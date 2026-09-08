@@ -1,0 +1,34 @@
+# AlgoMind default configuration.
+# These values are safe placeholders for local research on a low-resource machine.
+# They are NOT optimized and MUST NOT be treated as production trading parameters.
+
+system:
+  environment: research        # research | paper | live
+  timezone: UTC               # naive timestamps are produced in this zone
+  log_level: INFO             # DEBUG | INFO | WARNING | ERROR
+  # Optional pytest fixture / override file:
+  config_file: ~              # not used
+
+market:
+  symbols: []                 # populated at runtime from symbol info
+  default_timeframe: M1
+
+risk:
+  risk_per_trade_pct: 0.5    # % of equity risked per trade
+  daily_limit_pct:   2.0    # % of equity max exposure per day
+  total_limit_pct:   6.0     # % of equity max aggregate exposure
+
+execution:
+  max_spread:            40.0   # max allowed spread in points
+  max_slippage:          30.0    # max allowed slippage in points
+
+strategy:
+  minimum_confidence:    0.60    # no-trade below this confidence
+
+news:
+  mode: NEWS_OFF          # NEWS_OFF | NEWS_FILTER_ONLY | NEWS_TRADE | NEWS_HYBRID
+
+logging:
+  file: logs/algomind.log   # relative to project root; "" disables file logging
+  rotate_bytes: 1048576     # 1 MiB per file
+  backup_count:      3       # rotated files kept

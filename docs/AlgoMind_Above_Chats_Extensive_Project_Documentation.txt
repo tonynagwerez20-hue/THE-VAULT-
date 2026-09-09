@@ -1,0 +1,644 @@
+ALGOMIND / ASAP RETAIL OPTIONS FLOW ORDERFLOW SYSTEM
+EXTENSIVE CONSOLIDATED PROJECT DOCUMENTATION
+Information consolidated from the trading, order-flow, Pizzo FX, EA-development, data-engineering, testing and strategy-regime discussions above.
+
+Document field
+Record
+Project
+AlgoMind / Asap retail options flow orderflow system
+Document purpose
+Create a single detailed reference containing the strategy ideas, hypotheses, technical architecture, EA development history, validation findings, data requirements, risk controls and next-build direction discussed in the chats.
+Primary execution platform
+MetaTrader 5 / MQL5
+Research and analytics
+Python, statistical analysis, optional ML, external order-flow/market-data sources
+Main instruments discussed
+XAUUSD / gold, BTC and EURUSD
+Primary strategy families
+Mean reversion / value reversion and trend / continuation
+Status date
+3 September 2026
+
+1. Executive Overview
+The discussions describe the evolution of AlgoMind from an SMC-style Expert Advisor into a broader, adaptive market-state and order-flow system. The central design question became not simply 'what is the entry signal?' but 'which market hypothesis is currently most appropriate?' The two dominant hypotheses are Mean Reversion and Trend/Continuation. Market structure, liquidity, proxy delta, VWAP, volume profile/value areas, news and options/dealer-positioning context are intended to interact as evidence used to choose between those hypotheses.
+The project repeatedly emphasized that retail MT5 execution and data are materially different from institutional centralized order-flow environments. Consequently, the system must distinguish true exchange order flow from broker-derived proxies, normalize broker symbol specifications, model execution costs, and abstain when data quality is inadequate.
+Another major theme is validation integrity. A previous M5 validation review found FVG feature-construction defects that could introduce look-ahead bias. The corrected system therefore needs event-time feature construction: every historical feature must represent only information that was available at that exact decision time.
+1.1 Core thesis distilled from the discussions
+Markets are state-dependent; one strategy should not be forced to trade every regime.
+Mean reversion and continuation are complementary hypotheses rather than mutually exclusive indicators.
+Order-flow signals are strongest when interpreted at meaningful market locations.
+VWAP and value-area information provide context for whether price is stretched, accepted or rejected.
+Proxy delta should be treated as evidence with data-source uncertainty, not as universal centralized order flow.
+News can change the regime abruptly and therefore needs its own market-state logic.
+Options/dealer-positioning information can provide higher-level context, but its usefulness depends heavily on data quality and empirical validation.
+ML should initially rank or gate rule-generated setups rather than replace the entire trading logic.
+Hard risk, execution and data-quality controls must remain above the ML layer.
+The correct output of the system can be 'no trade' when the evidence is contradictory.
+2. Evolution of the Trading Strategy
+Development stage
+Main ideas discussed
+Strategic consequence
+SMC foundation
+Market structure, liquidity, order blocks, FVGs, session behavior
+Created the initial price-action framework.
+Order-flow expansion
+Cumulative delta, divergence, flips, surges and transitions
+Added participation/exhaustion information.
+Mean-reversion research
+VWAP, volume profile, value area and price deviation
+Created a distinct value-reversion hypothesis.
+Pizzo FX research
+Options/dealer positioning, gamma-like effects, volatility and liquidity
+Added higher-level positioning context.
+Mukasa Reef research
+Practitioner order-flow concepts from educational material
+Provided hypotheses to formalize and test.
+Regime-selection concept
+Choose between reversion and continuation according to current conditions
+Changed architecture from static to adaptive.
+EA engineering
+MQL5 execution, risk, sessions, news and broker compatibility
+Made the strategy operational.
+ML concept
+LightGBM, River, ONNX
+Added potential probabilistic gating and adaptation.
+Validation correction
+FVG lifecycle/look-ahead investigation
+Made causal feature construction a prerequisite.
+
+3. SMC / Market-Structure Layer
+The SMC layer discussed in the chats is a contextual layer rather than a complete strategy by itself.
+Swing structure: higher highs/higher lows and lower highs/lower lows.
+Breaks of structure and changes in market character.
+Liquidity pools around prior highs/lows, equal highs/lows, session extremes and obvious stop locations.
+Order blocks as contextual supply/demand zones.
+Fair Value Gaps as imbalance/retracement areas.
+Liquidity sweeps as events in which price takes a known high/low before either rejecting or accepting.
+The structural event must be timestamped when it became knowable; later confirmation cannot be allowed to rewrite the historical past.
+4. Order-Flow Framework
+4.1 Cumulative / proxy delta
+The discussions use delta as an indication of aggressive buying versus selling. However, for retail spot FX and many CFD feeds, the available data may not represent a centralized market-wide transaction flow. Therefore, the system should explicitly label broker-derived delta as proxy delta.
+Order-flow concept
+Intended interpretation
+Important condition
+Delta divergence
+Price makes an extreme while delta fails to confirm
+Potential exhaustion; not a standalone reversal signal.
+Delta flip
+Delta changes directional sign
+Potential trigger after location/context is established.
+Delta surge
+Unusually large directional delta movement
+Evidence of participation/impulse.
+Delta transition
+The character of flow changes over a sequence
+Useful for detecting regime/participation change.
+Absorption/exhaustion
+Aggressive flow produces limited price progress
+Can support rejection/reversion when located correctly.
+Imbalance
+Evidence of one-sided participation or thin liquidity
+Must be interpreted according to the available feed.
+
+4.2 Order flow must be contextual
+A major design conclusion is that the same delta observation can have different meanings depending on where it occurs. For example, aggressive selling near a major value-area low followed by a failure to push lower is potentially different from aggressive selling during a confirmed breakdown with continued acceptance below the level.
+Order flow + location is stronger than order flow alone.
+Order flow + structure + volatility is stronger than one isolated delta event.
+The system should measure normalized delta, such as z-scores, percentiles and delta relative to recent volume.
+Data quality should be a feature and a veto condition.
+5. VWAP, Volume Profile and Value Area
+5.1 VWAP
+VWAP provides a volume-weighted reference price for a defined session or anchor.
+Distance from VWAP can be normalized by ATR, realized volatility or historical VWAP-deviation distributions.
+Above/below VWAP is contextual rather than an automatic buy/sell rule.
+Extreme deviation combined with exhaustion can support mean reversion.
+Persistent acceptance on one side of VWAP can support continuation.
+5.2 Value area
+VAH = Value Area High.
+VAL = Value Area Low.
+POC = Point of Control.
+High-volume nodes can represent areas of prior acceptance.
+Low-volume nodes can represent areas through which price may move quickly when accepted/rejected.
+Inside value, balanced/rotational behavior may be more likely.
+A brief excursion beyond VAH/VAL is not automatically a breakout; acceptance beyond the boundary is more important.
+Migration of value can indicate that the market is establishing a new accepted price region.
+6. The Two Main Strategy Hypotheses
+6.1 Hypothesis A — Mean Reversion / Value Reversion
+The mean-reversion hypothesis assumes that price has become sufficiently extended from an accepted-value reference and that the extension is losing directional strength. The objective is a rotation back toward VWAP, POC, value midpoint, the opposite value edge or another statistically supported equilibrium.
+Component
+Possible implementation
+Location
+Outside value, near VAH/VAL, large VWAP deviation, prior range extreme or liquidity extreme.
+Extension
+VWAP/value distance standardized by volatility.
+Exhaustion
+Delta divergence, weakening flow, absorption-like behavior, failed continuation or liquidity sweep.
+Trigger
+Delta flip, rejection, structure shift or re-entry into value.
+Invalidation
+Sustained acceptance outside value, continued directional structure or volatility regime change.
+Targets
+VWAP, POC, value midpoint, opposite value edge or staged targets.
+Best environment
+Balanced, rotational or exhausted markets.
+Danger environment
+Strong directional trend days with repeated acceptance away from value.
+
+6.2 Hypothesis B — Trend / Continuation
+The continuation hypothesis assumes that the market has escaped a meaningful structure or value boundary and is accepting price in the new area. The system seeks a pullback or continuation entry while directional participation remains intact.
+Component
+Possible implementation
+Location
+Break of major structure, liquidity boundary, VAH/VAL, session extreme or other validated level.
+Acceptance
+Price holds beyond the level rather than immediately returning through it.
+Participation
+Delta surge/persistence, volume expansion or directional flow.
+Entry
+Retest, pullback, FVG/OB reaction or continuation trigger.
+Invalidation
+Failure to hold the breakout, opposing structure shift or strong opposing absorption.
+Targets
+Next liquidity pool, profile node, session extreme or risk-multiple target.
+Best environment
+Directional expansion and macro repricing.
+Danger environment
+Low-volatility chop and false breakouts.
+
+7. How the Components Interact
+The intended logic is hierarchical rather than a simple indicator checklist:
+Market state → determine whether the market is balanced, trending, expanding, compressing or transitioning.
+Location → determine whether price is near value, far from value, at liquidity or beyond a structural boundary.
+Structure → determine what price is attempting to do.
+Order flow → determine whether participation confirms or contradicts that attempt.
+News → determine whether the environment is normal or undergoing event-driven repricing.
+Options/dealer context → add higher-level positioning information where reliable data exist.
+Strategy selector → estimate whether mean reversion or continuation has the better conditional expectancy.
+Risk/execution gate → determine whether the trade can actually be executed safely.
+Execution → enter only after all mandatory gates pass.
+8. Adaptive Market-Regime Engine
+One of the most important conclusions in the discussions was that the EA should choose the strategy based on the current state of the market rather than applying a single strategy continuously.
+State dimension
+Features discussed
+Purpose
+Trend strength
+Structure sequence, slope, trend-strength metrics
+Distinguish directional from balanced conditions.
+Volatility
+ATR percentile, realized volatility, range expansion
+Identify compression, normal and expansion states.
+Location
+VWAP distance, VAH/VAL/POC distance, prior extremes
+Measure value displacement.
+Order flow
+Delta z-score, divergence, surge, flip, persistence
+Measure participation/exhaustion.
+Acceptance
+Time/volume retained beyond levels
+Distinguish breakout from rejection.
+Liquidity
+Sweeps, distance to highs/lows, profile nodes
+Identify potential reaction zones.
+Session
+Asian, London, New York, overlaps, rollover
+Account for changing liquidity/behavior.
+News
+Event proximity, surprise, reaction
+Identify discontinuous repricing.
+Execution
+Spread, spread percentile, tick quality
+Determine whether trading is practical.
+Options context
+Strikes, IV, skew, estimated positioning where available
+Higher-level market context.
+
+8.1 Example decision matrix
+Observed state
+Preferred hypothesis
+Typical action
+Low trend + large VWAP/value deviation + exhaustion
+Mean reversion
+Wait for rejection/flip then target value.
+High trend + acceptance beyond key level + directional delta
+Continuation
+Trade pullback/continuation.
+High volatility + unclear acceptance
+Neither / wait
+Avoid forcing a setup.
+Inside value + weak directional evidence
+Low-confidence MR / no trade
+Require stronger edge.
+Pre-major news
+No new trade or specialized news mode
+Protect against discontinuity.
+Post-news confirmed directional acceptance
+Continuation
+Wait for stabilization/confirmation.
+Conflicting order flow and structure
+No trade
+Abstain.
+
+9. Pizzo FX / Options Dealer-Positioning Research
+The Pizzo FX research thread explored options-market concepts such as dealer positioning, implied volatility, strikes, expiries, gamma-like behavior and liquidity. The project direction was to investigate these mechanisms statistically rather than treating practitioner explanations as established facts.
+Large option strikes may become relevant liquidity/attention zones.
+Dealer hedging behavior can differ depending on positioning and volatility regime.
+Estimated gamma exposure can potentially help classify whether price is more likely to experience pinning/mean-reversion-like behavior or stronger movement.
+Implied volatility and skew can provide information about expected risk and asymmetry.
+Options positioning should generally be a context layer rather than a tick-level entry trigger unless high-quality data are available.
+News can overwhelm positioning effects by changing volatility expectations and macro pricing.
+Missing options data should produce an explicit lower-confidence state rather than fabricated estimates.
+10. Mukasa Reef / Practitioner Order-Flow Concepts
+The discussions also asked to incorporate order-flow strategies described in Mukasa Reef educational videos. The agreed methodological approach is to treat these ideas as practitioner hypotheses and translate them into measurable rules before combining them with the broader system.
+Define the exact event described by the practitioner.
+Specify its lookback window.
+Define threshold and normalization.
+Define the required market location.
+Define confirmation and invalidation.
+Measure whether it adds incremental predictive value after VWAP/value, structure and delta are already present.
+Reject concepts whose apparent advantage disappears out of sample.
+11. News Intelligence and Interaction With the Strategy
+News was discussed as an active market-state variable rather than merely a calendar filter. The EA should distinguish the period before an event, the immediate reaction, confirmation and the subsequent stabilization.
+News phase
+Potential market behavior
+System response
+Pre-news
+Compression, reduced liquidity, positioning
+Reduce risk or block new entries.
+Immediate release
+Spread/volatility spike, discontinuous repricing
+Usually wait; specialized news mode only if proven.
+Initial reaction
+Directional impulse may be challenged
+Do not assume first move is final.
+Confirmation
+Market begins accepting a direction/level
+Reclassify regime; continuation may become preferred.
+Post-news stabilization
+Volatility normalizes or second move develops
+Return to normal strategy rules when execution quality recovers.
+
+11.1 News modes in V36.1
+NEWS_OFF — news ignored.
+NEWS_FILTER_ONLY — news affects whether trading is permitted.
+NEWS_TRADE — news reactions can create trades.
+NEWS_HYBRID — news modifies the normal strategy/regime engine.
+Historical news features discussed included surprise, reaction requirements and a 30-minute news buffer. V36.1 recorded InpMinSurprisePct = 0.05, InpNewsBufferMins = 30 and InpRequireReaction = true.
+12. Entry and Exit Architecture
+12.1 Entry sequence
+The intended decision sequence is:
+Context
+Regime classification
+Location
+Candidate hypothesis
+Setup confirmation
+Order-flow confirmation
+Trigger
+Risk and execution checks
+Order placement
+12.2 Exit concepts discussed
+ATR-based initial stops.
+Structural invalidation rather than arbitrary stop placement.
+Partial profit around approximately 2R was part of the V36-era configuration.
+Trailing stop using an ATR multiplier, with 1.5× ATR discussed.
+Mean-reversion targets around VWAP, POC or value.
+Continuation targets around liquidity pools and structural objectives.
+Exit when the original hypothesis is invalidated.
+Use MAE/MFE and time-to-target analysis to determine whether exit rules actually add expectancy.
+13. Risk Management Record
+Parameter
+Historical configuration discussed
+Purpose
+Risk per trade
+0.5% in V36-era configuration; earlier work also considered 0.1%
+Limit single-trade loss.
+Daily limit
+2.0%
+Stop trading after daily drawdown threshold.
+Total limit
+5.0%
+Hard account-level loss protection.
+Partial RR
+2.0R
+Scale out / reduce exposure.
+Trailing
+Enabled
+Protect gains.
+Trail ATR multiplier
+1.5
+Volatility-adaptive trailing.
+News buffer
+30 minutes
+Avoid event-driven execution risk.
+Session
+10:00–22:00 EAT in one configuration
+Avoid unwanted session conditions.
+
+These values are project-history settings and should not be treated as universally optimal. They require validation against account rules, instrument volatility, execution costs and risk-of-ruin analysis.
+Limit should subject to reset especially the total limit.
+14. Full Technical Architecture Discussed
+Layer
+Technology / component
+Role
+Execution
+MT5 / MQL5
+Broker connection, orders, position management and hard risk controls.
+Strategy
+Python strategy engine
+Complex feature engineering, regime classification and strategy scoring.
+ML
+LightGBM
+Tabular setup-quality and regime probability estimation.
+ML deployment
+ONNX
+Portable model inference/deployment concept.
+Online learning
+River
+Controlled incremental learning and drift adaptation.
+Messaging
+ZeroMQ
+Low-overhead EA/Python communication.
+API
+FastAPI
+Service interface.
+Cache/state
+Redis
+Fast current-state and event storage.
+Database
+PostgreSQL / PostGIS
+Persistent market/research/metadata storage.
+Order-flow source
+Sierra Chart
+Potential high-quality centralized order-flow reference.
+Order-flow analysis
+Bookmap
+Visual/research order-book analysis.
+Gateway
+Nginx
+Reverse proxy / gateway.
+Networking
+WireGuard/VPN
+Secure remote connectivity.
+Dashboard
+Next.js
+Monitoring and operational UI.
+
+14.1 Message flow
+MT5 receives market data.
+Execution-critical features are updated locally.
+Relevant feature/state packets can be sent top was intended behavior in the relevant EA configuration.
+15.1 Diagnostic checkpoint
+A later development checkpoint reported G9 compile verification as PASS with real evidence, while G10–G12 runtime verification remained blocked by account-authentication/root-cause conditions in the sandbox environment. The diagnostic work continued from the prior checkpoint rather than restarting.
+16. Data Requirements and Source Hierarchy
+Level
+Data
+Primary use
+Caveat
+1
+MT5 bid/ask ticks, tick volume, spread
+Execution-realistic baseline
+Broker-specific.
+2
+Broker DOM/depth where genuinely available
+Local liquidity context
+Not universal market depth.
+3
+Centralized futures/order-flow data
+Reference/validation
+Instrument relationship must be modeled.
+4
+VWAP/profile/value area
+Location/acceptance
+Must be calculated causally.
+5
+Economic news
+Event regime
+Timestamp and release data must be accurate.
+6
+Options IV/strikes/positioning
+Higher-level context
+Often incomplete for retail traders.
+7
+Practitioner concepts
+Hypothesis generation
+Not statistical proof.
+
+17. Machine Learning Layer
+The discussions considered whether an AI model is necessary. The recommended direction is to establish a robust rule-based system first, then use ML where it solves a defined problem.
+ML role
+How it fits
+Regime probability
+Estimate probability of MR versus continuation conditions.
+Trade-quality gate
+Score rule-generated candidate setups.
+Expected-value model
+Estimate outcome conditional on setup/context.
+Threshold adaptation
+Adjust thresholds within controlled boundaries.
+Drift monitoring
+Detect changes in feature distributions and performance.
+
+17.1 What ML should not control
+It should not override hard risk limits.
+It should not bypass spread or execution gates.
+It should not be trained using leaked future features.
+It should not initially invent arbitrary trades with no interpretable context.
+It should not continuously retrain on its own feedback without safeguards.
+18. Backtesting and Statistical Validation
+18.1 FVG look-ahead defect identified
+A previous M5 validation review identified three important problems: nearest_open_fvg was using final-lifecycle/final-invalidated information; _precompute_fvg_dir_flags behaved like once-found sticky-forever flags; and fill_percentage in build_feature_vector used the final maximum fill rather than the fill known at each historical bar.
+This is a severe validation issue because it can make historical performance look artificially strong. The fix is to reconstruct the FVG lifecycle at each timestamp and expose only the information available at that timestamp.
+18.2 Correct causal design
+Record FVG creation time.
+Record each subsequent fill update as it occurs.
+Record the first actual invalidation time.
+At historical bar t, expose only the state known by t.
+Never use the final fill percentage for earlier observations.
+Never let a once-found flag remain active forever unless the feature is intentionally cumulative.
+Unit-test feature vectors bar by bar against a deterministic event timeline.
+18.3 Validation protocol
+Chronological train/validation/test/forward splits.
+Walk-forward evaluation.
+No random shuffling for final time-series evaluation.
+Realistic spread, commission, slippage and execution delay.
+Parameter-sensitivity analysis.
+Ablation testing.
+Monte Carlo trade-sequence analysis.
+Cross-instrument and cross-regime testing.
+Out-of-sample forward testing.
+Model and feature-version freezing before final evaluation.
+19. Testing and Project Artifacts Discussed
+Artifact
+Contents / purpose
+AlgoMind_Reversion_Testing.xlsx
+README, BASELINE (M5/M15/M30/H1), OPTIMIZATION, PARAM_SENSITIVITY, FORWARD_TEST, TRADE_STATS, ACCOUNT_FEASIBILITY, PARAMETER_REFERENCE and DASHBOARD.
+Pizzo FX Options Dealer Positioning Personal Study Guide
+Research material for options/dealer-positioning concepts.
+Presentation 13 (1).pptx
+Academic presentation used in IVS/IFRS-related work.
+M5 validation tooling
+Feature-engineering and validation work where FVG lifecycle defects were identified.
+V29–V36.1 EA family
+Progressive versions of the MQL5 trading system.
+Broker diagnostic branch
+Compatibility investigation including compile/runtime verification.
+
+20. Multiple Strategies and Prop-Firm Risk
+The discussions also considered whether running multiple strategies on one prop-firm account is mathematically preferable to one strategy. The conclusion was that multiple strategies can improve robustness only if they genuinely diversify regime exposure and their combined risk is controlled.
+Two strategies with high return correlation are not true diversification.
+Mean reversion and continuation can potentially diversify because their strongest environments differ.
+Portfolio-level drawdown must govern the combined strategies.
+Each strategy can have a risk budget, but the total account risk must have a hard ceiling.
+Do not allow simultaneous signals to multiply effective risk beyond the intended account limit.
+21. Hardware and Deployment Constraints
+The project was designed with a low-end development machine in mind: a Lenovo IdeaPad-class 10th-generation i3 system with 4 GB RAM and an HDD. This makes computational efficiency important.
+Prefer incremental calculations instead of recomputing complete history on every tick.
+Keep feature vectors compact.
+Use MQL5 for execution-critical lightweight operations.
+Avoid unnecessary deep-learning models.
+Use bounded caches and controlled logging.
+Move heavy analytics to a VPS or remote service when needed.
+Design Python services so they can be deployed independently of the local laptop.
+22. End-to-End Build Plan
+1. Freeze definitions: Write exact mathematical definitions for structure, FVG lifecycle, delta flip/surge/divergence, VWAP deviation, value acceptance, liquidity sweep, trend strength and news states.
+2. Build causal feature engine: Ensure every feature can be reconstructed using only information available at the decision timestamp.
+3. Build standalone baselines: Create independent MR and continuation strategies before combining them.
+4. Add VWAP/value: Measure whether location and acceptance improve the baselines.
+5. Add order flow: Add proxy delta and quantify incremental information.
+6. Add news: Implement pre-event, reaction, confirmation and stabilization states.
+7. Add options context: Use reliable positioning/IV/strike information where available.
+8. Build rule-based regime selector: Start transparent and interpretable.
+9. Add ML gatekeeper: Train on candidate setups generated by the validated rule engine.
+10. Integrate MQL5 execution: Enforce broker specifications, risk, spread, session and news controls.
+11. Walk forward: Test chronologically across multiple regimes.
+12. Stress test: Apply spread/slippage/latency shocks and Monte Carlo analysis.
+13. Forward test: Use live-like data and execution without financial risk.
+14. Controlled deployment: Start at low risk with kill switches and monitoring.
+23. Performance Metrics to Track
+Net return and return volatility.
+Expectancy per trade.
+Average R multiple.
+Profit factor.
+Maximum drawdown.
+Daily drawdown distribution.
+Recovery factor.
+Win rate and payoff ratio.
+MAE and MFE.
+Time in trade.
+Slippage and spread cost.
+Performance by session.
+Performance by volatility regime.
+Performance by news state.
+Performance by strategy hypothesis.
+Performance by confidence score.
+Performance before and after each additional feature layer.
+Strategy correlation and joint drawdown.
+24. Principal Failure Modes
+Failure mode
+Effect
+Required control
+Look-ahead bias
+Artificially strong backtest
+Strict event-time features.
+Proxy delta mistaken for true delta
+False order-flow confidence
+Explicit feed labeling and validation.
+Overfitting
+Poor live performance
+Walk-forward and parameter perturbation.
+Wrong regime
+Wrong strategy selection
+Probabilistic selector + abstention.
+News discontinuity
+Large slippage/gaps
+News state and execution safeguards.
+Broker precision mismatch
+False vetoes or invalid sizing
+Dynamic symbol normalization.
+Data outage
+Stale decisions
+Data-health gate and safe fallback.
+Model drift
+Prediction degradation
+Drift monitoring and controlled retraining.
+Risk stacking
+Excess account drawdown
+Portfolio risk governor.
+Complexity creep
+Hard-to-debug system
+Modular layers and ablation tests.
+
+25. Target Final Decision Pipeline
+DATA → DATA QUALITY → MARKET STATE → LOCATION → HYPOTHESIS SELECTION → SETUP → ORDER-FLOW CONFIRMATION → NEWS/OPTIONS CONTEXT → ML GATE → RISK GATE → EXECUTION → MANAGEMENT → ATTRIBUTION
+The architecture should behave as a hierarchy. Hard safety constraints always outrank probabilistic signals. A high model score cannot override an abnormal spread, invalid data, a daily loss limit, an imminent prohibited news event or a broker-compatibility failure.
+26. Standard for Proving the Strategy
+Convert every practitioner idea into a measurable hypothesis.
+State the expected mechanism.
+Specify the observable variables.
+Find academic/statistical evidence where available.
+Test against a simple baseline.
+Test incremental value after controlling for other features.
+Evaluate out of sample.
+Include costs and execution.
+Test across instruments and regimes.
+Report uncertainty and robustness, not only profitability.
+27. Consolidated Project Status
+The project has converged on two major strategy hypotheses: mean reversion/value reversion and trend/continuation.
+The adaptive regime selector is the main conceptual bridge between these strategies.
+VWAP, volume profile/value area and order flow are intended to interact as contextual evidence.
+Pizzo FX/dealer-positioning concepts are positioned as higher-level context requiring rigorous validation.
+Mukasa Reef/practitioner order-flow concepts are treated as hypotheses to formalize and test.
+News is treated as a dynamic market-state variable.
+The ML layer is best positioned as a gatekeeper/probability estimator after the rule-based baseline is reliable.
+MQL5 remains the execution and hard-risk authority.
+Python can handle heavier research, feature engineering and model services.
+Causal feature construction and elimination of look-ahead bias are prerequisites to trusting performance results.
+Broker-specific symbol normalization is essential, demonstrated by the XAUUSDm spread-gate problem.
+The next major milestone is a causally correct, broker-normalized, walk-forward-tested regime engine that can choose between MR and continuation.
+28. Project Glossary
+Term
+Meaning in the project
+ATR
+Average True Range; volatility reference for stops, trailing and normalization.
+Cumulative Delta
+Running aggressive-buying versus aggressive-selling measure; quality depends on source.
+Delta Divergence
+Price and delta fail to confirm an extreme.
+Delta Flip
+Directional change in delta.
+Delta Surge
+Unusually large delta movement.
+FVG
+Fair Value Gap / imbalance zone.
+POC
+Point of Control in a volume profile.
+VAH
+Value Area High.
+VAL
+Value Area Low.
+VWAP
+Volume-weighted average price.
+Acceptance
+Evidence that price is being retained at/beyond a level.
+Liquidity Sweep
+Price taking a known liquidity area.
+MR
+Mean Reversion.
+TC
+Trend Continuation.
+Regime
+Current market-state classification.
+Gatekeeper
+Layer that filters/ranks candidate trades.
+Look-ahead bias
+Use of future information in historical decisions.
+Walk-forward
+Chronological repeated train/test evaluation.
+OOS
+Out of sample.
+MAE/MFE
+Maximum Adverse/Favorable Excursion.
+
+29. Final Design Principle
+The intended AlgoMind system is not a collection of indicators. It is a decision hierarchy. It should determine where price is, what state the market is in, whether price is being accepted or rejected, whether participation confirms the move, whether news or positioning changes the environment, which of the two core hypotheses has the stronger conditional expectancy, and whether the broker can execute the idea under acceptable risk.
+The system should therefore be designed to answer one final question before every trade: given only the information available now, is there enough statistically defensible edge to justify taking this risk?
+If the answer is no, the correct algorithmic decision is to do nothing.

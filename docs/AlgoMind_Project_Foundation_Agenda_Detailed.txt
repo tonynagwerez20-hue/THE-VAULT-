@@ -1,0 +1,592 @@
+ALGOMIND
+PROJECT FOUNDATION AGENDA
+Detailed project foundation, architecture, research and validation specification
+Version 1.0 • 4 September 2026
+1. Executive Definition
+AlgoMind is a hybrid retail trading research and execution system designed to combine market structure, auction/value concepts, order-flow proxies, VWAP, liquidity, imbalance information, news context and—where available—options/dealer-positioning information into a regime-aware decision process. The foundation is deliberately modular so the system can begin with MT5 and Python on a low-resource computer and later accept higher-quality data sources without rewriting the strategy.
+The project is not defined as an 'AI bot' first. Its first objective is a deterministic, event-driven market engine that can reproduce the same information and decisions in research, MT5 testing and live operation. Machine learning is an optional decision-quality layer added only after the underlying data, labels, feature timing and execution assumptions have been proven sound.
+2. Foundation Objectives
+Objective
+Definition of success
+Research integrity
+Every feature and signal is generated only from information available at the decision timestamp.
+Strategy integration
+Continuation/trend and mean-reversion hypotheses can be evaluated under the same feature framework.
+Regime awareness
+The engine can determine when each hypothesis is appropriate and when neither should trade.
+Execution realism
+Spread, slippage, latency, broker specifications and position-management rules are represented.
+Data adaptability
+The system can use MT5-native data, explicit proxies and optional external data without confusing their quality.
+Low-cost foundation
+The first functional system can operate without Sierra Chart, ZeroMQ, cloud infrastructure or paid feeds.
+Traceability
+Every decision can be reconstructed from timestamped inputs, feature version and strategy state.
+Safe degradation
+Missing/stale external services cannot silently cause uncontrolled trading.
+3. Non-Negotiable Design Principles
+No look-ahead: Historical calculations must reproduce what was knowable at each historical instant. Final FVG fill, final swing state, later invalidation or future volume must never leak backward.
+One canonical vocabulary: A feature such as VWAP distance, delta proxy or liquidity sweep must have one documented definition and version.
+Separate signal from execution: Python may recommend a trade; MQL5 remains the final execution and hard-risk authority.
+Proxy honesty: Tick-direction or candle-derived delta is a proxy, not exchange cumulative delta or institutional DOM.
+Regime before optimization: The project must establish which market condition exists before selecting the strategy hypothesis.
+Complexity earns its place: New data or models are retained only if they produce robust incremental value.
+Fail closed: Unknown, stale, malformed or contradictory critical inputs should result in NO_TRADE.
+Reproducibility: The same input snapshot and configuration should produce the same deterministic decision.
+4. System Scope
+The foundation covers the following interconnected areas:
+MT5 market-data ingestion and broker metadata.
+Historical/event-driven replay and backtesting.
+Market structure and liquidity mapping.
+VWAP and volume-profile/value-area context.
+Proxy cumulative delta and pressure measurements.
+Imbalance/FVG and displacement event tracking.
+Continuation/trend and mean-reversion strategy hypotheses.
+Market-regime classification and strategy selection.
+News and event-reaction intelligence.
+Optional options/dealer-positioning context.
+Python research/decision engine.
+MQL5 execution, risk and position-management engine.
+Local communication first; ZeroMQ as a later transport option.
+Versioned logs, feature snapshots and performance evaluation.
+5. High-Level Architecture
+Layer
+Core responsibility
+Examples
+L1 Data acquisition
+Collect and normalize observations
+MT5 ticks, bars, spread, optional depth, news, external options/order-flow
+L2 Event engine
+Turn observations into non-retroactive events
+Swings, liquidity sweeps, displacement, FVG lifecycle, session events
+L3 Feature engine
+Create numerical/state features
+ATR, VWAP distance, value position, delta proxy, volatility, news state
+L4 Regime engine
+Classify market environment
+Trend, balance, expansion, exhaustion, news, no-trade
+L5 Strategy engine
+Score competing hypotheses
+Continuation vs mean reversion
+L6 Decision gate
+Apply confidence/data-quality/risk eligibility
+Trade / reduce / wait / NO_TRADE
+L7 Execution
+Turn approved intent into broker action
+MQL5 entry, SL, TP, partials, trailing, reconciliation
+L8 Audit/analytics
+Record everything needed to reproduce results
+Decision log, execution log, feature version, performance metrics
+6. Data Foundation
+Data source
+MT5/native?
+Primary purpose
+Quality rule
+OHLC bars
+Yes
+Structure, VWAP, volatility, ATR
+Use closed/in-progress state explicitly.
+Ticks
+Usually
+Microstructure and proxy pressure
+Preserve timestamp and tick direction information.
+Bid/ask/spread
+Yes
+Execution filter
+Normalize units using symbol properties.
+Market depth
+Broker-dependent
+Depth imbalance/order book
+Only use if genuinely supplied; never simulate as real depth.
+External futures/order flow
+Optional
+Higher-quality delta/footprint/DOM
+Store source timestamp and feed identity.
+Options flow/positioning
+Optional
+Dealer/gamma/strike context
+Store publication/observation timestamp.
+News/calendar
+MT5 or external
+Event regime/reaction
+Backtests must use historically available event data.
+Volume profile
+Derived
+POC/VAH/VAL
+Reconstruct using only historical observations.
+VWAP
+Derived
+Fair-value reference
+Use session/anchor definition consistently.
+7. Event-Driven Feature Foundation
+The project should move away from static indicator snapshots toward an event-driven model. A feature is not merely a value; for many market concepts it has a lifecycle: created, active, interacted with, filled/mitigated, invalidated or expired.
+Event
+Required state information
+Swing
+Creation timestamp, price, direction, confirmation condition, invalidation/retirement state
+Liquidity pool
+Location, creation time, type, whether swept, sweep time, post-sweep response
+FVG/imbalance
+Creation time, direction, boundaries, current fill at each timestamp, invalidation state
+Delta surge
+Start time, rolling magnitude, threshold state, end time
+Delta flip
+Previous state, new state, transition timestamp
+VWAP deviation
+Current deviation, maximum deviation known so far, return/rejection state
+News event
+Scheduled time, release time if known, surprise when released, reaction window
+Trade setup
+Setup creation time, conditions then present, expiry, execution/invalidity reason
+This structure directly addresses the previously identified danger of using final lifecycle values—such as maximum FVG fill—as if they were known on every earlier bar.
+8. VWAP, Volume Profile and Value Area
+Calculate session VWAP from observations available up to the current timestamp.
+Where volume profile is used, define the price-bin method, session boundaries and volume allocation rule.
+Record POC, VAH and VAL with their creation/calculation timestamp.
+Measure price location relative to VWAP/POC/VAH/VAL in raw price and normalized units such as ATR.
+Treat VWAP/value as context rather than a standalone buy/sell trigger.
+Use acceptance outside value to support continuation and rejection from value extremes to support mean reversion.
+9. Order-Flow and Delta Proxy Foundation
+Because ordinary retail MT5 feeds may not provide exchange-grade order flow, AlgoMind should maintain multiple proxy modes. The goal is not to claim institutional accuracy; it is to test whether observable pressure proxies contain useful incremental information.
+Mode
+Concept
+Use
+Proxy A
+Tick-direction signed activity
+Short-horizon directional pressure.
+Proxy B
+Candle/range/tick-volume pressure
+Lower-data-resolution pressure estimate.
+Proxy C
+Price-volume/delta divergence
+Detect non-confirmation at new price extremes.
+Fusion
+Normalized combination of proxies
+More robust pressure state than a single estimator.
+External
+True/near-exchange flow where available
+Validation and higher-quality deployment option.
+Core state concepts: delta flip, delta surge, delta transition, divergence, exhaustion, absorption/rejection proxy and pressure persistence.
+10. Liquidity and SMC Context
+Track observable swing highs/lows and equal-high/equal-low areas.
+Track session highs/lows and other objective liquidity references.
+Define sweep detection precisely: what price interaction qualifies, over what time window and what confirms/rejects the event.
+Use displacement and structure breaks as evidence of directional intent.
+Treat FVGs/imbalances as zones with time-dependent state rather than permanent historical facts.
+Use order blocks or similar zones only when their creation, validity and invalidation rules are deterministic.
+Do not allow later mitigation to change what the feature said before mitigation.
+11. Two-Hypothesis Strategy Framework
+Hypothesis
+Expected environment
+Supporting evidence
+Do not trade when
+Continuation / Trend
+Directional expansion and acceptance
+Structure break, displacement, value acceptance, persistent pressure, supportive volatility/flow
+Breakout repeatedly fails or price returns deeply into value.
+Mean Reversion / Balance
+Two-sided rotation and stretched price
+VWAP/value deviation, sweep, divergence/exhaustion, rejection, return-to-value potential
+Strong acceptance outside value or persistent directional expansion.
+SMC, order-flow, VWAP, value area, options and news should therefore be treated as evidence streams feeding the hypothesis rather than as unrelated strategies that compete for control.
+12. Regime Engine
+Regime
+Description
+Default strategy posture
+TREND_UP
+Persistent upward structure and participation
+Continuation
+TREND_DOWN
+Persistent downward structure and participation
+Continuation
+BALANCED
+Rotational two-sided auction
+Mean reversion
+EXPANSION
+Volatility/participation expansion with direction developing
+Wait or conditional continuation
+EXHAUSTION
+Directional move losing confirmation
+Mean reversion after rejection
+NEWS
+Event-driven market behaviour
+News-specific rules/reduced exposure
+NO_TRADE
+Insufficient quality/conflicting evidence
+None
+Regime classification should be a state machine with persistence/hysteresis so one noisy bar does not constantly switch strategy.
+13. Canonical Feature Schema
+Group
+Representative fields
+Price
+open, high, low, close, returns, range, gap
+Volatility
+ATR, realized volatility, range expansion, volatility percentile
+Structure
+swing state, directional bias, BOS/CHOCH-style state, distance to key liquidity
+VWAP/value
+VWAP, POC, VAH, VAL, deviations, inside/outside value
+Order flow
+delta_proxy_A, delta_proxy_B, fusion, surge, flip, divergence, persistence
+Liquidity
+nearest high/low, sweep state, distance, post-sweep reaction
+Imbalance
+FVG active state, fill percentage at current bar, age, direction
+Options
+gamma regime, strike distance, notable-flow flags, data quality
+News
+event type, time-to-event, surprise, reaction direction, volatility response
+Session
+session, time-of-day, opening range, session-relative location
+Execution
+spread, stop distance, estimated slippage, current exposure
+Decision
+regime, hypothesis scores, confidence, action, reason code
+14. Python–MQL5 Division of Labour
+Component
+Responsibilities
+Must not do
+Python research/decision engine
+Feature computation, regime state, strategy scoring, model inference, research logs
+Directly bypass MQL5 hard risk controls
+MQL5 EA
+Broker data, account state, execution, position management, hard risk vetoes
+Assume external feeds are always available
+Shared schema
+Timestamped normalized snapshots and decisions
+Change fields silently between versions
+Transport layer
+Move snapshots/decisions between processes
+Define strategy logic itself
+Storage
+Historical data, features, decisions, executions
+Overwrite prior versions without lineage
+15. Communication Architecture
+The project should start with the simplest reliable local mechanism. A file/localhost handshake is acceptable for development because it proves the protocol before introducing messaging infrastructure.
+Stage
+Transport
+When to use
+Stage 1
+Local files/shared directory or localhost polling
+Initial build, debugging and deterministic experiments
+Stage 2
+ZeroMQ on localhost
+Once the message contract and synchronization are proven
+Stage 3
+FastAPI/Redis/PostgreSQL or similar
+Only if multi-process, multi-symbol or remote scaling actually requires it
+ZeroMQ is therefore an implementation option, not a prerequisite for starting AlgoMind.
+16. Canonical Decision Message
+A conceptual message should contain at least: decision_id, timestamp, symbol, regime, hypothesis, action, confidence, entry/reference zone, stop, target, risk allocation, feature_version, model_version, data_quality, reason_code and expiry.
+The schema must include a version number. Any incompatible change should create a new version rather than silently changing historical semantics.
+17. Historical Backtest Architecture
+Load historical data in chronological order.
+Advance a deterministic clock.
+At each event, build the information set available at that exact time.
+Update event lifecycles without reading future bars.
+Build the canonical feature vector.
+Classify regime.
+Score continuation and mean-reversion hypotheses.
+Apply risk and execution assumptions.
+Simulate order/fill/position management.
+Record every decision, including NO_TRADE decisions.
+At the end, calculate returns, drawdown, expectancy, trade distribution and robustness metrics.
+18. MT5 Strategy Tester Synchronization
+The key engineering issue is synchronization. A Python process running independently cannot automatically know the exact simulated tester state unless MQL5 communicates it. The recommended design is an MT5-driven snapshot/response loop.
+Step
+MT5 tester
+Python
+1
+Receives simulated market event
+—
+2
+Builds current broker/account snapshot
+—
+3
+Publishes snapshot
+Receives it
+4
+—
+Builds features and strategy decision
+5
+Receives decision
+Returns decision
+6
+Applies final risk/execution rules
+—
+7
+Advances simulation
+—
+For early prototypes this can use a local file handshake. For faster synchronization, replace the transport with ZeroMQ. The feature definitions remain unchanged.
+19. Live Trading Flow
+MT5 receives current broker data.
+MQL5 creates a canonical snapshot.
+Python updates the feature and regime state.
+Python produces trade intent or NO_TRADE.
+MQL5 verifies freshness, symbol state, spread, margin, exposure, daily loss and total loss.
+MQL5 executes only after its final veto checks pass.
+MQL5 manages SL, TP, partial exit and trailing according to the active position policy.
+Both engines log the decision and execution result using the same decision ID.
+20. Failure Handling
+Failure
+Required response
+Python unavailable
+No new trade; optionally use an explicitly enabled local fallback.
+Python response stale
+Reject it.
+Malformed schema
+Reject it.
+Options feed missing
+Mark unavailable; continue only if options are non-mandatory.
+External flow missing
+Use configured proxy mode or downgrade confidence.
+Spread excessive
+Veto.
+Daily loss limit reached
+Veto.
+Total drawdown limit reached
+Veto.
+Broker order rejected
+Reconcile actual position state before retry.
+Connection interruption
+Do not duplicate orders; reconcile state.
+Clock/timestamp mismatch
+Stop decision processing until synchronized.
+21. Risk Management Foundation
+Control
+Initial project setting/concept
+Risk per trade
+0.5% as a configurable research starting point; live risk should be validated conservatively.
+Daily loss limit
+2.0% starting hard limit.
+Total loss/drawdown limit
+5.0% starting project-level limit.
+Stop loss
+ATR and/or structural/liquidity based, respecting broker minimum distance.
+Partial exit
+Around 2R as an initial research parameter.
+Trailing
+Optional ATR-based trailing after defined profit excursion.
+Position sizing
+Calculate from monetary risk and actual stop distance.
+Correlation exposure
+Limit simultaneous positions with highly related risk.
+Emergency kill switch
+Manual and automatic shutdown capability.
+These are starting engineering parameters, not claims of optimal profitability.
+22. News Intelligence
+Mode
+Behaviour
+NEWS_OFF
+News ignored by strategy logic.
+NEWS_FILTER_ONLY
+Block/reduce trading around configured events.
+NEWS_TRADE
+Permit dedicated event/reaction setups.
+NEWS_HYBRID
+Combine event surprise, market reaction, structure and flow.
+Record scheduled time and actual release time separately where possible.
+Do not use revised historical economic data as though the revision was known at the original release.
+Require a defined reaction window if reaction confirmation is part of the setup.
+Treat extreme spread/volatility around news as an execution-risk condition, not automatically as opportunity.
+23. Options / Dealer Positioning Layer
+When an external options dataset is available, AlgoMind may incorporate strike-level positioning, open interest, implied volatility, dealer gamma estimates and notable flow. The data should be treated as contextual evidence.
+Major strikes may act as areas of interest, potential barriers or magnets.
+Estimated gamma regime can modify the expected balance-versus-expansion environment.
+Options information should not independently trigger a trade without price/structure/flow confirmation.
+Every options feature needs a source timestamp and quality flag.
+If unavailable, the engine must explicitly set the feature to unavailable rather than substitute invented values.
+24. Machine Learning Agenda
+The recommended order is rules → clean dataset → statistical validation → ML gate. The first model should rank or gate trades rather than replace every deterministic market concept.
+Stage
+Purpose
+Baseline rules
+Establish whether a deterministic edge exists.
+Feature validation
+Remove redundant, unstable or leaky inputs.
+Regime classifier
+Estimate market-state probabilities.
+LightGBM gate/ranker
+Estimate trade quality conditional on setup/regime.
+Probability calibration
+Make confidence values interpretable.
+Online learning/River
+Experiment with controlled adaptation after stable deployment.
+Drift monitoring
+Detect when live data no longer resembles training data.
+25. Dataset and Label Governance
+Separate raw data, normalized data, derived features and labels.
+Version feature definitions.
+Use walk-forward rather than random train/test splitting.
+Ensure future-based labels are never included in the input feature set.
+Store training-window dates and model version.
+Include transaction costs in performance labels where appropriate.
+Keep an immutable record of the data source used for each experiment.
+Use ablation tests to determine whether each information source adds genuine value.
+26. Validation and Testing Programme
+Test
+Acceptance question
+Unit tests
+Are calculations correct for known inputs?
+Lifecycle tests
+Do events change state only when valid information appears?
+Look-ahead tests
+Does changing future data alter earlier features? It must not.
+Replay tests
+Can a historical sequence be reproduced exactly?
+Baseline backtest
+Does the simplest strategy show an edge?
+Walk-forward
+Does the edge persist across unseen periods?
+Parameter sensitivity
+Is performance robust outside one narrow optimum?
+Ablation
+Which components genuinely contribute?
+Execution stress
+Does realistic spread/slippage/latency destroy the edge?
+Broker test
+Do digits, contract size, tick value and stops behave correctly?
+Shadow/paper trading
+Does live feature generation match research expectations?
+27. Performance Metrics
+Net return and risk-adjusted return.
+Maximum drawdown and recovery time.
+Profit factor and expectancy per trade.
+Win rate and payoff ratio.
+Average R and distribution of R-multiples.
+Trade frequency and average holding time.
+Performance by regime.
+Performance by session.
+Performance by news state.
+Performance by hypothesis.
+Performance after spread/slippage/latency assumptions.
+Parameter stability and walk-forward degradation.
+28. Minimum Viable AlgoMind
+The first functioning version should contain only what is needed to prove the architecture:
+MT5 adapter.
+Canonical snapshot and decision schema.
+ATR/volatility/session engine.
+VWAP and basic value context.
+Deterministic structure/liquidity engine.
+Two proxy-delta modes plus fusion.
+FVG/imbalance lifecycle tracking.
+Continuation and mean-reversion hypotheses.
+Simple regime state machine.
+Python decision engine.
+MQL5 execution/risk shell.
+Local file/localhost bridge.
+Complete decision and execution logs.
+Automated look-ahead/replay tests.
+29. What Should Be Deferred
+Deep neural networks.
+Cloud microservices.
+Complex dashboards.
+Large-scale databases before local storage becomes limiting.
+Expensive options/order-flow feeds before baseline value is demonstrated.
+Artificial Level-2 reconstruction presented as real order book data.
+High-frequency execution ambitions on retail MT5.
+Large parameter sweeps before feature correctness is proven.
+Dozens of overlapping indicators.
+30. Proposed Repository Structure
+algomind/
+  config/              symbol, risk, session and source settings
+  schemas/             versioned message/feature contracts
+  data/raw/            immutable raw datasets
+  data/processed/      normalized datasets
+  events/              lifecycle/event engine
+  features/            VWAP, value, structure, delta, liquidity
+  regimes/             market-state engine
+  strategies/          continuation and mean-reversion
+  models/              ML models and calibration
+  bridge/              file, localhost and ZeroMQ transports
+  execution/           MQL5 EA and execution contract
+  backtest/             deterministic replay/evaluation
+  tests/               unit, integration and look-ahead tests
+  logs/                decisions, execution and data-quality logs
+  research/            experiments and notebooks
+  docs/                specifications
+31. Project Phases
+Phase
+Primary deliverable
+Exit criterion
+0. Foundation
+Schemas, repository, configuration, logging
+Contracts are frozen and testable.
+1. Market engine
+MT5 data, sessions, ATR, VWAP, structure
+Historical snapshots reproduce correctly.
+2. Order-flow proxies
+Delta modes, divergence, surge/flip/transition
+Proxy calculations pass replay/look-ahead tests.
+3. Strategy engine
+Value/auction context + two hypotheses
+Baseline backtest is reproducible.
+4. Regime engine
+State machine and strategy selector
+Regime transitions are stable and auditable.
+5. Python/MQL5 bridge
+Local synchronized communication
+Tester/live-style handshake works.
+6. Tester integration
+MT5-driven historical synchronization
+No material mismatch from independent replay.
+7. External data
+News/options/order-flow adapters
+Each adapter has timestamp and quality controls.
+8. ML gate
+LightGBM/statistical ranking
+Out-of-sample improvement demonstrated.
+9. Paper trading
+Shadow/live feed validation
+Research and live feature states reconcile.
+10. Controlled deployment
+Small-risk live operation
+Risk, monitoring and kill switches proven.
+32. Definition of Done
+Every trade has a unique decision ID.
+Every feature has a definition, unit, source and timestamp.
+Every event has a lifecycle rather than a retroactive final state.
+Historical features are immune to future-data changes.
+Python and MQL5 share the same feature/decision vocabulary.
+MQL5 hard risk rules cannot be bypassed by Python.
+External data failures produce explicit degraded states.
+Backtests include realistic execution assumptions.
+Model versions and training windows are recorded.
+Walk-forward and out-of-sample results are separated from optimization.
+The system can safely stop trading when critical dependencies fail.
+33. Immediate Foundation Agenda
+Freeze the canonical schemas.
+Write mathematical definitions for all first-generation features.
+Define the information-availability timestamp for every feature/event.
+Build the event-driven Python engine.
+Build the MQL5 snapshot publisher and hard-risk execution shell.
+Implement local communication before ZeroMQ.
+Implement VWAP/value, structure/liquidity and FVG lifecycle logic.
+Implement proxy delta A/B and fusion.
+Implement continuation and mean-reversion hypotheses.
+Implement the first regime selector.
+Create deterministic replay and look-ahead tests.
+Build XAUUSD, EURUSD and BTC datasets using available MT5 history.
+Run baseline, walk-forward and sensitivity tests.
+Add external news/options/order-flow adapters only after the core works.
+Introduce ZeroMQ when the communication contract is stable.
+Add ML only after the deterministic baseline is trustworthy.
+Paper trade and reconcile Python decisions against MT5 execution.
+Deploy only after risk controls and failure modes have been tested.
+34. Core Decision Pipeline
+MARKET DATA → DATA QUALITY CHECK → EVENT UPDATE → FEATURE UPDATE → REGIME CLASSIFICATION → LIQUIDITY/VALUE/STRUCTURE CONTEXT → ORDER-FLOW PROXY/EXTERNAL FLOW → CONTINUATION VS MEAN-REVERSION SCORING → NEWS/OPTIONS MODIFIERS → CONFIDENCE/DATA-QUALITY GATE → MQL5 HARD-RISK VETO → EXECUTION → POSITION MANAGEMENT → AUDIT LOG
+35. Final Foundation Position
+The strongest foundation for AlgoMind is not to start by building the largest possible trading stack. It is to build a small, deterministic engine whose market information is temporally correct, whose hypotheses are explicit, whose regime selection is auditable, and whose execution is separated from research. That architecture allows the project to begin with zero MQ infrastructure and ordinary MT5 data, then progressively incorporate ZeroMQ, higher-quality order flow, options/dealer positioning, news intelligence, databases and ML without changing the underlying strategy contract.
+The project's central technical risk is not lack of sophistication. It is false confidence caused by data leakage, unrealistic execution assumptions, proxy-data mislabelling or poor synchronization between research and MT5. Those risks should therefore be treated as first-class foundation requirements.
+Appendix — Engineering Rules to Keep Visible
+Future information is never a feature.
+Final event outcome is never the historical event state.
+Proxy delta is labelled as proxy delta.
+Options data is labelled by source and timestamp.
+Python proposes; MQL5 validates and executes.
+Risk controls are independent of model confidence.
+NO_TRADE is a valid and often preferred decision.
+ZeroMQ is transport, not strategy.
+ML is a gate/ranker until proven otherwise.
+Every performance claim must survive out-of-sample testing.
+END OF ALGOMIND PROJECT FOUNDATION AGENDA

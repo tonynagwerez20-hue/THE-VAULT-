@@ -1,0 +1,548 @@
+ALGOMIND
+MASTER HARMONIZED ENGINEERING SPECIFICATION
+Foundation Agenda + Updated Specification + V38.x Corrections + CFTC/COT Integration
+Version 1.0 • 7 September 2026 • Master Baseline
+Document status: AUTHORITATIVE PROJECT BASELINE. This document harmonizes the revised Foundation Agenda and the updated engineering Specification into one implementation authority. Where earlier documents conflict with this master specification, this master specification controls unless a later revision explicitly supersedes it.
+1. Harmonization Decision
+AlgoMind is MQL5-first at the execution and core trading-logic level. Python is retained where it adds capabilities MT5/MQL5 cannot natively provide or where research, replay, external-data acquisition and model development are materially easier. Python never bypasses MQL5 hard-risk controls and never becomes a second execution authority.
+Area
+Master decision
+Authority
+Core trading engine
+MQL5 implements the deterministic market, structure, liquidity, auction, proxy-flow, regime, strategy, risk and execution core.
+MQL5
+External information
+Python acquires, normalizes and time-stamps CFTC/COT, options/dealer, news and other external information where required.
+Python
+Decision authority
+Python can supply context/research outputs; MQL5 validates and makes the final executable decision.
+MQL5
+Hard risk
+Independent of confidence, ML, news, options and CFTC context.
+MQL5
+Transport
+Begin locally; introduce ZeroMQ only after message contracts are proven.
+Infrastructure
+ML
+Gate/ranker after deterministic correctness is established.
+Python research + MQL5 deployment if selected
+Historical truth
+Point-in-time, closed-bar, event-lifecycle snapshots only.
+Both
+2. System Definition
+AlgoMind is a regime-aware retail trading research and execution system for instruments including XAUUSD, EURUSD and BTC. It combines market structure, liquidity, auction/value context, VWAP, imbalance/FVG, proxy order flow, news, options/dealer positioning and CFTC/COT positioning as evidence streams.
+The system is not defined as an AI bot first. Its primary product is a deterministic information and decision engine whose decisions can be reconstructed from timestamped inputs. ML and external intelligence are additive layers, not substitutes for causal data handling, explicit hypotheses or risk controls.
+3. Objectives and Success Criteria
+Objective
+Required outcome
+Research integrity
+No feature, event, label or decision uses information unavailable at its decision timestamp.
+Strategy integration
+Continuation and mean-reversion hypotheses operate under one shared feature and regime framework.
+Regime awareness
+TREND_UP, TREND_DOWN, BALANCED, EXPANSION, EXHAUSTION, NEWS and NO_TRADE are explicit states.
+Execution realism
+Spread, slippage, latency, broker stops, margin, fills and position management are represented.
+Data adaptability
+Native MT5 data, proxies and external feeds are distinguishable by source, timestamp and quality.
+Traceability
+Every decision and trade is reconstructable from snapshots, schema version and state.
+Safe degradation
+Missing, stale or contradictory dependencies create explicit degraded states or NO_TRADE.
+Low-resource operation
+Baseline operation must work without Sierra Chart, cloud infrastructure, ZeroMQ or paid feeds.
+4. Non-Negotiable Engineering Principles
+No look-ahead: future bars, final object state, later invalidation, future FVG fill or future reaction windows cannot alter historical features.
+Closed-bar causal processing: forming bars may be refreshed for live observation but become historical only when finalized.
+One canonical vocabulary: every feature/event has a definition, unit, source, timestamp rule and version.
+Python cannot bypass MQL5 risk or execution authority.
+Proxy honesty: candle/tick-derived delta is labelled proxy delta and never represented as exchange cumulative delta or institutional DOM.
+Regime before optimization: establish the market environment before selecting the strategy hypothesis.
+Fail closed: critical uncertainty, stale external data, schema mismatch, invalid inference or clock mismatch means NO_TRADE.
+NO_TRADE is a valid output, not a system failure.
+ZeroMQ is transport, not strategy.
+ML is a gate/ranker until robust incremental value is demonstrated.
+Every performance claim must survive out-of-sample and walk-forward testing.
+5. Canonical Architecture
+MT5 MARKET DATA → DATA QUALITY → EVENT/LIFECYCLE ENGINE → FEATURE ENGINE → REGIME ENGINE → HYPOTHESIS SCORING → EXTERNAL CONTEXT MODIFIERS → DECISION GATE → MQL5 HARD RISK → EXECUTION → POSITION MANAGEMENT → RECONCILIATION → AUDIT
+Python operates alongside this flow as an external-information and research subsystem. It is not required for native-only operation unless the selected configuration explicitly marks an external dependency as mandatory.
+6. Core MQL5 Modules
+Module
+Responsibility
+BarCollector
+Maintains forming-bar slot and immutable closed-bar sequence; refreshes forming data every tick.
+StructureEngine
+Causal swings, BOS/CHOCH, structural legs, premium/discount and structure state.
+OrderBlockEngine
+OB detection and per-bar lifecycle snapshots.
+FVGEngine
+FVG detection, fill/mitigation lifecycle and direction-aware queries.
+LiquidityEngine
+Pools, EQH/EQL, sweeps, recency, targets and per-bar sweep state.
+AuctionEngine
+VWAP, POC, VAH/VAL, HVN/LVN and value position.
+OrderFlowEngine
+Proxy delta A/B, fusion, surge, flip, transition, divergence and persistence.
+FeatureEngine
+Canonical feature vector and feature-schema version.
+RegimeEngine
+Persistent/hysteretic market-state machine.
+StrategyEngine
+Continuation and mean-reversion hypothesis scoring.
+ExternalContextAdapter
+Consumes timestamped Python outputs without owning execution.
+DecisionGate
+Combines data quality, regime, hypothesis, context and confidence into action/NO_TRADE.
+RiskEngine
+Independent hard-risk controls and broker-aware sizing.
+ExecutionEngine
+OrderCheck, order submission, retcode/result classification and fill verification.
+TransactionRecon
+OnTradeTransaction-based account/position reconciliation.
+PositionManager
+Partials, break-even, trailing and persistent position state.
+TradeJournal
+Decision, setup, context, risk and execution lineage.
+7. Point-in-Time Event and State Model
+Every stateful object must be represented as state-as-of-bar-b when queried historically. Mutable final-state fields are forbidden as historical feature inputs.
+Each event has creation timestamp/bar, active interval, state transitions and expiry/invalidation rules.
+OB/FVG/liquidity lifecycle snapshots are maintained one closed bar at a time.
+Historical queries read snapshots, never final mutable object state.
+Backfill initialization must replay the same causal process used during incremental operation.
+A newly detected object enters forward maintenance on the same causal schedule; no newest-object exclusion.
+Sweep reaction becomes available only when the allowed reaction window has elapsed.
+8. Mandatory V38.x Corrections
+Priority
+Correction
+Acceptance test
+P0
+Closed-bar buffer integrity and forming-bar refresh.
+Repeated ticks on one forming bar do not freeze OHLC/spread; finalized snapshot is causal and deterministic.
+P0
+Remove post-sweep future leakage.
+Earlier historical reaction features do not change because later bars reveal the eventual outcome.
+P0
+Prevent pre-sweep credit.
+A pool cannot be classified as swept before the actual sweep.
+P0
+Per-bar OB/FVG/pool lifecycle snapshots.
+Later bars cannot rewrite earlier lifecycle features.
+P0
+Causal backfill.
+Initialization and incremental processing produce identical state for identical event sequences.
+P1
+Train/serve SL/RR parity.
+Training feature geometry and execution policy use the same SL/RR assumptions.
+P1
+Runtime schema/model manifest verification.
+Feature order/schema/model mismatch fails closed.
+P1
+Direction-aware nearest OB/FVG and StructureStrength.
+Long and short queries select only directionally valid objects and match Python semantics.
+P1
+Last-50 BOS/CHOCH parity.
+MQL5 and Python return identical rolling counts for identical snapshots.
+P1
+Last CLOSED H1 mapping.
+LTF decisions never consume a still-forming H1 bar.
+P1
+OrderCheck + retcode + ResultDeal verification.
+Internal state changes only after execution is classified and fill is verified.
+P2
+OnTradeTransaction reconciliation.
+Entries, fills, partials, modifications and closures reconcile to actual account state.
+P2
+Full trade journal.
+Decision, setup, risk, context, model and execution fields are persisted.
+P2
+Total-DD high-watermark + persistent lock.
+Drawdown lock survives restart and follows defined set/reset semantics.
+P2
+Server-time/DST session abstraction.
+Execution does not depend on a hard-coded EAT clock.
+P2
+Slippage capture/classification/limit.
+Expected and actual fill are recorded and excessive slippage can veto.
+P2
+NEWS_TRADE/HYBRID implementation or fail-closed disable.
+Declared modes cannot silently behave as FILTER_ONLY.
+9. Canonical Feature Contract
+Group
+Representative features
+Timing rule
+Price
+OHLC, returns, range, gap
+Closed-bar state for historical decisions.
+Volatility
+ATR, realized volatility, range expansion, percentile
+Only observations available by decision time.
+Structure
+Swing state, bias, BOS/CHOCH, distance to structural liquidity
+Causal state-as-of-bar.
+VWAP/Value
+VWAP, POC, VAH, VAL, deviations, value location
+Reconstructed only from allowed historical observations.
+Order flow
+delta proxy A/B, fusion, surge, flip, transition, divergence, persistence
+Explicit proxy source and timestamp.
+Liquidity
+Directional high/low, sweep state, distance, reaction
+No pre-sweep or future reaction credit.
+Imbalance
+FVG active state, fill %, age, direction
+Per-bar lifecycle snapshot.
+Options
+Gamma regime, strike distance, notable flow, data quality
+Latest observation known at decision timestamp.
+News
+Event type, time-to-event, surprise, reaction, volatility response
+Release-time/PIT event state.
+CFTC/COT
+Net position, long/short change, percentile/extreme, release age, positioning regime
+Release availability controls use.
+Session
+Session, time-of-day, opening range, relative location
+Server-time/DST normalized.
+Execution
+Spread, stop distance, estimated slippage, exposure
+Current broker/account snapshot.
+Decision
+Regime, hypothesis scores, confidence, action, reason code
+Generated from current canonical snapshot.
+10. CFTC/COT Positioning Specification
+CFTC/COT is a slow-moving external positioning context layer, not an intraday trigger. The adapter must preserve both the report/reference period and the actual public release/availability timestamp. A COT observation may be used historically only after it was publicly available.
+Maintain immutable raw CFTC releases and normalized records.
+Separate report date from publication/availability timestamp.
+Never backfill revised data into an earlier decision timestamp.
+Map futures contracts to traded instruments explicitly; mappings are versioned and auditable.
+For XAUUSD, document the selected gold futures proxy and basis assumptions.
+For FX, document currency-futures mapping and sign convention.
+For BTC, document the selected CFTC-covered futures contract and mapping if used.
+Compute positioning percentiles/extremes only from observations available at the decision time.
+CFTC may modify context/regime confidence but cannot override hard risk.
+Prove incremental out-of-sample value before CFTC context is allowed to influence live decisions.
+11. Options / Dealer Positioning Specification
+Options data is identified by source, observation timestamp, expiry, strike and underlying mapping.
+Possible fields include premium, open interest, Delta, Gamma, IV, ATM distance and concentration.
+Options positioning is context/location information, not a guaranteed support/resistance level.
+Use expiry selection consistent with trading horizon and inspect relevant nearby strikes.
+Derived states may include touch, rejection, reclaim, acceptance and failure.
+Options context modifies regime/hypothesis scoring; MQL5 retains final execution authority.
+Missing or stale options data is explicitly ABSENT/DEGRADED, never silently converted to a neutral zero.
+Any numerical threshold is a research parameter and must be validated.
+12. News Intelligence
+Mode
+Required behavior
+NEWS_OFF
+News has no strategy influence.
+NEWS_FILTER_ONLY
+Block/reduce around configured events using PIT-safe event data.
+NEWS_TRADE
+Dedicated event/reaction setups with an actual execution path.
+NEWS_HYBRID
+Combine surprise, reaction, structure and flow with an actual execution path.
+Scheduled time and actual release time are separate fields.
+Forecast, actual and revision values retain their own availability timestamps.
+Post-release reaction is causal and measured only from bars available at decision time.
+Extreme spread/volatility is execution risk, not automatically an opportunity.
+If NEWS_TRADE/HYBRID is not implemented, those modes must be unavailable or fail closed.
+13. Regime Engine
+Regime
+Description
+Default posture
+TREND_UP
+Persistent upward structure and participation.
+Continuation
+TREND_DOWN
+Persistent downward structure and participation.
+Continuation
+BALANCED
+Two-sided rotational auction/value behavior.
+Mean reversion
+EXPANSION
+Volatility/participation expansion with direction developing.
+Wait or conditional continuation
+EXHAUSTION
+Directional move losing confirmation.
+Mean reversion after rejection
+NEWS
+Event-driven market behavior.
+News-specific rules/reduced exposure
+NO_TRADE
+Insufficient quality or conflicting evidence.
+No trade
+The regime engine uses persistence/hysteresis so one noisy bar does not repeatedly switch strategy.
+14. Strategy Hypotheses
+14.1 Continuation
+Requires compatible structural direction, participation/pressure confirmation and a valid entry location.
+May use BOS/CHOCH, displacement, FVG/OB retest, VWAP/value position and order-flow confirmation.
+External options/CFTC/news context can modify confidence but cannot override structural invalidation or hard risk.
+14.2 Mean Reversion
+Requires balanced/rotational conditions, stretched price relative to value/liquidity and rejection/absorption evidence.
+Evidence may include VWAP/value deviation, liquidity sweep, FVG/OB reaction, delta reversal and options context.
+Invalidates when the market transitions into confirmed expansion/trend conditions.
+15. Proxy Order Flow
+Proxy A and Proxy B have explicit mathematical definitions and source labels.
+Fusion specifies weights and version and is deterministic.
+Features include delta flip, surge, transition, divergence and persistence where causally measurable.
+No proxy is described as true exchange footprint, DOM or institutional cumulative delta.
+External order flow, if later available, is an additional evidence source and does not silently replace the proxy.
+16. Risk Management
+Control
+Starting specification
+Risk per trade
+0.5% configurable research starting point; live risk validated conservatively.
+Daily loss limit
+2.0% starting hard limit.
+Total drawdown limit
+5.0% starting project-level limit with high-watermark semantics.
+Position sizing
+Broker-aware monetary-risk sizing using actual stop distance and OrderCalcProfit/equivalent.
+Stop loss
+ATR and/or structural/liquidity based, respecting broker minimum stop distance.
+Partial
+Around 2R as an initial research parameter.
+Trailing
+Optional ATR-based trailing after defined excursion.
+Correlation
+Limit simultaneous correlated exposure.
+Kill switch
+Manual and automatic shutdown.
+These are engineering starting parameters, not claims of optimal profitability. Risk controls are independent of model confidence.
+17. Execution Contract
+Validate symbol/trading mode, spread, margin, exposure, daily loss, total drawdown, stops level and slippage conditions.
+Run OrderCheck before order submission.
+Classify trade-server retcodes.
+Verify ResultDeal/fill price/volume when available.
+Do not blindly retry rejected orders.
+Mutate internal position state only after confirmed execution/reconciliation.
+After connection interruption, reconcile actual account state before a new order.
+Prevent duplicates using decision/setup/position identity.
+18. Position Management and Reconciliation
+Use POSITION_IDENTIFIER as the stable position key where applicable.
+Persist state required for partial close, break-even and trailing.
+Use OnTradeTransaction as the authoritative transaction stream for fills, partials, modifications, closures and realized P/L.
+Restart must restore safe state without duplicate orders.
+Actual account state outranks stale local assumptions.
+19. Communication Architecture
+Stage
+Transport
+Purpose
+1
+Local files/shared directory or localhost polling
+Prove protocol with minimum infrastructure.
+2
+ZeroMQ localhost
+Faster synchronized snapshot/decision exchange after contract stability.
+3
+FastAPI/Redis/PostgreSQL or equivalent
+Only when multi-process, multi-symbol, remote or scaling needs justify it.
+ZeroMQ is optional infrastructure. Strategy, feature and decision semantics remain transport-independent.
+20. Canonical Snapshot / Decision Message
+Minimum snapshot: snapshot_id, timestamp, symbol, timeframe, bid, ask, spread, OHLC state, broker metadata, account state, session, data-quality state, external-context availability and schema version.
+Minimum decision: decision_id, timestamp, symbol, regime, hypothesis, action, confidence, entry/reference zone, stop, target, risk allocation, feature_version, model_version, data_quality, reason_code and expiry.
+Every message has a version.
+Breaking changes create a new contract version.
+No silent semantic changes.
+21. ML Architecture
+ML is introduced only after deterministic baseline and feature integrity are proven.
+Initial role is gate/ranker, not signal generator.
+LightGBM/statistical models are suitable for the first production research layer.
+River/online learning is optional and cannot receive direct execution authority.
+Inference fails closed on load errors, NaN/out-of-range output, missing calibration, schema mismatch or model mismatch.
+Ship a manifest containing feature names/order, schema version, model version and integrity hash.
+Training and serving must use identical feature geometry, especially SL/RR assumptions.
+22. Backtesting and MT5 Tester Synchronization
+Load historical data chronologically.
+Advance a deterministic clock.
+Build only currently available information.
+Update event lifecycles causally.
+Build the canonical feature vector.
+Classify regime.
+Score continuation and mean-reversion.
+Apply risk and execution assumptions.
+Simulate fills and position management.
+Record every decision, including NO_TRADE.
+Calculate returns, drawdown, expectancy, distribution and robustness.
+For MT5 Strategy Tester synchronization, MQL5 is the clock owner: tester event → broker/account snapshot → Python/external context request when required → response → MQL5 validation/execution → next event. Local handshake is the initial implementation; ZeroMQ can later replace it without changing semantics.
+23. Testing Pyramid
+Test layer
+Required tests
+Unit
+Feature formulas, lifecycle transitions, directionality, sizing, session/DST and schema validation.
+Causal/look-ahead
+Future-bar mutation, sweep timing, lifecycle snapshots and closed-bar integrity.
+Parity
+Python/MQL5 feature vectors, regime states and decision vocabulary.
+Integration
+Snapshot → decision → MQL5 validation → execution → reconciliation.
+Tester synchronization
+MT5-driven clock and Python response handshake remain aligned.
+Backtest
+Baseline, walk-forward, sensitivity and execution-realism tests.
+Stress/failure
+Missing Python, stale response, malformed schema, feed outage, clock mismatch, broker rejection and restart.
+Paper trading
+Shadow decisions reconcile against live-style MT5 state.
+24. Data Quality / Fail-Closed Matrix
+Failure
+Required response
+Python unavailable
+NO_TRADE if required; otherwise explicit native-only/degraded mode.
+Python response stale
+Reject response; NO_TRADE if dependency is required.
+Malformed schema
+Reject and log.
+Options missing
+ABSENT/DEGRADED; continue only if non-mandatory.
+CFTC missing/stale
+ABSENT/DEGRADED; never fabricate neutral values.
+External flow missing
+Use configured proxy mode or downgrade confidence.
+Excessive spread
+Veto.
+Daily loss reached
+Veto and lock.
+Total DD reached
+Veto and persistent lock.
+Broker rejection
+Classify and reconcile actual state; no blind retry.
+Clock mismatch
+Stop decision processing until synchronized.
+Model/schema mismatch
+Initialization failure / fail closed.
+NaN/out-of-range inference
+Skip trade and log.
+25. Trade Journal
+Each trade is reconstructable from one decision ID. Journal fields include decision_id, setup_id, symbol, timestamps, regime, hypothesis, action, reason_code, feature/schema/model versions, model output/calibration, data-quality state, CFTC state, options state, news state, entry zone, SL, TP, intended risk, volume, actual fill, slippage, partials, trailing, exit reason, realized P/L, commission, swap, MAE, MFE and execution/transaction status.
+26. Repository Structure
+algomind/
+  config/                 symbol, risk, session, broker and source settings
+  schemas/                versioned snapshot/feature/decision contracts
+  data/raw/               immutable source data
+  data/processed/         normalized datasets
+  external/               CFTC, options, news and external-flow adapters
+  events/                 causal lifecycle/event engine
+  features/               canonical feature definitions
+  structure/              swing/BOS/CHOCH/OB/FVG/liquidity
+  auction/                VWAP/value/profile
+  orderflow/              proxy delta and pressure
+  regimes/                state machine
+  strategies/             continuation and mean-reversion
+  models/                 ML models, manifests, calibration
+  bridge/                 local/localhost/ZeroMQ transports
+  mt5/                    MQL5 EA and execution components
+  backtest/               deterministic replay/evaluation
+  tests/                  unit, parity, integration, look-ahead
+  logs/                   decisions, executions, data-quality
+  research/               experiments and notebooks
+  docs/                   specifications and change records
+27. Harmonized Project Roadmap
+Phase
+Deliverable
+Exit criterion
+0
+Foundation/contracts
+Schemas, naming, timestamps and repository frozen.
+1
+MQL5 market engine
+Closed-bar causal snapshots reproduce correctly.
+2
+Structure/liquidity/auction
+OB/FVG/sweep/VWAP/value pass causal tests.
+3
+Proxy order flow
+Delta A/B/fusion/flip/surge/divergence pass replay tests.
+4
+Strategy engine
+Continuation + mean-reversion baseline reproducible.
+5
+Regime engine
+State transitions stable and auditable.
+6
+Python external-information bridge
+External context is timestamp-safe and degrades correctly.
+7
+MT5 tester synchronization
+MT5-driven snapshot/response loop works.
+8
+CFTC/options/news enrichment
+Each adapter has source, timestamp, quality and PIT controls.
+9
+ML gate
+Out-of-sample incremental improvement demonstrated.
+10
+Paper trading
+Research/live-style states reconcile.
+11
+Controlled deployment
+Risk, reconciliation, monitoring and kill switches proven.
+28. Definition of Done
+Every trade has a unique decision ID.
+Every feature has a definition, unit, source and availability timestamp.
+Every event has a causal lifecycle.
+Historical features cannot be changed by future information.
+Python and MQL5 share one canonical vocabulary and schema.
+MQL5 hard risk cannot be bypassed.
+External-data failures create explicit degraded states.
+Backtests model realistic execution assumptions.
+Model versions, feature schema and training windows are recorded.
+Walk-forward and out-of-sample results are separated from optimization.
+Actual broker transaction state is reconciled.
+Critical failures safely stop trading.
+CFTC mapping and release timing are documented before live influence.
+NEWS_TRADE/HYBRID cannot be enabled without a genuine execution path.
+29. Immediate Build Order
+Freeze this master specification as the canonical baseline.
+Freeze snapshot, feature and decision schemas.
+Implement closed-bar/causal lifecycle primitives before trusting V38 backtests.
+Correct OB/FVG/liquidity snapshot semantics and causal backfill.
+Align Python/MQL5 feature geometry and schema manifests.
+Implement broker-aware execution checks and transaction reconciliation.
+Build the deterministic MQL5 core: market → structure → auction → proxy flow → regime → strategies → decision → risk → execution.
+Build Python external-information adapters beginning with CFTC/COT, then options/news as separately versioned sources.
+Connect external context through the canonical snapshot/decision contract.
+Run deterministic replay, look-ahead, parity and Strategy Tester synchronization tests.
+Establish baseline performance before ML.
+Add ML only after the deterministic baseline is trustworthy.
+Paper trade and reconcile every decision/execution path.
+Deploy only after risk and failure-mode gates pass.
+30. Engineering Rules to Keep Visible
+Future information is never a feature.
+Final event outcome is never the historical event state.
+Proxy delta is labelled proxy delta.
+Options data is labelled by source and timestamp.
+CFTC/COT data is labelled by release/availability timestamp and report period.
+Python supplies external information/research; MQL5 owns final execution.
+Risk controls are independent of model confidence.
+NO_TRADE is a first-class decision.
+ZeroMQ is transport, not strategy.
+ML is a gate/ranker until proven otherwise.
+Backtest claims are invalid until causal integrity is demonstrated.
+Optimization cannot compensate for incorrect features.
+31. Conflict Resolution and Change Control
+This master specification supersedes contradictory wording in earlier agenda/specification drafts. New changes must identify the affected contract, state whether historical semantics change, update the version, add or modify tests, and record migration requirements.
+Change type
+Requirement
+Non-breaking
+May retain major contract version; tests and documentation updated.
+Feature semantic change
+New feature/schema version; historical comparability explicitly documented.
+Decision-message breaking change
+New contract version; old historical records remain immutable.
+Model change
+New model version + manifest + training window + calibration record.
+External-source change
+New source/version metadata and timestamp-policy validation.
+Risk-policy change
+New configuration version and regression tests.
+32. Reference Alignment
+Revised AlgoMind Foundation Agenda — including the CFTC addition and staged architecture.
+Updated AlgoMind engineering Specification — canonical architecture, contracts, risk, testing and implementation rules.
+V38 forensic findings — mandatory point-in-time, lifecycle, parity, execution and production-safety corrections.
+Options/dealer-positioning work — options context and probabilistic positioning interpretation.
+The harmonized baseline therefore preserves the agenda as the strategic roadmap while making the updated specification and V38 corrections the engineering contract. CFTC/COT is a first-class external context adapter, but it is not allowed to bypass the deterministic core or hard-risk layer.
+33. Final Architectural Position
+AlgoMind should be built as a deterministic MQL5-first trading system with a controlled Python intelligence/research boundary. Native market, structure, auction, proxy order-flow, regime, strategy, risk and execution logic remains in MQL5. Python handles capabilities that MT5 cannot natively provide or that are substantially better suited to Python: CFTC/COT, options/dealer positioning, external news/order-flow, dataset construction, model research and parity testing.
+The critical milestone is not profitability first. It is proving that the same historical information produces the same feature state and decision in deterministic replay, MT5 Strategy Tester and live-style operation. Only after that proof should additional complexity—external feeds, ZeroMQ, ML and scaling infrastructure—be allowed to increase.
+END OF ALGOMIND MASTER HARMONIZED ENGINEERING SPECIFICATION — VERSION 1.0

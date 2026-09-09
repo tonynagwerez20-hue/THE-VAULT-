@@ -1,0 +1,573 @@
+AlgoMind Institutional-Style Gold System
+DETAILED ENGINEERING SPECIFICATION — CFTC INTEGRATED EDITION
+MT5 / MQL5 Execution • Python Research • Retail Order-Flow Proxies • CFTC Positioning
+Item
+Specification
+Primary instrument
+XAUUSD / broker-specific gold symbol
+Execution authority
+MT5 / MQL5 EA
+Research and intelligence
+Python
+Core strategy families
+Continuation/trend + mean reversion
+Fast data
+Ticks, bars, spread, retail volume/activity proxies
+External slow context
+CFTC COT; news; optional options/dealer-positioning sources
+Baseline account feasibility
+USD 200
+Reference risk baseline
+0.5% per trade; 2% daily; 5% total
+ML
+Optional gatekeeper after deterministic baseline
+Purpose: define the complete engineering contract for the AlgoMind system, including the CFTC positioning layer added to the previously established specification.
+
+1. System Purpose and Scope
+AlgoMind is a modular XAUUSD research, decision and execution system intended to reproduce an institutional-style workflow using data that can realistically be assembled in a retail environment. It combines market structure, liquidity, value, retail order-flow proxies, volatility, sessions, news, positioning context and strict execution/risk controls.
+Python is responsible for research, feature engineering, regime intelligence and strategy scoring.
+MQL5 is the final execution and hard-risk authority.
+The deterministic rule-based engine is the reference implementation; ML is optional.
+Backtest, replay, forward and live modes use the same versioned feature and decision contracts.
+Retail flow is explicitly treated as a proxy rather than centralized institutional order flow.
+CFTC is explicitly treated as slow positioning context rather than intraday order flow.
+Missing, stale or malformed critical data causes a safe veto rather than uncontrolled trading.
+2. Design Principles
+Causality: every historical decision uses only information available at that timestamp.
+Modularity: data, features, regime, strategy, risk and execution are independently testable.
+Auditability: every decision can be reconstructed from timestamped inputs and versioned configuration.
+Broker neutrality: symbol precision, contract size, tick value and minimum volume are read from the broker.
+Fail closed: system uncertainty blocks new entries.
+Separation of evidence: CFTC, retail flow, news and hypothesis-based positioning sources retain separate provenance.
+3. High-Level Architecture
+Layer
+Responsibility
+MT5 market adapter
+Ticks, bars, bid/ask, spread, symbol/account specifications
+External data adapters
+CFTC, news and optional options/dealer-positioning datasets
+Event engine
+BOS, sweeps, displacement, FVG/OB lifecycle, flow transitions and external-data events
+Feature engine
+Structure, liquidity, flow, VWAP/value, volatility, news and CFTC features
+Regime engine
+Trend, range, transition, volatile/news and unsuitable states
+Strategy engine
+Continuation and mean-reversion candidate generation/scoring
+Risk engine
+Position size, margin, spread, session and loss limits
+Execution engine
+MQL5 validation, order placement and position management
+Audit/storage
+Raw data, features, decisions, executions, configurations and versions
+Canonical flow: MarketSnapshot → MarketEvent → FeatureSnapshot → RegimeState → StrategyScore → TradeIntent → MQL5 RiskValidation → ExecutionRecord.
+4. Canonical Data Contracts
+4.1 MarketSnapshot
+UTC/source timestamp
+symbol and broker symbol
+bid, ask, mid, spread
+tick volume and real volume when genuinely available
+OHLC for configured timeframes
+point/digits/contract size/tick value/minimum lot/lot step/stops/freeze levels
+session state
+data-quality flags
+4.2 FeatureSnapshot
+Immutable derived-state record containing only features that were computable at the timestamp.
+4.3 RegimeState
+Contains regime label, confidence, preferred strategy family, risk modifier and reason codes.
+4.4 TradeIntent
+intent_id
+schema_version
+strategy_version
+model_version if applicable
+symbol
+direction
+timestamp
+expiry
+entry reference
+stop/target plan
+score/confidence
+regime
+reason codes
+risk request
+4.5 ExecutionRecord
+MQL5 records validation, order submission, fills, modifications, partial closes, final closure and execution errors.
+5. MQL5 Execution Layer
+Receive or read TradeIntent messages.
+Revalidate current market price, spread and broker symbol specifications.
+Calculate volume using actual tick value, stop distance, account equity and broker constraints.
+Apply session, spread, news, margin and loss-limit gates.
+Prevent duplicate, stale or expired intents.
+Manage stops, partial exits and trailing logic.
+Record execution lifecycle and broker response.
+Broker normalization is mandatory because gold symbols can have different digits, point sizes, contract specifications and minimum trade sizes.
+6. Python Research and Intelligence Layer
+Data normalization
+Historical replay
+Structure/liquidity engine
+Retail order-flow proxy engine
+VWAP/value engine
+News/session engine
+CFTC adapter and feature engine
+Regime engine
+Strategy scorer
+TradeIntent serializer
+Backtest diagnostics
+Optional ML gatekeeper
+Python has no authority to bypass MQL5 hard-risk controls.
+7. Market Structure and Liquidity
+Swing highs/lows
+Break of structure
+Displacement
+Internal/external structure
+Multi-timeframe alignment
+Previous day/week/session levels
+Equal highs/lows
+Liquidity sweeps
+Liquidity-pool distance
+Order blocks
+Fair value gaps
+Imbalances
+FVGs, order blocks and other objects are state machines. Their state must be evaluated bar-by-bar/event-by-event; a final filled or invalidated state cannot be projected backward.
+Release-blocking causal tests include per-bar FVG fill state, nearest-open-FVG selection and directional flags.
+8. Retail Order-Flow Proxy Layer
+Because a normal retail MT5 environment does not provide complete centralized institutional order flow, AlgoMind creates measurable proxies from observable data.
+Proxy delta
+Delta surge
+Delta flip
+Delta transition
+Delta persistence
+Delta divergence
+Absorption proxy
+Flow quality/confidence
+Every feature stores provenance such as RETAIL_PROXY and its calculation version. These values must never be described as complete institutional order flow.
+9. VWAP, Value and Volume Context
+Session VWAP
+Anchored/reference VWAP
+Price-to-VWAP distance
+VWAP slope
+Value-area/high-volume/low-volume references where data supports them
+Confluence of value, structure, liquidity and flow
+Where only broker tick volume exists, derived volume/value measures are labelled retail proxies.
+10. News and Session Intelligence
+Mode
+Behaviour
+NEWS_OFF
+No news restriction
+NEWS_FILTER_ONLY
+News can block entries
+NEWS_TRADE
+News reaction can influence strategy
+NEWS_HYBRID
+Filtering plus reaction intelligence
+Established V36.1 baseline: minimum surprise 0.05, 30-minute news buffer and require reaction = true. Session times must be normalized explicitly into the project's EAT framework and broker/server time.
+11. CFTC Commitments of Traders Integration
+CFTC COT is now a formal AlgoMind external-data layer. The CFTC publishes weekly positioning reports covering report families including Legacy, Disaggregated and Traders in Financial Futures (TFF). The Disaggregated reports classify reportable traders such as Producer/Merchant/Processor/User, Swap Dealers, Managed Money and Other Reportables; TFF uses financial-market categories such as Dealer, Asset Manager, Leveraged Money and Other Reportables. citeturn0search2turn0search4
+For gold, AlgoMind should initially use the relevant CFTC gold futures market from the appropriate report family and explicitly configure its relationship to the broker's XAUUSD spot/CFD symbol. Futures positioning is not assumed to equal spot positioning.
+11.1 CFTC source hierarchy
+Priority
+Use
+Primary
+Official CFTC Public Reporting Environment / official COT reports
+Historical canonical source
+Official CFTC historical datasets
+Local reproducible copy
+Immutable downloaded raw files + normalized versioned tables
+Third-party summaries
+Cross-check only; never canonical
+CFTC provides historical COT data extending to 1986 for Futures-Only reports and to 1995 for Futures-and-Options-Combined reports, with historical datasets available by report family. citeturn0search3turn0search7
+11.2 CFTC timing and point-in-time control
+CFTC states that weekly Futures-Only and Futures-and-Options-Combined COT reports are released Friday at 3:30 p.m. Eastern Time. AlgoMind therefore stores both the report/as-of date and a publication-availability timestamp. citeturn0search7
+Critical rule: a historical strategy decision may use a CFTC observation only after that observation was publicly available. Joining by report date alone is prohibited.
+11.3 CFTC canonical schema
+Field
+Definition
+source
+CFTC
+report_type
+Legacy / Disaggregated / TFF / combined
+report_date
+CFTC as-of/report date
+publication_timestamp_utc
+First time strategy may use the report
+market_name
+Exact CFTC contract market
+contract_market_code
+Stable market identifier
+open_interest
+Market open interest
+category long/short/spread
+Raw positioning by trader category
+percentage fields
+Normalized percentages when supplied
+change fields
+Week-over-week changes
+data_version
+Parser/adapter version
+quality_flag
+Completeness and source status
+11.4 Derived CFTC Features
+Net position = long − short for each trader category
+Week-over-week net-position change
+Position as percentage of open interest
+Long/short ratio where meaningful
+Rolling percentile or z-score of positioning
+Multi-week positioning momentum
+Managed Money directional context
+Swap Dealer context
+Producer/Merchant context
+Cross-category agreement/disagreement
+Historical positioning extremes
+Open-interest change alongside positioning change
+11.5 CFTC-to-XAUUSD Mapping
+The CFTC adapter must explicitly record the selected futures contract, report family, contract continuity/roll methodology, symbol mapping and version. The active CFTC state is carried forward between eligible releases; no artificial intraday CFTC value is generated.
+The mapping must be tested because XAUUSD is normally a broker-specific spot/CFD instrument while CFTC data represents regulated futures positioning.
+11.6 Role of CFTC in the Strategy
+Slow directional context
+Positioning-extreme/crowding context
+Regime modifier
+Continuation confirmation hypothesis
+Mean-reversion/crowding hypothesis
+Confidence modifier when slow positioning agrees/disagrees with fast price/flow
+CFTC direction is never an unconditional trading signal. A net-long or net-short category does not by itself establish the next XAUUSD move; predictive value must be tested out of sample.
+12. Pizzo / Dealer-Positioning Hypothesis Layer
+The project's Pizzo-derived concepts remain a separate hypothesis layer. They are translated into measurable variables and evaluated against price, structure and flow rather than being treated as direct dealer-book data.
+Source and freshness tracking
+Explicit hypothesis fields
+Confluence with price/flow reaction
+Modifier/filter role before proven trigger role
+Out-of-sample validation
+CFTC and Pizzo-derived positioning must remain separate data fields and evidence classes.
+13. Regime Model
+Dimension
+Examples
+Speed
+Price/structure
+Trend, range, transition, BOS
+Fast
+Volatility
+ATR, realized volatility
+Fast/medium
+Liquidity
+Sweeps, pool distance
+Fast
+Retail flow
+Delta proxy, transitions, divergence
+Fast
+Value
+VWAP/value context
+Medium
+News
+Release/reaction state
+Event
+CFTC
+Positioning/change/extreme
+Weekly
+Execution quality
+Spread/slippage/latency
+Real time
+Output: regime label + confidence + preferred strategy family + risk modifier + reason codes.
+14. Strategy Engine
+The engine evaluates candidate setups through confluence rather than single-indicator triggers.
+Structure alignment
+Liquidity-event quality
+FVG/OB/imbalance confluence
+Retail flow confirmation
+Flow divergence/transition
+VWAP/value context
+Regime compatibility
+News/session compatibility
+CFTC positioning context
+Risk/reward feasibility
+Execution quality
+Strategy
+Typical condition
+Continuation/trend
+Directional structure + displacement + compatible flow/regime; CFTC can provide slow context.
+Mean reversion
+Value/range + liquidity extreme + exhaustion/flow divergence; CFTC can contextualize crowding.
+No trade
+Conflicting regime, poor execution, stale data, insufficient edge or risk violation.
+15. Risk Management and USD 200 Feasibility
+USD 200 is the engineering feasibility baseline from the project specification. It is not a claim that such an account is economically suitable or that profitability is assured.
+V36.1 baseline
+Value
+Risk per trade
+0.5%
+Daily loss limit
+2.0%
+Total loss limit
+5.0%
+Partial exit
+2.0R
+Trailing
+Enabled
+ATR trailing multiplier
+1.5
+Risk sizing uses current equity/balance, stop distance, tick value and broker constraints.
+Minimum lot and lot step may prevent exact theoretical risk.
+Margin must be checked before order submission.
+Spread and expected execution costs must be included.
+Daily and total loss limits are hard gates.
+16. Position Management
+Initial hard stop
+Primary target
+Partial close at configured R
+ATR trailing
+Liquidity/structure invalidation
+News/event management
+Emergency safety close
+Historical exits must never use future candle extremes to manufacture performance.
+17. Python–MT5 Communication Contract
+Message
+Direction
+Purpose
+MarketSnapshot
+MT5 → Python
+Current market state
+MarketEvent
+Either
+State transition
+FeatureSnapshot
+Python/store
+Derived features
+RegimeState
+Python → MT5/store
+Current regime
+StrategyScore
+Python → MT5/store
+Candidate score
+TradeIntent
+Python → MT5
+Action proposal
+RiskValidation
+MT5 → store
+Risk decision
+ExecutionRecord
+MT5 → Python/store
+Broker outcome
+Heartbeat
+Both
+Liveness
+A lightweight local transport is preferred initially. SQLite/local files or localhost IPC are acceptable if atomicity, freshness and idempotency are guaranteed. ZeroMQ can be introduced later when the foundation is stable.
+18. Backtesting and Deterministic Replay
+Python historical research
+MT5 Strategy Tester
+Forward testing
+Shadow/paper trading
+Controlled live testing
+18.1 CFTC replay rules
+Load CFTC raw data without altering historical timestamps.
+Convert report availability into UTC.
+Keep report_date and publication_timestamp as separate fields.
+Before publication: CFTC state is unavailable.
+After publication: latest eligible report remains active until a newer eligible report appears.
+Never use a later report to explain an earlier trade.
+18.2 Transaction-cost model
+Spread
+Slippage
+Commission
+Latency
+Minimum lot/step
+Stops/freeze levels
+Broker tick-value/contract constraints
+19. Look-Ahead Prevention
+At timestamp t, every feature must be derivable from information available by t and legitimate previously stored state.
+Future FVG fill/invalidation state
+Future swing confirmation
+Future candle highs/lows
+Full-sample normalization
+Post-entry information used in entry features
+Future CFTC reports
+External-data revisions without availability/version handling
+19.1 Required regression tests
+Per-bar FVG lifecycle
+Nearest-open-FVG selection
+Structure-event timing
+Feature snapshot causality
+CFTC publication-time gating
+Train/test contamination
+Deterministic replay
+20. ML / AI Gatekeeper
+The deterministic system remains the benchmark. ML is introduced only if it demonstrates incremental out-of-sample value.
+LightGBM for compact tabular classification/ranking
+ONNX for controlled portable inference
+River-style online learning only after drift and rollback controls
+ML may rank or veto candidate trades but cannot bypass MQL5 risk controls.
+CFTC features entering ML must be timestamp-gated by their publication availability.
+21. Health, Heartbeat and Fail-Safe
+Python heartbeat
+MT5 heartbeat
+Last market-data timestamp
+Last event processed
+Last TradeIntent
+Last execution acknowledgement
+Bridge backlog
+Last eligible CFTC report
+External-source freshness
+Critical failures default to no new entries while existing positions remain under controlled management.
+22. Storage and Auditability
+Raw market data
+Normalized market data
+Event lifecycles
+Feature snapshots
+Regime states
+Strategy scores
+Trade intents
+Risk validations
+Execution records
+Position lifecycle
+News state
+CFTC raw and normalized data
+CFTC feature snapshots
+Configuration/model hashes
+Errors and heartbeats
+Every trade must be traceable to the active market snapshot, feature version, regime, strategy score, active CFTC report where applicable, risk decision and execution outcome.
+23. Testing and Acceptance Criteria
+23.1 Unit tests
+Point/digit normalization
+Volume/risk sizing
+Spread calculation
+Session boundaries
+News windows
+Structure events
+FVG lifecycle
+Order-flow transitions
+VWAP/value
+Regime classification
+CFTC parsing
+CFTC feature calculations
+CFTC publication gating
+TradeIntent validation
+23.2 Integration tests
+MT5 → bridge → Python
+Python → TradeIntent → MT5
+Risk veto
+Duplicate intent handling
+Execution acknowledgement
+Heartbeat timeout
+Restart/recovery
+CFTC update ingestion
+23.3 Release gates
+No look-ahead under automated causal tests
+Deterministic replay
+Every trade has a decision ID and version
+MQL5 hard-risk veto cannot be bypassed
+Broker-specific XAUUSD precision is correct
+Python/bridge failure fails closed
+CFTC is unavailable before publication
+Transaction costs are represented
+External data has freshness and provenance
+24. Low-Resource Deployment
+The system should remain practical on the established low-end development environment.
+SQLite/local files initially
+Chunk historical processing
+Compact feature storage
+Offline model training
+Local CFTC cache
+Avoid unnecessary distributed services
+Add ZeroMQ only when justified
+25. Security and Operational Controls
+Keep broker credentials outside source code
+Validate all message schemas
+Reject stale/malformed intents
+Emergency kill switch
+Log configuration/model hashes
+Research layer has no direct order authority
+External data cannot directly place an order
+26. Repository and File Contracts
+algomind/├── mql5/├── python/│   ├── data/│   ├── events/│   ├── features/│   ├── structure/│   ├── orderflow/│   ├── regime/│   ├── strategy/│   ├── backtest/│   ├── models/│   ├── bridge/│   └── diagnostics/├── external_data/│   ├── cftc/│   ├── news/│   └── options/├── schemas/├── config/├── tests/├── logs/└── docs/
+Core schemas: market_snapshot_v1, market_event_v1, feature_snapshot_v1, regime_state_v1, strategy_score_v1, trade_intent_v1, risk_validation_v1, execution_record_v1 and cftc_positioning_snapshot_v1.
+CFTC raw files are immutable. Normalized CFTC datasets are versioned and retain parser/source metadata.
+27. Development Phases
+Phase
+Main deliverable
+Exit condition
+0
+Foundation, schemas, logging, tests
+Contracts validate
+1
+MT5 market data
+Clean snapshots
+2
+Structure/liquidity/FVG/OB
+Causal lifecycle tests pass
+3
+Retail order flow
+Replay tests pass
+4
+VWAP/value
+Features validated
+5
+Regime
+Stable/auditable regime states
+6
+Strategy
+Deterministic TradeIntents
+7
+Bridge/execution
+End-to-end MT5 flow
+8
+News + CFTC + other external data
+Freshness/PIT controls pass
+9
+ML gatekeeper
+Out-of-sample incremental value
+10
+Shadow/controlled live
+Operational and risk acceptance
+28. Research Hypotheses and Known Limitations
+28.1 Limitations
+Retail MT5 does not provide complete institutional/global order-book information.
+Broker tick volume is not centralized exchange volume.
+Retail execution introduces spread, slippage and latency.
+Minimum lot sizes can distort small-account risk targeting.
+CFTC is weekly and slow relative to intraday gold price action.
+CFTC futures positioning is not identical to spot XAUUSD positioning.
+Historical performance depends on data quality and broker-specific assumptions.
+28.2 Hypotheses to test
+Retail order-flow proxies add information beyond structure.
+Delta divergence/transition improves timing.
+VWAP/value improves selection.
+Regime-aware strategy switching improves robustness.
+CFTC positioning extremes or changes add contextual value to XAUUSD.
+Combining slow CFTC context with fast retail flow improves conditional signal quality.
+ML gatekeeping improves trade quality without replacing deterministic controls.
+28.3 Experimental decisions
+Exact CFTC gold contract mapping
+Report family selection
+Trader-category aggregation
+CFTC lookback horizon
+CFTC role: filter vs score vs regime modifier
+Positioning-extreme thresholds
+Final bridge transport
+Final risk settings
+29. Definition of Done
+Canonical market-to-execution pipeline works end-to-end.
+MT5 is sole execution authority.
+Python/MQL5 contracts are versioned.
+Retail flow is proxy-labelled.
+Structure/FVG/OB lifecycles are causal.
+No future information contaminates tests.
+Risk uses actual broker/account state.
+USD 200 feasibility is explicitly tested.
+News/session gates are deterministic.
+CFTC is ingested from an authoritative, reproducible source.
+CFTC report date and publication time are separate.
+CFTC cannot affect decisions before publication.
+CFTC-to-XAUUSD mapping is explicit and versioned.
+CFTC is treated as positioning context, not intraday order flow.
+External-data failures fail safely.
+Duplicate/stale intents cannot create unintended positions.
+Transaction costs are included.
+Every decision and execution is auditable.
+30. Engineering Summary
+The completed AlgoMind architecture is a layered decision system: fast MT5 price/structure/liquidity/retail-flow state, medium-horizon value and regime intelligence, event-based news context, and slow external positioning context from CFTC. These layers feed a deterministic strategy engine and are ultimately constrained by MQL5 risk and execution controls.
+The CFTC layer strengthens contextual positioning analysis but does not replace fast market information. Its most important engineering requirement is point-in-time correctness: the strategy must use the CFTC observation only after its actual public availability.
+
+Official CFTC Reference Basis
+The CFTC materials establishing the report families, historical datasets and publication timing form the reference basis for the CFTC integration. citeturn0search2turn0search3turn0search4turn0search7
+CFTC Public Reporting Environment
+CFTC About the COT Reports
+CFTC Historical Viewable COT Data
+CFTC Historical Compressed COT Data

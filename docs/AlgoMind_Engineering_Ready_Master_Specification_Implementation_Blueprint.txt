@@ -1,0 +1,1542 @@
+ALGOMIND
+Engineering-Ready Master Specification &amp; Implementation Blueprint
+Reconciled from the finalized AlgoMind project material available in the project File LibraryVersion: Engineering Baseline 1.0 | Date: 8 September 2026
+AUTHORITY AND RECONCILIATION STATUS
+Authoritative baseline: AlgoMind_Project_Foundation_Agenda_Detailed_Revised_CFTC.docx, dated 4 September 2026 and revised/approved on 5 September 2026. The earlier AlgoMind_Project_Foundation_Agenda_Detailed.docx is treated as superseded where the revised CFTC version differs. The project conversation additionally establishes the governing architectural decision that MQL5 is the core AlgoMind trading system and Python is only an external-information/data provider for information MQL5 cannot obtain itself.
+Supporting engineering evidence retained for gap/status analysis: AlgoMind_Reversion_Testing.xlsx and the stored V38 forensic audit artifacts. These are not allowed to silently override the revised project agenda; they are used to identify existing implementation state, conflicts, and engineering risks.
+STRICT NO-INVENTION STATUS: This blueprint deliberately leaves unsupported fields as NOT SPECIFIED, REQUIRES DECISION, ENGINEERING GAP, or CONFLICTING REQUIREMENTS. Recommendations are not incorporated as authoritative requirements.
+1. Executive Architecture
+AlgoMind is a deterministic, event-driven retail trading research and execution system whose authoritative trading core is MQL5. The system uses MT5-native market/broker information and documented proxy measurements inside the MQL5 core. Python exists only to supply external information that MQL5 cannot obtain or reliably process itself. CFTC/COT is explicitly included as an external/public higher-timeframe futures-positioning source. External information is context, not an independent BUY/SELL command.
+The architectural intent preserved from the agenda is modularity: start with MT5 plus local Python communication on a low-resource computer, validate deterministic feature timing and strategy behaviour, then add external data, ZeroMQ and ML only when the relevant contracts and baseline are proven.
+Layer
+Authoritative responsibility
+Status
+MT5/MQL5 market layer
+Broker/account data, market observations, sessions, execution conditions
+ESTABLISHED
+MQL5 event/feature/strategy/risk/execution core
+Trading-state construction, strategy logic, final decision, risk veto, execution and position management
+ESTABLISHED BY CURRENT PROJECT DECISION + AGENDA EXECUTION AUTHORITY
+Python external-data layer
+External information that MQL5 cannot obtain/reliably process; CFTC and other explicitly admitted external feeds
+ESTABLISHED IN PRINCIPLE; EXACT DATASET/PROTOCOLS PARTLY NOT SPECIFIED
+Transport
+Local file/localhost first; ZeroMQ later; broader infrastructure only if required
+ESTABLISHED
+Audit/analytics
+Timestamped decisions, features, executions and performance evidence
+ESTABLISHED
+2. Authoritative System Principles
+ID
+Principle
+Authority
+P-01
+MQL5 is the core AlgoMind trading system: trading brain, hard-risk authority, execution authority and primary live/backtest system.
+Project conversation decision
+P-02
+Python is only an external information/data provider for information MQL5 cannot obtain or reliably process itself.
+Project conversation decision
+P-03
+No look-ahead: historical features/events may use only information available at the decision timestamp.
+Revised agenda §3
+P-04
+Every canonical feature has one documented definition and version.
+Revised agenda §3
+P-05
+Proxy delta is explicitly labelled as proxy data, not exchange cumulative delta or institutional DOM.
+Revised agenda §3
+P-06
+Regime precedes strategy selection/optimization.
+Revised agenda §3
+P-07
+Critical unknown, stale, malformed or contradictory information fails closed to NO_TRADE.
+Revised agenda §3
+P-08
+The same input snapshot and configuration must yield the same deterministic decision.
+Revised agenda §3
+P-09
+MQL5 hard-risk controls cannot be bypassed by Python.
+Revised agenda §32 + project decision
+P-10
+ZeroMQ is transport, not strategy; local file/localhost communication precedes it.
+Revised agenda §§15, 33–35
+P-11
+ML is a later gate/ranker, not the initial replacement for deterministic market concepts.
+Revised agenda §24
+P-12
+Every performance claim must survive out-of-sample validation.
+Revised agenda Appendix/§25–27
+3. Requirements Matrix
+ID
+Requirement
+Description
+Type
+Owner
+Inputs
+Outputs
+Dependencies
+Priority
+Acceptance
+Test
+Status
+REQ-001
+Deterministic event-driven engine
+Build the system around timestamp-causal event and feature updates.
+Functional
+MQL5 core
+MT5 observations
+Deterministic events/features
+Canonical schemas; timestamps
+P0
+Historical replay reproduces information/decisions without future data
+Replay + look-ahead
+Specified
+REQ-002
+MT5 market ingestion
+Use MT5-native OHLC, ticks, bid/ask/spread and broker metadata.
+Functional
+MQL5
+MT5
+Canonical market snapshot
+Symbol/broker state
+P0
+Snapshot contains required native observations
+Unit/integration
+Specified
+REQ-003
+Closed/in-progress state distinction
+Historical/live calculations explicitly distinguish forming from closed information.
+Non-functional
+MQL5
+Bars/ticks
+Causal bar state
+Event timing
+P0
+Earlier features cannot change because future bar information was added
+Look-ahead/replay
+Specified
+REQ-004
+Market structure
+Maintain deterministic structure/swing/BOS/CHOCH-style state as established in the feature schema.
+Functional
+MQL5
+OHLC/events
+Structure state
+Event engine
+P1
+State is causal and timestamped
+Lifecycle/replay
+Specified; exact mathematical definitions not yet frozen
+REQ-005
+Liquidity mapping
+Track liquidity pools and sweep/reaction lifecycle state.
+Functional
+MQL5
+Price/events
+Liquidity state
+Structure/event engine
+P1
+Lifecycle state at each bar is point-in-time
+Lifecycle/look-ahead
+Specified; exact formulas partly NOT SPECIFIED
+REQ-006
+FVG/imbalance lifecycle
+Track creation, current fill, age, direction and invalidation without retroactive final-state leakage.
+Functional
+MQL5
+OHLC/events
+FVG state
+Event engine
+P1
+Historical state reflects only information then available
+Lifecycle/look-ahead
+Specified
+REQ-007
+VWAP/value context
+Calculate session VWAP and, where used, POC/VAH/VAL from available observations.
+Functional
+MQL5
+Market observations
+VWAP/value features
+Data/session definitions
+P1
+Values are reproducible and timestamped
+Unit/replay
+Specified; bin/allocation details NOT SPECIFIED
+REQ-008
+Proxy delta A/B
+Maintain two proxy-delta modes plus fusion.
+Functional
+MQL5
+Ticks/bars
+delta_proxy_A/B/fusion
+Tick/bars
+P1
+Proxy modes reproduce from same snapshot
+Unit/replay
+Specified; exact formulas NOT SPECIFIED
+REQ-009
+Delta event logic
+Support surge, flip, transition, divergence and persistence fields where defined.
+Functional
+MQL5
+Delta proxies
+Delta events/features
+Proxy engine
+P1
+Events only arise from causal observations
+Unit/lifecycle
+Specified; thresholds NOT SPECIFIED
+REQ-010
+Continuation hypothesis
+Evaluate continuation/trend hypothesis.
+Functional
+MQL5
+Canonical features
+Hypothesis score/setup
+Regime + features
+P2
+Decision is reproducible for a fixed snapshot/configuration
+Unit/replay
+Specified; exact scoring formula NOT SPECIFIED
+REQ-011
+Mean-reversion hypothesis
+Evaluate mean-reversion hypothesis.
+Functional
+MQL5
+Canonical features
+Hypothesis score/setup
+Regime + features
+P2
+Decision is reproducible for a fixed snapshot/configuration
+Unit/replay
+Specified; exact scoring formula NOT SPECIFIED
+REQ-012
+Regime engine
+Use state-machine regime classification including TREND_UP, TREND_DOWN, BALANCED, EXPANSION, EXHAUSTION, NEWS and NO_TRADE.
+Functional
+MQL5
+Feature/event state
+Regime state
+Structure/value/news/data quality
+P2
+Regime transitions are stable/auditable
+State-machine tests
+Specified; exact transition thresholds NOT SPECIFIED
+REQ-013
+Decision gate
+Apply confidence/data-quality/risk eligibility before trade action.
+Functional
+MQL5
+Strategy/regime/external context
+Trade/reduce/wait/NO_TRADE
+Risk + data quality
+P2
+Critical vetoes prevent trade
+Integration
+Specified; exact confidence threshold NOT SPECIFIED
+REQ-014
+Final trading decision
+MQL5 remains final authority for whether a trade can execute.
+Functional
+MQL5
+Candidate intent + broker/account state
+Approved/rejected intent
+Risk/execution checks
+P0
+No Python message can bypass MQL5 vetoes
+Integration/security
+Specified by current project decision
+REQ-015
+Position sizing
+Calculate position size from monetary risk and actual stop distance.
+Functional
+MQL5
+Equity/risk/SL/symbol properties
+Lot size
+Broker symbol properties
+P1
+Position does not exceed configured monetary risk after normalization
+Unit/broker tests
+Specified; exact implementation formula beyond principle NOT SPECIFIED
+REQ-016
+Risk per trade
+Use 0.5% as configurable research starting point.
+Non-functional
+MQL5
+Account/risk setting
+Risk amount
+Risk engine
+P1
+Configured value is enforced by risk engine
+Unit/integration
+Specified as starting research setting
+REQ-017
+Daily loss limit
+Use 2.0% starting hard limit.
+Non-functional
+MQL5
+Equity/reference
+Veto/lock
+Risk engine
+P1
+Trading is vetoed at configured limit
+Risk integration
+Specified as starting setting
+REQ-018
+Total drawdown/loss limit
+Use 5.0% starting project-level limit.
+Non-functional
+MQL5
+Equity/reference
+Veto/lock
+Risk engine
+P1
+Trading is vetoed at configured limit
+Risk integration
+Specified as starting setting
+REQ-019
+SL
+SL is ATR and/or structural/liquidity based and must respect broker minimum distance.
+Functional
+MQL5
+ATR/structure/broker
+Stop price
+Risk/execution
+P1
+Invalid broker-distance stops are rejected
+Broker tests
+Specified; exact selection hierarchy NOT SPECIFIED
+REQ-020
+Partial exit
+Around 2R is an initial research parameter.
+Functional
+MQL5
+Position R
+Partial action
+Position manager
+P2
+Configured partial policy is reproducible
+Position tests
+Specified as initial parameter; exact fraction NOT SPECIFIED
+REQ-021
+Trailing
+Optional ATR-based trailing after defined profit excursion.
+Functional
+MQL5
+ATR/position state
+Modified SL
+Position manager
+P2
+Trailing only occurs under configured condition
+Position tests
+Specified; exact excursion/ATR multiple NOT SPECIFIED
+REQ-022
+Correlation exposure
+Limit simultaneous positions with highly related risk.
+Functional
+MQL5
+Open exposure
+Veto/size limit
+Risk engine
+P2
+Correlated exposure limit is enforced
+Risk integration
+Specified; correlation method/threshold NOT SPECIFIED
+REQ-023
+Emergency kill switch
+Provide manual and automatic shutdown capability.
+Non-functional
+MQL5
+Risk/system state
+Trading lock
+Risk/execution
+P1
+Kill switch prevents new risk and supports shutdown behaviour
+Failure/integration
+Specified
+REQ-024
+News modes
+Support NEWS_OFF, NEWS_FILTER_ONLY, NEWS_TRADE, NEWS_HYBRID.
+Functional
+MQL5 + external data as applicable
+News state
+News context/veto
+News adapter
+P2
+Mode changes behaviour as configured
+Mode/integration
+Specified
+REQ-025
+Options context
+Options/dealer positioning may provide contextual evidence; never independently trigger a trade.
+Functional
+External/Python + MQL5 consumption
+Options dataset
+Context flags
+Source/timestamp/quality
+P3
+Unavailable data is explicitly unavailable
+Adapter/integration
+Specified conceptually
+REQ-026
+CFTC/COT
+Include CFTC/COT as higher-timeframe futures-positioning context.
+Functional
+Python external-data layer
+CFTC public data
+Positioning features
+Release timing + mapping
+P2
+No decision uses COT before actual release; mapping is auditable
+Timing/mapping/replay
+Specified; exact CFTC fields beyond canonical list NOT SPECIFIED
+REQ-027
+CFTC feature set
+Canonical CFTC fields include net position, long/short change, positioning percentile/extreme, release age and positioning regime.
+Functional
+Python -&gt; MQL5
+CFTC observations
+Canonical CFTC context
+CFTC adapter
+P2
+Fields are timestamped and mapped
+Unit/replay
+Specified
+REQ-028
+External data quality
+External data carries timestamp/source identity and quality state.
+Non-functional
+Python + MQL5
+External data
+Quality metadata
+Shared schema
+P1
+Stale/malformed/unknown critical data cannot silently trade
+Failure tests
+Specified
+REQ-029
+Canonical decision message
+Use decision_id, timestamp, symbol, regime, hypothesis, action, confidence, entry/reference zone, stop, target, risk allocation, feature_version, model_version, data_quality, reason_code and expiry; schema version required.
+Functional
+Shared
+Snapshot/context
+Decision message
+Transport/schema
+P0
+Required fields validate; incompatible versions are rejected
+Schema tests
+Specified
+REQ-030
+Local transport first
+Use local files/shared directory or localhost polling before ZeroMQ.
+Technical
+Bridge
+Snapshot/decision
+Response message
+Schema + sync
+P0
+Tester/live-style handshake works
+Integration
+Specified
+REQ-031
+ZeroMQ later
+Introduce ZeroMQ only after contract/synchronization are proven.
+Technical
+Bridge
+Canonical messages
+Transport
+Contract
+P3
+Transport swap does not change feature definitions
+Integration
+Specified
+REQ-032
+Backtest deterministic clock
+Replay historical information chronologically with an information set at each exact time.
+Non-functional
+MQL5 + Python/external data
+Historical data
+Decision sequence
+Causal event engine
+P0
+Future-data modification cannot alter prior features
+Replay/look-ahead
+Specified
+REQ-033
+MT5-driven tester sync
+Tester publishes current broker/account snapshot; external layer responds; MQL5 applies final risk/execution rules.
+Functional
+MQL5 + Python
+Tester snapshot
+Decision response
+Bridge
+P2
+No material mismatch from independent replay
+Integration
+Specified; exact tester bridge mechanics NOT SPECIFIED
+REQ-034
+Live flow
+MT5 snapshot -&gt; external information update -&gt; intent/NO_TRADE -&gt; MQL5 freshness/risk checks -&gt; execution -&gt; position management -&gt; shared-ID logs.
+Functional
+MQL5 + Python
+Live market + external context
+Trade/NO_TRADE
+All core modules
+P2
+Live and research feature states reconcile in paper trading
+Integration
+Specified
+REQ-035
+Failure: Python unavailable
+No new trade; local fallback only if explicitly enabled.
+Functional
+MQL5
+Bridge state
+NO_TRADE/defined fallback
+Bridge
+P1
+Unavailable external service cannot create uncontrolled trading
+Failure test
+Specified
+REQ-036
+Failure: stale/malformed response
+Reject stale or malformed external response.
+Functional
+MQL5
+Message metadata
+Reject
+Schema/quality gate
+P1
+Rejected before trade
+Failure/schema tests
+Specified
+REQ-037
+Failure: order rejection/connection
+Reconcile actual position state before retry; interruption must not duplicate orders.
+Functional
+MQL5
+Broker/transaction state
+Reconciled state
+Execution
+P1
+No duplicate order from uncertain connection
+Integration
+Specified
+REQ-038
+Logging
+Every trade has unique decision ID; decisions, execution, feature versions and performance are logged.
+Non-functional
+MQL5 + external layer
+Decision/execution state
+Audit records
+Shared schema
+P1
+A trade can be reconstructed from logs
+Audit/replay
+Specified
+REQ-039
+Model governance
+Record model version and training window; separate walk-forward/OOS from optimization.
+Non-functional
+Research/ML
+Model metadata
+Governance record
+Dataset pipeline
+P3
+Each model result is reproducible/auditable
+ML validation
+Specified
+REQ-040
+ML gate
+LightGBM/statistical ranking may be used as a later gate/ranker after deterministic baseline.
+Functional
+MQL5 consumption + Python research/external data where established
+Canonical features
+Gate/rank result
+Feature contract
+P3
+OOS improvement demonstrated before acceptance
+Walk-forward/ablation
+Specified concept; exact model interface NOT SPECIFIED
+REQ-041
+Online learning
+River/online learning is a later controlled adaptation stage.
+Functional
+ML layer
+Validated live data
+Adapted model
+Drift controls
+P4
+Only after stable deployment and validation
+Drift/OOS
+Specified as later agenda
+REQ-042
+Performance evaluation
+Evaluate return, risk-adjusted return, drawdown, recovery, PF, expectancy, win rate, payoff, R, frequency, holding time, regime/session/news/hypothesis and execution-cost effects.
+Non-functional
+Research/analytics
+Trade logs
+Metrics
+Audit data
+P2
+All required metric classes are reproducible
+Analytics
+Specified
+4. System Architecture
+The definitive ownership model below applies the later explicit project decision to the agenda's broader Python/MQL5 division. The agenda contains an internal tension: its conceptual high-level flow names a Python decision/research engine, while it simultaneously says MQL5 is final execution/hard-risk authority. The current project decision resolves this by keeping the trading decision logic inside MQL5 and restricting Python to external information/data provision.
+Component
+Owner
+Authoritative role
+Notes
+MT5 data/broker adapter
+MQL5
+Primary native market/account source
+Includes market data, broker metadata, account/position state
+Event engine
+MQL5
+Causal lifecycle state
+Swings, liquidity, displacement, FVG, session events as established
+Feature engine
+MQL5
+Canonical trading features
+VWAP/value, structure, proxy delta, volatility and other established features
+Regime engine
+MQL5
+Classify market state
+State machine; exact transitions need mathematical freeze
+Strategy engine
+MQL5
+Continuation/mean-reversion evaluation
+No new strategy rules added here
+External-data adapter
+Python
+Acquire/process external information only
+CFTC explicitly included; other sources only when explicitly admitted
+External-context importer
+MQL5
+Validate/consume external information
+Python cannot issue executable BUY/SELL authority
+Risk engine
+MQL5
+Hard risk veto and sizing
+Independent of model confidence
+Execution/position management
+MQL5
+Broker action and trade lifecycle
+SL/TP/partials/trailing/reconciliation
+Bridge
+Shared
+Move timestamped canonical messages
+Local first; ZeroMQ later
+Audit/logging
+MQL5 + Python
+Record reconstructable state
+Shared decision ID/vocabulary
+5. MQL5 Architecture
+MQL5 is the primary system. The following modules are the minimum architecture directly supported by the documents and the governing project decision.
+Module
+Purpose
+Inputs
+Outputs
+Dependencies
+Open specification
+MQL5 Market Snapshot
+Collect current symbol/broker/account/market state
+OHLC, ticks, bid/ask/spread, symbol properties, account state
+Canonical snapshot
+MT5
+Exact snapshot field schema NOT SPECIFIED
+Bar/Time State
+Maintain causal forming/closed information
+Ticks/bars/time
+Closed/in-progress state
+Market snapshot
+Exact buffer implementation NOT SPECIFIED
+Event/Lifecycle Engine
+Update non-retroactive market events
+Causal observations
+Swing/liquidity/FVG/displacement/session lifecycle
+Snapshot
+Mathematical definitions NOT SPECIFIED
+Feature Engine
+Generate canonical feature vector
+Event state + market observations
+Features with timestamp/version
+Event engine
+Exact formulas/units partly NOT SPECIFIED
+Regime Engine
+Classify market state
+Feature/event state
+Regime state
+Feature engine
+Transition thresholds NOT SPECIFIED
+Strategy Engine
+Evaluate continuation and mean-reversion hypotheses
+Regime + features + contextual evidence
+Candidate setup/hypothesis score
+Regime/features
+Exact scoring rules NOT SPECIFIED
+Decision/Risk Gate
+Final trade eligibility
+Candidate + account/broker state
+Approved/rejected/NO_TRADE
+Strategy + risk
+Exact confidence gate NOT SPECIFIED
+Risk Engine
+Size and enforce hard limits
+Equity, stop, symbol properties, exposure
+Lot size/veto
+Broker/account
+Correlation algorithm NOT SPECIFIED
+Execution Engine
+Submit/reconcile broker orders
+Approved intent
+Execution result
+Risk engine
+Exact retry policy beyond documented reconciliation NOT SPECIFIED
+Position Manager
+Manage active positions
+Position state
+SL/TP/partial/break-even/trailing state
+Execution/risk
+Exact trailing/partial details partly NOT SPECIFIED
+Audit Logger
+Record decisions and executions
+All canonical states
+Decision/execution logs
+All modules
+Storage format NOT SPECIFIED
+6. Python External-Data Architecture
+Python is not the trading brain. It is an external-data/information layer. The agenda's earlier phrase 'Python research/decision engine' is retained only as historical documentation context and is overridden for the live/trading ownership model by the explicit project decision in this conversation.
+Dataset/context
+Source
+Data required
+Acquisition
+Update frequency
+Processing
+Output to MQL5
+Timestamp
+Mapping
+Missing/stale/failure
+CFTC/COT
+CFTC/public
+Net position; long/short change; positioning percentile/extreme; release age; positioning regime
+NOT SPECIFIED
+NOT SPECIFIED
+Normalize and map futures contract to trading instrument
+Canonical CFTC context fields
+Release/observation timestamp required
+Futures-to-instrument mapping required
+Fail/quality behaviour must preserve explicit degraded/unavailable state; exact policy NOT SPECIFIED
+Options/dealer positioning
+External options dataset
+Expiry, strike/OI, IV, premium, Delta, Gamma, notable flow where available
+NOT SPECIFIED
+NOT SPECIFIED
+Normalize source and quality/timestamp
+Contextual options fields
+Source timestamp required
+Underlying mapping; exact mapping NOT SPECIFIED
+Unavailable explicitly, never invented
+External futures/order flow
+External source if later admitted
+Higher-quality delta/footprint/DOM
+NOT SPECIFIED
+NOT SPECIFIED
+Normalize source/feed identity
+External-flow context
+Source timestamp required
+Instrument mapping NOT SPECIFIED
+Quality-controlled; exact fallback NOT SPECIFIED
+News/calendar
+MT5 or external
+Scheduled time, release time, surprise, reaction state
+NOT SPECIFIED
+NOT SPECIFIED
+PIT event representation; preserve actual release vs revisions
+News state/context
+Scheduled/release timestamps
+Symbol relevance mapping NOT SPECIFIED
+Missing feed handling partly specified; exact mandatory/optional policy per mode
+Important boundary: Python may supply context and research information, but the MQL5 core decides whether that context is admissible and whether a trade can execute.
+7. CFTC Data Architecture
+CFTC/COT is explicitly added as a higher-timeframe futures-positioning component. The revised agenda requires a CFTC/COT adapter and futures-to-instrument mapping layer, and requires release timing validation before COT information can influence the regime selector.
+CFTC element
+Authoritative requirement
+Engineering state
+Source class
+CFTC COT / external/public higher-timeframe futures positioning
+DOCUMENTED FACT
+Canonical fields
+net position; long/short change; positioning percentile/extreme; release age; positioning regime
+DOCUMENTED FACT
+Timing
+A historical decision must not use a COT observation before its actual publication timestamp
+DOCUMENTED FACT
+Instrument mapping
+Futures-to-instrument mapping layer is required
+DOCUMENTED FACT
+Use in strategy
+Validate release timing and incremental value before allowing influence on regime selector
+DOCUMENTED FACT
+Exact contract universe
+NOT SPECIFIED
+REQUIRES DECISION
+Exact CFTC report/category selection
+NOT SPECIFIED
+REQUIRES DECISION
+Exact historical storage format
+NOT SPECIFIED
+ENGINEERING GAP
+Exact update schedule
+NOT SPECIFIED
+ENGINEERING GAP
+Exact percentile lookback/window
+NOT SPECIFIED
+REQUIRES DECISION
+Exact positioning-regime formula
+NOT SPECIFIED
+REQUIRES DECISION
+No CFTC variable beyond the canonical feature list has been invented. In particular, report categories, contract selection, percentile windows and positioning-regime thresholds remain open.
+8. Python ↔ MQL5 Data Contract
+The project establishes a conceptual canonical decision message and requires versioning, but it does not freeze an exact serialization format, primitive data types, optionality rules, or transport framing. Those items therefore remain explicitly open.
+Field
+Status
+Purpose
+schema_version
+REQUIRED concept
+Version canonical contract; exact type NOT SPECIFIED
+decision_id
+REQUIRED
+Unique decision/trade correlation identifier
+timestamp
+REQUIRED
+Decision/message time
+symbol
+REQUIRED
+Instrument identity
+regime
+REQUIRED
+Canonical regime
+hypothesis
+REQUIRED
+Continuation/mean-reversion or other established hypothesis
+action
+REQUIRED
+Decision action; exact enum NOT SPECIFIED
+confidence
+REQUIRED
+Decision confidence; exact scale/threshold NOT SPECIFIED
+entry/reference zone
+REQUIRED concept
+Reference/entry information; exact structure NOT SPECIFIED
+stop
+REQUIRED concept
+Stop information
+target
+REQUIRED concept
+Target information
+risk allocation
+REQUIRED concept
+Risk allocation
+feature_version
+REQUIRED
+Feature vocabulary/version
+model_version
+REQUIRED
+Model metadata; exact semantics NOT SPECIFIED
+data_quality
+REQUIRED
+Data quality/degraded state
+reason_code
+REQUIRED
+Decision explanation
+expiry
+REQUIRED
+Intent validity/expiry
+CFTC context
+ADDITIONAL canonical context
+Exact envelope/field typing NOT SPECIFIED
+serialization format
+NOT SPECIFIED
+Do not assume JSON/MessagePack/etc.
+transport framing
+NOT SPECIFIED
+Do not assume sockets/ports/file names/etc.
+authentication/security mechanism
+NOT SPECIFIED
+REQUIRES DECISION
+stale-data threshold
+NOT SPECIFIED
+REQUIRES DECISION
+reconnection protocol
+NOT SPECIFIED
+REQUIRES DECISION beyond documented failure behaviour
+Documented transport sequence: local files/shared directory or localhost polling first; ZeroMQ after the message contract and synchronization are proven. FastAPI/Redis/PostgreSQL or similar is deferred until scaling actually requires it.
+9. Detailed Module Specifications
+Owner
+Module
+Purpose
+Inputs
+Outputs
+Dependencies
+Interface
+Open/error conditions
+MQL5
+Market Snapshot
+Broker/market/account snapshot
+Market ticks/bars, spread, symbol properties, account state
+Canonical snapshot
+MT5
+Snapshot schema
+NOT SPECIFIED
+MQL5
+Event Engine
+Causal lifecycle state
+Snapshot
+Swing/liquidity/FVG/displacement/session events
+Market snapshot
+Feature engine
+Final lifecycle query must never be used for past bars
+MQL5
+VWAP/Value
+Fair-value context
+Historical observations
+VWAP, POC, VAH, VAL, deviations
+Market snapshot
+Regime/strategy
+Price-bin/session/allocation rules NOT SPECIFIED
+MQL5
+Orderflow Proxy
+Retail-feasible pressure context
+Ticks/bars
+Proxy A/B, fusion, surge, flip, divergence, transition
+Market snapshot
+Strategy/regime
+Exact proxy formulas/thresholds NOT SPECIFIED
+MQL5
+Structure/Liquidity
+Structure and liquidity context
+Causal event history
+Swings, BOS/CHOCH-style state, pools, sweeps
+Event engine
+Strategy/regime
+Exact definitions NOT SPECIFIED
+MQL5
+FVG/Imbalance
+Track imbalance lifecycle
+Bars/events
+Creation/fill/age/direction/invalidation
+Event engine
+Strategy
+Exact fill/invalidation formulas NOT SPECIFIED
+MQL5
+Regime
+Select market environment
+Canonical features/events
+Regime state
+Features
+Strategy
+Hysteresis required conceptually; exact persistence thresholds NOT SPECIFIED
+MQL5
+Strategy
+Evaluate two documented hypotheses
+Regime + context
+Candidate setup/hypothesis score
+Regime/features
+Decision gate
+Exact formulas NOT SPECIFIED
+MQL5
+Risk
+Hard risk authority
+Account/symbol/position/SL
+Veto, size, exposure
+Strategy + broker
+Execution
+Correlation and exact SL selection NOT SPECIFIED
+MQL5
+Execution
+Broker action
+Approved intent
+Order result/reconciliation
+Risk + broker
+Position manager
+Exact transaction implementation NOT SPECIFIED
+MQL5
+Position Management
+SL/TP/partials/trailing
+Open positions
+State changes
+Execution/risk
+Audit
+Exact parameters partly NOT SPECIFIED
+MQL5
+Audit
+Reconstruct decisions
+All state
+Decision/execution logs
+All modules
+Research/validation
+Storage format NOT SPECIFIED
+Python
+CFTC Adapter
+Acquire and normalize COT
+CFTC/public source
+CFTC canonical context
+External source
+MQL5 bridge
+Exact acquisition mechanism NOT SPECIFIED
+Python
+External Context Adapters
+Normalize explicitly admitted external information
+External source
+Timestamped contextual records
+Source data
+MQL5 bridge
+Source-specific schemas NOT SPECIFIED
+Shared
+Contract/Schema
+Freeze vocabulary/version
+Canonical definitions
+Versioned messages/features
+All components
+All components
+Exact serialization NOT SPECIFIED
+Shared
+Bridge
+Transport messages
+Snapshots/decisions
+Request/response
+MQL5/Python
+Both
+Local first; ZeroMQ later
+10. Data-Flow Architecture
+LIVE DATA FLOW
+MT5 market/broker observations → MQL5 canonical snapshot.
+MQL5 causal event/lifecycle updates → MQL5 feature engine.
+MQL5 features + contextual external data → MQL5 regime engine.
+MQL5 regime → continuation/mean-reversion hypothesis evaluation.
+External Python data (CFTC/news/options/other explicitly admitted sources) → timestamped canonical context → MQL5 validation/consumption.
+Candidate intent → MQL5 hard-risk gate → broker execution.
+Execution/position state → MQL5 audit log, correlated by decision_id.
+INTERNAL MQL5 FLOW
+Raw market observations → data-quality state → causal event update → feature update → regime state → strategy hypothesis → decision gate → hard risk veto → execution → position management → audit/reconciliation.
+Python never sits downstream of the final risk veto. External information enters as context; it cannot become an executable command.
+11. Backtest Architecture
+The documented backtest sequence is chronological: load historical data; advance a deterministic clock; construct the information set available at that exact time; update event lifecycles without future bars; build canonical features; classify regime; score the two hypotheses; apply risk/execution assumptions; simulate fill/position management; record every decision including NO_TRADE; calculate performance/robustness metrics.
+MT5 Strategy Tester synchronization is specified as an MT5-driven snapshot/response loop: tester receives simulated event → MQL5 builds broker/account snapshot → publishes snapshot → external layer builds response → MQL5 receives response → MQL5 applies final risk/execution rules → simulation advances.
+Backtest issue
+Documented requirement
+Status
+CFTC timing
+No historical decision may use COT before actual publication timestamp
+Specified
+External data availability mechanism in Tester
+MT5-driven snapshot/response loop; exact local implementation not frozen
+Specified concept / REQUIRES DECISION on implementation details
+Historical CFTC storage/lookup
+NOT SPECIFIED
+REQUIRES DECISION
+Exact tester/Python synchronization cadence
+NOT SPECIFIED
+REQUIRES DECISION
+Deterministic reproducibility
+Same input snapshot/configuration should yield same decision
+Specified
+Execution assumptions
+Spread/slippage/latency/broker specifications/position management must be represented
+Specified concept; exact numerical assumptions NOT SPECIFIED
+Future-data protection
+Future bars/final lifecycle states cannot affect earlier features
+Specified
+The V38 audit artifacts add a critical engineering status finding: the stored V38 implementation contains confirmed data-corruption/look-ahead defects and therefore cannot be treated as a trustworthy production baseline until corrected and revalidated. This is implementation evidence, not a new strategy requirement.
+12. Live-Trading Architecture
+The documented live sequence is retained with ownership corrected to the governing MQL5-core principle: MT5 supplies the live market/broker state; MQL5 creates the canonical snapshot; Python supplies only external information; MQL5 updates/validates context, performs regime/strategy/risk logic, and makes the final decision; MQL5 executes and manages positions.
+Condition
+Required documented behaviour
+Python unavailable
+No new trade; local fallback only if explicitly enabled
+Python response stale
+Reject it
+Malformed schema
+Reject it
+Options missing
+Mark unavailable; continue only if options are non-mandatory
+External flow missing
+Use configured proxy mode or downgrade confidence
+Spread excessive
+Veto
+Daily loss limit reached
+Veto
+Total drawdown limit reached
+Veto
+Broker order rejected
+Reconcile actual position state before retry
+Connection interruption
+Do not duplicate orders; reconcile state
+Clock/timestamp mismatch
+Stop decision processing until synchronized
+13. Implementation Sequence
+APPROVED/DOCUMENTED PHASE ORDER
+Phase
+Name
+Primary deliverable
+Exit criterion
+0
+Foundation
+Schemas, repository, configuration, logging
+Contracts are frozen and testable.
+1
+Market engine
+MT5 data, sessions, ATR, VWAP, structure
+Historical snapshots reproduce correctly.
+2
+Order-flow proxies
+Delta modes, divergence, surge/flip/transition
+Proxy calculations pass replay/look-ahead tests.
+3
+Strategy engine
+Value/auction context + two hypotheses
+Baseline backtest is reproducible.
+4
+Regime engine
+State machine and strategy selector
+Regime transitions are stable and auditable.
+5
+Python/MQL5 bridge
+Local synchronized communication
+Tester/live-style handshake works.
+6
+Tester integration
+MT5-driven historical synchronization
+No material mismatch from independent replay.
+7
+External data
+News/options/order-flow adapters
+Each adapter has timestamp and quality controls.
+8
+ML gate
+LightGBM/statistical ranking
+Out-of-sample improvement demonstrated.
+9
+Paper trading
+Shadow/live feed validation
+Research and live feature states reconcile.
+10
+Controlled deployment
+Small-risk live operation
+Risk, monitoring and kill switches proven.
+Engineering ownership adjustment: wherever the historical phase wording calls a 'Python decision engine' the governing current project decision is MQL5-owned trading logic. Python remains the external-information provider. This is a CONFLICTING REQUIREMENT resolved by the later explicit project decision, not an invented redesign.
+Any finer-grained task ordering not explicitly established above is a RECOMMENDATION and is intentionally not treated as authoritative.
+14. Testing and Validation Framework
+Area
+Method
+Cases
+Acceptance
+Status
+Canonical schema
+Unit + contract
+Missing fields, wrong versions, malformed values
+Reject invalid message; exact error representation NOT SPECIFIED
+Specified requirement
+Event lifecycle
+Unit + lifecycle
+Creation/interaction/fill/invalidation/expiry
+State changes only when valid information appears
+Specified
+Look-ahead
+Dedicated
+Modify future data after decision timestamp
+Earlier features/decisions must not change
+Specified
+Replay
+Integration
+Replay identical historical input
+Same deterministic sequence is reproduced
+Specified
+VWAP/value
+Unit/replay
+Known historical observations
+Exact output according to frozen formula
+Formula NOT SPECIFIED
+Proxy delta
+Unit/replay
+Known tick/bar sequence
+A/B/fusion outputs reproduce
+Formula NOT SPECIFIED
+Structure/liquidity
+Lifecycle/replay
+Synthetic/historical event sequence
+Causal states reproduce
+Exact thresholds NOT SPECIFIED
+Strategy hypotheses
+Unit/replay
+Canonical feature snapshots
+Deterministic candidate/NO_TRADE result
+Exact score rules NOT SPECIFIED
+Regime
+State-machine
+Controlled transitions/noisy sequence
+Stable/auditable transitions
+Exact hysteresis thresholds NOT SPECIFIED
+Risk
+Unit/integration
+Equity, SL, symbol properties, exposure
+Hard limits and sizing enforced
+Exact implementation formula partly NOT SPECIFIED
+Execution
+Integration
+Accepted/rejected/uncertain broker outcomes
+No duplicate orders; reconcile state
+Specified
+CFTC timing
+Historical integration
+COT release/observation timestamps
+No pre-release use
+Specified
+CFTC mapping
+Mapping tests
+Known futures/instrument mappings
+Correct configured mapping; exact universe NOT SPECIFIED
+Requires decision
+News
+Mode/integration
+NEWS_OFF/FILTER_ONLY/TRADE/HYBRID
+Mode-specific documented behaviour
+Specified conceptually
+Paper trading
+Shadow/integration
+Live feature states vs research
+States reconcile
+Specified
+Walk-forward
+Research
+Unseen periods
+Edge persistence assessed without random split
+Specified
+Parameter sensitivity
+Research
+Parameter variations
+Robustness outside narrow optimum
+Specified
+Ablation
+Research
+Remove one information source at a time
+Incremental value identified
+Specified
+Execution stress
+Backtest/integration
+Spread/slippage/latency assumptions
+Assess whether edge survives costs
+Specified concept; exact assumptions NOT SPECIFIED
+15. Requirement Traceability Matrix
+Source
+Requirements
+Module
+Interface/Data Flow
+Implementation owner
+Validation
+Agenda §3
+REQ-001/003/007/028/032
+Event/Feature/Data Quality
+Snapshot → Event → Feature
+MQL5 core
+Lifecycle/look-ahead/replay
+Agenda §§8–9
+REQ-007/008/009
+VWAP/Value/Orderflow
+Market observations → features
+MQL5 core
+Unit/replay
+Agenda §12
+REQ-012
+Regime Engine
+Features → regime
+MQL5 core
+State-machine
+Agenda §13
+REQ-004–013/027
+Canonical feature schema
+Features → strategy/risk
+MQL5 + external context
+Contract + replay
+Agenda §14 + project decision
+REQ-014/028
+Ownership boundary
+Python context → MQL5 final decision
+MQL5 core
+Security/integration
+Agenda §15–16
+REQ-029–031
+Bridge
+Snapshot ↔ decision
+Shared
+Schema/handshake
+Agenda §17–18
+REQ-032/033
+Backtest/Tester
+Historical clock ↔ response
+MQL5 + Python context
+Replay/integration
+Agenda §§19–21
+REQ-034–037/015–023
+Live/risk/execution
+Intent → risk → broker
+MQL5
+Failure/risk/broker
+Agenda §22
+REQ-024
+News
+External event → MQL5 context
+External + MQL5
+Mode/integration
+Agenda §23
+REQ-025
+Options
+External options → context
+External + MQL5
+Availability/integration
+Agenda §24–25
+REQ-039–041
+ML governance
+Feature dataset → model metadata/gate
+MQL5 consumption + research
+OOS/walk-forward/ablation
+Agenda §26–27
+All testing/performance REQs
+Validation
+Data → test → metrics
+Shared
+Test suite
+Agenda §28–31
+REQ-001–041
+MVP/repository/phases
+Implementation structure
+Shared
+Phase exit criteria
+Agenda §32–35
+REQ-038–041
+DoD + implementation order
+Implementation → acceptance
+Shared
+Audit/DoD
+CFTC revision §33 + feature schema
+REQ-026/027
+CFTC adapter/mapping
+CFTC → Python → MQL5
+Python external layer
+Timing/mapping/ablation
+Stored V38 forensic audit
+Implementation-status evidence
+Current V38 code
+Code → defects/gaps
+MQL5/Python artifacts
+P0 correction/retest
+16. Engineering Gaps and Risks
+ID
+Problem
+Evidence/source
+Impact
+Recommended resolution
+Priority
+G-01
+Python decision-engine wording conflicts with MQL5-core governing decision
+Agenda §14/18/19 versus later project decision
+Potential responsibility drift and Python becoming trading brain
+Keep Python external-data-only; MQL5 owns final strategy/risk/execution
+P0
+G-02
+Exact mathematical definitions for first-generation features are not frozen
+Agenda immediate foundation item 21
+Engineers can implement incompatible interpretations
+Freeze canonical equations/units before production implementation
+P0
+G-03
+CFTC contract universe/report selection/mapping details absent
+CFTC adapter requirement + canonical fields
+Incorrect or non-reproducible positioning context
+Approve exact CFTC reports/contracts and mapping table
+P0
+G-04
+CFTC update frequency/acquisition/storage mechanism absent
+CFTC architecture
+Live/backtest synchronization cannot be fully implemented
+Define acquisition/update/storage contract
+P1
+G-05
+Bridge serialization/types/stale thresholds/security absent
+Canonical message + transport sections
+Interoperability and failure handling remain underdefined
+Freeze schema, types, transport framing and freshness policy
+P0
+G-06
+Backtest external-data mechanism is conceptually defined but not fully specified
+Tester synchronization section
+Cannot build deterministic tester integration from prose alone
+Specify exact snapshot/response mechanics
+P0
+G-07
+Exact risk formulas and some position-management parameters absent
+Risk section
+Different implementations can produce different risk
+Freeze formula/parameter hierarchy before production
+P1
+G-08
+Correlation-exposure method absent
+Risk section
+Exposure control cannot be tested precisely
+Define correlation/exposure methodology
+P2
+G-09
+Options/news external sources and schemas are not fully specified
+External data sections
+Adapters cannot be implemented consistently
+Approve source contracts only when component is activated
+P2
+G-10
+V38 stored audit reports critical causal-data defects and look-ahead leakage
+Stored V38 forensic audit artifacts
+Existing implementation is not a trustworthy production baseline
+Fix P0 causal-data defects, retrain/re-run validation before production claims
+P0
+G-11
+V38 execution audit identifies missing/weak transaction/order validation in stored implementation
+Stored V38 audit artifacts
+Execution state may not be safely reconciled
+Bring implementation into compliance with documented reconciliation requirements
+P0
+G-12
+Low-resource target constrains architecture
+Agenda low-cost foundation + deferred cloud/large DB
+Overengineering can break foundation objective
+Keep initial build local/lightweight
+P1
+G-13
+MT5 depth/orderflow capability is broker-dependent
+Data foundation section
+Orderflow claims may exceed available data
+Only use genuinely supplied depth; label proxy data honestly
+P1
+G-14
+Retail MT5 cannot be treated as high-frequency execution infrastructure
+Deferred scope
+False execution expectations
+Do not pursue HFT ambitions in this architecture
+P1
+G-15
+Older testing workbook contains parameter values that do not match revised project-level risk settings
+Reversion workbook vs revised agenda
+Historical testing settings can be mistaken for current authority
+Treat workbook as test artifact; revised agenda controls project-level starting risk values
+P1
+17. Decisions Still Requiring Approval
+ID
+Decision
+Related requirements
+Status
+Priority
+D-01
+Freeze mathematical definition of every first-generation feature
+REQ-004–013
+REQUIRES DECISION
+P0
+D-02
+Define exact CFTC reports/contracts/categories and futures-to-instrument mapping
+REQ-026/027
+REQUIRES DECISION
+P0
+D-03
+Define CFTC acquisition/update/storage mechanism
+REQ-026
+REQUIRES DECISION
+P1
+D-04
+Freeze exact Python↔MQL5 serialization format and field types
+REQ-029–031
+REQUIRES DECISION
+P0
+D-05
+Freeze stale-data threshold, timestamp tolerance and reconnection semantics
+REQ-028/035–037
+REQUIRES DECISION
+P0
+D-06
+Freeze backtest tester snapshot/response implementation mechanics
+REQ-033
+REQUIRES DECISION
+P0
+D-07
+Freeze exact confidence gate and strategy scoring formulas
+REQ-010–013
+REQUIRES DECISION
+P1
+D-08
+Freeze exact SL selection hierarchy, partial fraction, trailing excursion/multiple and correlation method
+REQ-019–022
+REQUIRES DECISION
+P1
+D-09
+Define external news/options source contracts when activated
+REQ-024/025
+REQUIRES DECISION
+P2
+D-10
+Approve whether/when ML gate enters the live MQL5 path and its exact model contract
+REQ-040/041
+REQUIRES DECISION
+P3
+D-11
+Define security/authentication for the local bridge if required
+REQ-029–031
+REQUIRES DECISION
+P2
+D-12
+Resolve V38 P0 audit defects and formally re-baseline implementation
+G-10/G-11
+REQUIRES DECISION + implementation work
+P0
+18. Final Engineering Checklist
+Authoritative revised CFTC agenda is the baseline; superseded agenda is not used to override it.
+MQL5 owns the trading brain, final strategy decision, hard risk and execution.
+Python is restricted to external information/data MQL5 cannot obtain or reliably process.
+Every canonical feature has a frozen definition, unit, source and timestamp.
+Every event is lifecycle-based and point-in-time; no final-state projection into earlier history.
+Closed and forming bar states are explicitly separated.
+VWAP/value definitions are frozen before implementation claims.
+Proxy delta is explicitly labelled as proxy data.
+Depth is used only when genuinely supplied; no artificial Level-2 is presented as real.
+CFTC fields, release timing and futures-to-instrument mapping are frozen and tested.
+CFTC cannot affect historical decisions before actual publication time.
+Canonical bridge schema is versioned and incompatible changes create a new version.
+Local file/localhost bridge is validated before ZeroMQ.
+Python unavailable/stale/malformed responses fail safely according to the documented policy.
+Risk limits are enforced independently of confidence/model output.
+Position sizing uses actual stop distance and broker properties.
+Broker order rejection/connection interruption cannot create duplicate orders.
+Every trade/decision is correlated by decision_id and fully logged.
+Deterministic replay and look-ahead tests pass before trusting research results.
+Baseline, walk-forward, sensitivity, ablation and execution-stress tests are separated.
+V38 implementation is not treated as production-ready until stored P0 audit defects are fixed and revalidated.
+Recommendations remain clearly separated from approved requirements.
+No-Invention Audit
+Audit result: PASS FOR SPECIFICATION DISCIPLINE, with explicit open items preserved. No new strategy rule, data source, protocol, parameter, formula, broker capability, threshold, model interface or hardware target has been promoted to an authoritative requirement without source support. Where the documents are incomplete, this blueprint marks the item NOT SPECIFIED, REQUIRES DECISION, ENGINEERING GAP, or CONFLICTING REQUIREMENTS.
+Known conflict resolved explicitly: the revised agenda contains language describing Python as a research/decision engine and a tester loop in which Python builds the decision, while the later governing project decision requires MQL5 to be the trading brain and Python to provide external information only. This blueprint does not silently erase the historical wording; it records the conflict and applies the later explicit decision as the controlling architecture.
+Known implementation evidence: stored V38 forensic audits report critical data/lifecycle defects including first-observation-frozen bars, future-data leakage in sweep-reaction data, future-state/sweep-credit contamination, ever-flags/final-state contamination, and other production-readiness gaps. These findings are treated as implementation-status evidence and engineering risks, not as permission to redesign the project.
+Source Register
+ID
+Document
+Role
+S1
+AlgoMind_Project_Foundation_Agenda_Detailed_Revised_CFTC.docx
+Latest approved foundation/architecture source of truth used for requirements, CFTC integration, risk, news/options, ML, testing and phase order.
+S2
+AlgoMind_Project_Foundation_Agenda_Detailed.docx
+Superseded predecessor; used only to identify conflicts/duplication and confirm continuity.
+S3
+AlgoMind_Reversion_Testing.xlsx
+Testing artifact; used for parameter/test-history context, not to override the revised project specification.
+S4
+Stored V38 forensic audit artifacts (Pasted markdown/text files)
+Implementation evidence for current V38 status, defects, leakage and production-readiness gaps; not treated as new project requirements.
+END OF ENGINEERING-READY ALGOMIND MASTER SPECIFICATION &amp; IMPLEMENTATION BLUEPRINT

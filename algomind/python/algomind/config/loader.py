@@ -57,7 +57,7 @@ class AlgoMindConfig :
 
 def default_config_path() -> Path :
     """Path to the bundled default.yaml."""
-    return Path(__file__.resolve()).parents[3] / "config" / "default.yaml"
+    return Path(__file__).resolve().parents[3] / "config" / "default.yaml"
 
 
 def load_config(path: Path | str | None = None ) -> AlgoMindConfig :

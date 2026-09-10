@@ -16,7 +16,7 @@ market:
 risk:
   risk_per_trade_pct: 0.5    # % of equity risked per trade
   daily_limit_pct:   2.0    # % of equity max exposure per day
-  total_limit_pct:   6.0     # % of equity max aggregate exposure
+  total_limit_pct:   5.0     # % of equity max aggregate exposure (authoritative: 5.0% total loss/drawdown limit)
 
 execution:
   max_spread:            40.0   # max allowed spread in points

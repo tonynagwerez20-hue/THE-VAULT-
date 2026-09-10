@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from algomind.core.enums import (
     DataQuality,
+    DecisionAction,
     Direction,
     Regime,
     SessionState,
@@ -73,8 +74,25 @@ def _guard_increasing_timestamp(values: dict[str, Any]) -> dict[str, Any]:
 
 
 class MarketSnapshot(PointInTime):
-    """Information observable about a symbol at a moment in time."""
+    """Information observable about a symbol at a moment in time.
+
+
+
+    Finalized to the documented minimum snapshot contract (D3 §20):
+    snapshot_id, timestamp, symbol, timeframe, bid, ask, spread, OHLC
+    state, broker metadata, account state, session, data-quality state,
+    external-context availability and schema version. The authoritative engineering
+    specification leaves the exact snapshot field schema NOT SPECIFIED (D4 §6);
+    therefore documented structures without a frozen layout are carried as free-form
+    dicts: exact field layout for OHLC/broker/account/session/external-context is
+    left open so later phases can fill them without restructuring this model.
+
+
+
+    """
+
     symbol: str = Field(min_length=1, max_length=32)
+    snapshot_id: str = Field(default_factory=lambda: f"snap-{uuid4().hex[:16]}", max_length=64)
     bid: Price | None = Field(default=None, ge=0.0)
     ask: Price | None = Field(default=None, ge=0.0)
     last: Price | None = Field(default=None, ge=0.0)
@@ -82,6 +100,22 @@ class MarketSnapshot(PointInTime):
     tick_volume: Volume | None = Field(default=None, ge=0.0)
     spread: Price | None = Field(default=None, ge=0.0)
     timeframe: Timeframe | None = None
+    ohlc: dict[str, Any] = Field(default_factory=dict)
+
+    broker_metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+
+    account_state: dict[str, Any] = Field(default_factory=dict)
+
+
+
+    session_state: SessionState | None = None
+    external_context_availability: dict[str, Any] = Field(default_factory=dict)
+
+
+
+    schema_version: int = Field(default=1, ge=1, le=99)
     data_quality: DataQuality = DataQuality.MISSING
 
     _normalize_prices = field_validator("bid", "ask", "last", mode="before")(lambda v: _strip_nan_before(v))
@@ -95,7 +129,6 @@ class MarketSnapshot(PointInTime):
                 if bid > ask:
                     raise ValueError("bid must not exceed ask")
         return self
-
 
 class OrderflowSnapshot(PointInTime):
     """Orderflow information available at a timestamp.
@@ -122,9 +155,13 @@ class OrderflowSnapshot(PointInTime):
 class FeatureSnapshot(PointInTime):
     """Container for calculated features at a timestamp.
 
-    Phase 1 defines the contract only: no feature is computed yet. Each
-    feature bucket is free-form so later phases can fill it without restructuring
-    this model. All values must derive from data at timestamps <= ``timestamp``.
+    Feature groups finalize the documented canonical feature contract (D3 §9;
+    D1 §13). The authoritative engineering specification defers exact formulas
+    and units (D4 §7 feature engine), so each bucket is free-form:
+    later phases can fill it without restructuring this model. All values must
+    derive from data at timestamps <= ``timestamp``. Availability of external
+    context (news, CFTC positioning) is carried as separate features so
+    degraded/unavailable state is explicit, never silently neutral.
     """
 
     symbol: str = Field(min_length=1, max_length=32)
@@ -133,23 +170,32 @@ class FeatureSnapshot(PointInTime):
     structure_features: dict[str, Any] = Field(default_factory=dict)
     vwap_features: dict[str, Any] = Field(default_factory=dict)
     value_area_features: dict[str, Any] = Field(default_factory=dict)
-
     liquidity_features: dict[str, Any] = Field(default_factory=dict)
     imbalance_features: dict[str, Any] = Field(default_factory=dict)
     orderflow_features: dict[str, Any] = Field(default_factory=dict)
+    options_features: dict[str, Any] = Field(default_factory=dict)
+    news_features: dict[str, Any] = Field(default_factory=dict)
+    session_features: dict[str, Any] = Field(default_factory=dict)
+    execution_features: dict[str, Any] = Field(default_factory=dict)
+    cftc_features: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
-
-
 class MarketState(PointInTime):
-    """Market regime/context at a point in time."""
+    """Market regime/context at a point in time.
+
+    Per-dimension state is carried as ``Regime | None``: ``None`` means "not
+    yet classified" at this timestamp. The canonical regime vocabulary (D3 §13 /
+    D4 REQ-012) has no UNKNOWN value; NO_TRADE is the documented fail-closed
+    output for insufficient quality/conflicting evidence.
+    """
+
     symbol: str = Field(min_length=1, max_length=32)
-    trend_state: Regime = Regime.UNKNOWN
-    volatility_state: Regime = Regime.UNKNOWN
-    liquidity_state: Regime = Regime.UNKNOWN
-    orderflow_state: Regime = Regime.UNKNOWN
-    value_state: Regime = Regime.UNKNOWN
-    structure_state: Regime = Regime.UNKNOWN
-    session_state: SessionState = SessionState.UNKNOWN
+    trend_state: Regime | None = None
+    volatility_state: Regime | None = None
+    liquidity_state: Regime | None = None
+    orderflow_state: Regime | None = None
+    value_state: Regime | None = None
+    structure_state: Regime | None = None
+    session_state: SessionState | None = None
     directional_bias: Direction = Direction.NONE
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     data_quality: DataQuality = DataQuality.MISSING
@@ -166,7 +212,8 @@ class Signal(PointInTime):
     take_profit: Price | None = Field(default=None, ge=0.0)
     timestamp: datetime
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
-    regime: Regime = Regime.UNKNOWN
+    regime: Regime | None = None
+    # None: regime not computed yet. Canonical vocabulary (D3/D4) has no UNKNOWN.
     reason_codes: list[str] = Field(default_factory=list)
     risk_multiplier: float = Field(default=1.0, gt=0.0)
     data_quality: DataQuality = DataQuality.MISSING
@@ -277,4 +324,52 @@ class StructureEvent(PointInTime) :
                 if high < low:
                     raise ValueError("price_range_high must not be below price_range_low")
         return _guard_increasing_timestamp(self.model_dump())
+
+class DecisionMessage(PointInTime):
+    """Canonical decision message (D4 REQ-029; D3 §20; D1 §16).
+
+    Carries the required documented concepts: decision_id, timestamp, symbol,
+    regime, hypothesis, action, confidence, entry/reference zone, stop, target,
+    risk allocation, feature_version, model_version, data_quality, reason_code,
+    expiry and schema_version.
+
+    The authoritative engineering specification (D4 §8) leaves the exact serialization
+    format, field types, optionality rules and transport framing NOT SPECIFIED.
+    Where a field type is not documented, it is marked REQUIRES DECISION below and
+    carried with the least-committal scaffold-compatible carrier (e.g. free-form dict)
+    so the contract can be frozen at Phase 0 without inventing semantics.
+    """
+
+    decision_id: str = Field(default_factory=lambda: f"dec-{uuid4().hex[:16]}", max_length=64)
+    symbol: str = Field(min_length=1, max_length=32)
+    regime: Regime | None = None
+    hypothesis: StrategyType = StrategyType.NONE
+    action: DecisionAction = DecisionAction.NO_TRADE
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    # entry_reference_zone: exact structure NOT SPECIFIED (D4 REQ-029) → free-form.
+    entry_reference_zone: dict[str, Any] = Field(default_factory=dict)
+    stop: Price | None = Field(default=None, ge=0.0)
+    target: Price | None = Field(default=None, ge=0.0)
+    # risk_allocation: exact structure NOT SPECIFIED (D4 REQ-029) → free-form.
+    risk_allocation: dict[str, Any] = Field(default_factory=dict)
+    # feature_version/model_version: exact types NOT SPECIFIED (D4 §8) → REQUIRES DECISION.
+    feature_version: str | None = None
+    model_version: str | None = None
+    data_quality: DataQuality = DataQuality.MISSING
+    # reason_code: documented field name (D4 REQ-029); type/optionality NOT SPECIFIED.
+    reason_code: str | None = None
+    expiry: datetime | None = None
+    schema_version: int = Field(default=1, ge=1, le=99)
+
+    @field_validator("stop", "target", mode="before")
+    @classmethod
+    def _strip_nan_prices(cls, v: Any) -> Any:
+        return _strip_nan_before(v)
+
+    @model_validator(mode="after")
+    def _expiry_not_before_timestamp(self) -> "DecisionMessage":
+        if self.expiry is not None:
+            if self.expiry < self.timestamp:
+                raise ValueError("expiry must not be earlier than timestamp")
+        return self
 

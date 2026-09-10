@@ -21,16 +21,42 @@ class StrategyType(str, Enum):
     NONE = "NONE"
 
 
+class DecisionAction(str, Enum):
+    """Decision-gate output action (D4 REQ-013; D1 §5 L6).
+
+    Canonical vocabulary: TRADE, REDUCE, WAIT, NO_TRADE. ``NO_TRADE``
+    is the fail-closed output when evidence/quality/risk does not permit a
+    trade (non-negotiable principle P-07.``.
+    """
+
+    TRADE = "TRADE"
+    REDUCE = "REDUCE"
+    WAIT = "WAIT"
+    NO_TRADE = "NO_TRADE"
+
+
 class Regime(str, Enum):
-    """Market regime/context classification."""
+    """Market regime/context classification.
+
+    Canonical vocabulary established by the authoritative engineering
+    specification (D3 §13 / D4 REQ-012): TREND_UP, TREND_DOWN,
+    BALANCED, EXPANSION, EXHAUSTION, NEWS and NO_TRADE. The superseded
+    scaffold words (RANGE, COMPRESSION, REVERSAL, UNKNOWN) are removed
+    because no equivalence to the canonical states is established in the
+    authoritative documents.
+
+    ``NO_TRADE`` is a valid regime/output, not a system failure.
+
+
+    """
 
     TREND_UP = "TREND_UP"
     TREND_DOWN = "TREND_DOWN"
-    RANGE = "RANGE"
+    BALANCED = "BALANCED"
     EXPANSION = "EXPANSION"
-    COMPRESSION = "COMPRESSION"
-    REVERSAL = "REVERSAL"
-    UNKNOWN = "UNKNOWN"
+    EXHAUSTION = "EXHAUSTION"
+    NEWS = "NEWS"
+    NO_TRADE = "NO_TRADE"
 
 
 class DataQuality(str, Enum):

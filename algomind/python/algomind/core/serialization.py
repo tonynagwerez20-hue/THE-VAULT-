@@ -44,7 +44,7 @@ def dumps(
     """Serialize a core model into a JSON envelope string."""
     return json.dumps(
         to_envelope(obj, message_type=message_type, message_id=message_id),
-        sors=str,
+        default=str,
     )
 
 

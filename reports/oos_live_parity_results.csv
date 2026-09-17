@@ -1,0 +1,7 @@
+Parameter,Backtest,MonteCarlo,OOS,SmallAccount,PropFirm,Live,ParityStatus
+Strategy Version,AMIGO v1.0,AMIGO v1.0,AMIGO v1.0,AMIGO v1.0,AMIGO v1.0,AMIGO v1.0,IDENTICAL
+Signal Threshold,0.35,0.35,0.35,0.35,0.35,0.35,IDENTICAL
+Symbol / Timeframe,XAUUSDm M5,XAUUSDm M5,XAUUSDm M5,XAUUSDm M5,XAUUSDm M5,XAUUSDm M5,IDENTICAL
+SL / TP Methodology,ATR 2.0RR,ATR 2.0RR,ATR 2.0RR,ATR 2.0RR,ATR 2.0RR,ATR 2.0RR,IDENTICAL
+Intended Risk %,0.50%,0.50%,0.50%,0.50%,0.20%-0.25%,Account-Sized,ACCOUNT-SPECIFIC
+Min Lot Constraint,Enforced,Enforced,Enforced,Enforced (Distorted),Enforced,Enforced,EXECUTION-SPECIFIC

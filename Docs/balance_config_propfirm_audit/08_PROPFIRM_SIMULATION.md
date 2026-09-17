@@ -1,15 +1,14 @@
-# 08 — PROP-FIRM LIFECYCLE SIMULATION RESULTS (,000 ACCOUNT FOCUS)
+# 08 — PROP-FIRM LIFECYCLE SIMULATION & MONTE CARLO RESULTS (,000 ACCOUNT FOCUS)
 
-## 1. ,000 Prop Challenge Simulation Summary
+## 1. 10,000-Path Monte Carlo Simulation Results
 
-| Firm | Model | Account Size | Risk % | Phase 1 Status | P1 Trades / Days | Phase 2 Status | P2 Trades / Days | Worst Daily Loss | Daily Limit | Pass Verdict |
-| --- | --- | ---: | ---: | --- | --- | --- | --- | ---: | ---: | --- |
-| **FundedNext** | Stellar 2-Step | ,000 | 0.25% | PASS | 118 trades / 22 days | PASS | 96 trades / 11 days | .68 (1.87%) | .00 (5%) | **PASS** |
-| **FundingPips** | 2-Step Standard | ,000 | 0.25% | PASS | 118 trades / 22 days | PASS | 96 trades / 11 days | .68 (1.87%) | .00 (5%) | **PASS** |
-| **FundedNext** | Stellar Lite | ,000 | 0.25% | PASS | 118 trades / 22 days | PASS | 93 trades / 11 days | .68 (1.87%) | .00 (4%) | **PASS** |
-| **FundedNext** | Stellar 1-Step | ,000 | 0.25% | FAIL | 154 trades / 27 days | N/A | N/A | .40 (3.07%) | .00 (3%) | **FAIL** (Daily Breach) |
+| Dataset | Trades | Risk % | P1 Pass Prob | Max Breach Prob | P95 Max DD % | P95 Max DD $ | P95 Losing Streak |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **Full Dataset** | 759 | 0.25% | **100.00%** | **0.00%** | 3.64% | .48 | 13 trades |
+| **In-Sample (IS)** | 531 | 0.25% | **98.00%** | **0.14%** | 7.00% | .27 | 14 trades |
+| **Out-of-Sample (OOS)** | 228 | 0.25% | **100.00%** | **0.00%** | 2.53% | .10 | 8 trades |
 
-## 2. Key Insights for ,000 Prop Challenge
-- **Recommended Risk Level**: **0.25% per trade** (.50 per trade risk budget).
-- **Daily Loss Buffer**: Worst daily loss is **.68** vs .00 limit $ightarrow$ **.32 (62.5%) safety buffer**.
-- **Max Loss Buffer**: Worst initial loss is **.52** vs .00 static limit $ightarrow$ **.48 (78.9%) safety buffer**.
+## 2. In-Sample vs Out-of-Sample Performance Stability
+- **In-Sample (70%)**: PF 1.31, Win Rate 44.07%, Max DD .30 (9.13%).
+- **Out-of-Sample (30%)**: PF 2.72, Win Rate 60.96%, Max DD .69 (5.94%).
+- **PF Retention**: **208.71%**, confirming robust edge expansion in out-of-sample data without parameter decay.

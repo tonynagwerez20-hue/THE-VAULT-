@@ -1,0 +1,10 @@
+{
+  "MedianEndingBalance": 8592.045000000006,
+  "P5EndingBalance": 7239.183500000005,
+  "P95EndingBalance": 9910.824999999999,
+  "ProbProfitPct": 100.0,
+  "MedianMaxDDPct": 2.863643736350694,
+  "P95MaxDDPct": 4.847353595142057,
+  "MaxLosingStreakP95": 13,
+  "ProbDDGt15Pct": 0.0
+}

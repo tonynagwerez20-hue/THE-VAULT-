@@ -1,0 +1,67 @@
+# AlgoMind configuration reference — FINAL BASELINE
+# Source: AlgoMind_Final_Mathematical_Specification_v2.0
+#
+# This file is documentation only. The Python service does NOT read it.
+# Runtime values live in AMIGO.mq5 OnInit and in the Python adapter
+# defaults. If a constant changes here, it must change in those places
+# too and the schema version must be bumped.
+
+schema_version: 100
+
+features:
+  atr_period: 14
+  swing_k: 2
+  zscore_window: 20
+  value_area_pct: 0.70
+  pressure_threshold: 0.25
+  surge_threshold: 0.60
+
+strategy:
+  score_threshold: 0.65
+  score_margin: 0.15
+
+regime:
+  threshold: 0.60
+  hysteresis: 0.10
+  persistence_bars: 2
+
+risk:
+  per_trade_pct: 0.5
+  daily_loss_pct: 2.0
+  total_dd_pct: 5.0
+  partial_rr: 2.0
+  partial_fraction: 0.50
+  trail_atr_mult: 1.5
+  trail_activate_r: 1.0
+
+spread:
+  max_spread_atr_pct: 0.10
+
+external_influence_caps:
+  cftc: 0.05
+  options: 0.10
+
+bridge:
+  inbox_filename: "algomind_ext_in.txt"
+  outbox_filename: "algomind_mkt_out.txt"
+  stale_threshold_s: 120
+
+ml:
+  enabled: false
+
+cftc:
+  report_family: "Disaggregated"
+  category: "Managed Money"
+  lookback_releases: 156
+
+options:
+  primary_source: "CBOE"
+  fallback_source: "yfinance"
+  proxy_symbol: "GLD"
+  proxy_label: "PROXY_GLD"
+
+news:
+  source: "ForexFactory"
+  buffer_minutes: 30
+  reaction_bars: 3
+  bar_minutes: 5

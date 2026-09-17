@@ -54,6 +54,10 @@ struct AlgoMindConfig
    int      news_mode;            // 0=OFF 1=FILTER 2=TRADE 3=HYBRID
    int      news_buffer_mins;     // 30
 
+   //--- Min Lot Risk Override
+   bool     allow_min_lot_override; // false = strict EA risk cap; true = allow min lot override
+   double   max_allowed_distortion; // e.g. 5.0 = allow up to 5x risk distortion
+
    //--- External context influence caps (per Math Spec §27)
    double   options_max_influence; // 0.10
    double   cftc_max_influence;    // 0.05

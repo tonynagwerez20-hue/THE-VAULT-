@@ -120,14 +120,26 @@ double ComputeLotSize(string symbol, double entry, double stop, double risk_pct,
 
    if(lots < vol_min)
    {
-      if(vol_min * loss_per_lot > risk_amount)
+      double min_lot_loss = vol_min * loss_per_lot;
+      double distortion = (risk_amount > 0.0) ? (min_lot_loss / risk_amount) : 999.0;
+
+      if(g_cfg.allow_min_lot_override && (g_cfg.max_allowed_distortion <= 0.0 || distortion <= g_cfg.max_allowed_distortion))
+      {
+         lots = vol_min;
+         LogMsg(LOG_INFO, "SIZE_OVERRIDE", StringFormat("MIN_LOT_OVERRIDE eq=%.2f risk_amt=%.2f min_lot_loss=%.2f dist=%.2fx <= max_dist=%.2fx",
+                equity, risk_amount, min_lot_loss, distortion, g_cfg.max_allowed_distortion));
+      }
+      else if(min_lot_loss > risk_amount)
       {
          err = "MIN_LOT_EXCEEDS_RISK";
-         LogMsg(LOG_INFO, "SIZE_DIAG", StringFormat("eq=%.2f risk_amt=%.2f stop_dist=%.4f tick_sz=%.5f tick_val=%.2f loss_per_lot=%.2f min_lot_loss=%.2f min_vol=%.2f",
-                equity, risk_amount, stop_distance, tick_size, tick_value, loss_per_lot, vol_min * loss_per_lot, vol_min));
+         LogMsg(LOG_INFO, "SIZE_DIAG", StringFormat("eq=%.2f risk_amt=%.2f stop_dist=%.4f tick_sz=%.5f tick_val=%.2f loss_per_lot=%.2f min_lot_loss=%.2f min_vol=%.2f dist=%.2fx",
+                equity, risk_amount, stop_distance, tick_size, tick_value, loss_per_lot, min_lot_loss, vol_min, distortion));
          return 0.0;
       }
-      lots = vol_min;
+      else
+      {
+         lots = vol_min;
+      }
    }
    if(lots > vol_max) lots = vol_max;
 

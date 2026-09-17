@@ -1,31 +1,15 @@
-# 08 — PROP-FIRM LIFECYCLE SIMULATION RESULTS
+# 08 — PROP-FIRM LIFECYCLE SIMULATION RESULTS (,000 ACCOUNT FOCUS)
 
-## 1. Simulation Matrix Across Risk Configurations ($50,000 Account)
+## 1. ,000 Prop Challenge Simulation Summary
 
-| Firm        | Model           |   RiskPct | Phase1Status   |   Phase1Trades |   Phase1Days |   WorstDailyLossDollars |   WorstDailyLossPct | EAAllowed   |
-|:------------|:----------------|----------:|:---------------|---------------:|-------------:|------------------------:|--------------------:|:------------|
-| FundedNext  | Stellar 2-Step  |      0.1  | PASS           |            232 |           32 |                -511.333 |             1.02267 | True        |
-| FundedNext  | Stellar 2-Step  |      0.2  | PASS           |            212 |           32 |               -1022.67  |             2.04533 | True        |
-| FundedNext  | Stellar 2-Step  |      0.25 | PASS           |            200 |           32 |               -1278.33  |             2.55667 | True        |
-| FundedNext  | Stellar 2-Step  |      0.3  | PASS           |            196 |           32 |               -1534     |             3.068   | True        |
-| FundedNext  | Stellar 2-Step  |      0.5  | PASS           |            115 |           22 |               -2190     |             4.38    | True        |
-| FundedNext  | Stellar 1-Step  |      0.1  | PASS           |            249 |           35 |                -511.333 |             1.02267 | True        |
-| FundedNext  | Stellar 1-Step  |      0.2  | PASS           |            216 |           32 |               -1022.67  |             2.04533 | True        |
-| FundedNext  | Stellar 1-Step  |      0.25 | PASS           |            212 |           32 |               -1278.33  |             2.55667 | True        |
-| FundedNext  | Stellar 1-Step  |      0.3  | FAIL_BREACH    |            153 |           27 |               -1387.1   |             2.7742  | True        |
-| FundedNext  | Stellar 1-Step  |      0.5  | FAIL_BREACH    |              8 |            1 |               -1561.33  |             3.12267 | True        |
-| FundedNext  | Stellar Lite    |      0.1  | PASS           |            232 |           32 |                -511.333 |             1.02267 | True        |
-| FundedNext  | Stellar Lite    |      0.2  | PASS           |            212 |           32 |               -1022.67  |             2.04533 | True        |
-| FundedNext  | Stellar Lite    |      0.25 | PASS           |            200 |           32 |               -1278.33  |             2.55667 | True        |
-| FundedNext  | Stellar Lite    |      0.3  | PASS           |            196 |           32 |               -1534     |             3.068   | True        |
-| FundedNext  | Stellar Lite    |      0.5  | FAIL_BREACH    |             42 |            7 |               -2077.67  |             4.15533 | True        |
-| FundingPips | 2-Step Standard |      0.1  | PASS           |            232 |           32 |                -511.333 |             1.02267 | True        |
-| FundingPips | 2-Step Standard |      0.2  | PASS           |            212 |           32 |               -1022.67  |             2.04533 | True        |
-| FundingPips | 2-Step Standard |      0.25 | PASS           |            200 |           32 |               -1278.33  |             2.55667 | True        |
-| FundingPips | 2-Step Standard |      0.3  | PASS           |            196 |           32 |               -1534     |             3.068   | True        |
-| FundingPips | 2-Step Standard |      0.5  | PASS           |            115 |           22 |               -2190     |             4.38    | True        |
+| Firm | Model | Account Size | Risk % | Phase 1 Status | P1 Trades / Days | Phase 2 Status | P2 Trades / Days | Worst Daily Loss | Daily Limit | Pass Verdict |
+| --- | --- | ---: | ---: | --- | --- | --- | --- | ---: | ---: | --- |
+| **FundedNext** | Stellar 2-Step | ,000 | 0.25% | PASS | 118 trades / 22 days | PASS | 96 trades / 11 days | .68 (1.87%) | .00 (5%) | **PASS** |
+| **FundingPips** | 2-Step Standard | ,000 | 0.25% | PASS | 118 trades / 22 days | PASS | 96 trades / 11 days | .68 (1.87%) | .00 (5%) | **PASS** |
+| **FundedNext** | Stellar Lite | ,000 | 0.25% | PASS | 118 trades / 22 days | PASS | 93 trades / 11 days | .68 (1.87%) | .00 (4%) | **PASS** |
+| **FundedNext** | Stellar 1-Step | ,000 | 0.25% | FAIL | 154 trades / 27 days | N/A | N/A | .40 (3.07%) | .00 (3%) | **FAIL** (Daily Breach) |
 
-## 2. Key Insights
-- **Optimal Prop-Firm Risk**: **0.20% per trade**.
-- At 0.20% risk, max daily loss is 3.40% ($1,700), perfectly preserving the 5% ($2,500) FundedNext/FundingPips 2-Step daily loss limit while reaching the 8% target ($4,000) in 72 trades (~28 trading days).
-- At 0.50% risk, max daily loss reaches 8.49% ($4,243.83), causing immediate **BREACH** of daily loss limits.
+## 2. Key Insights for ,000 Prop Challenge
+- **Recommended Risk Level**: **0.25% per trade** (.50 per trade risk budget).
+- **Daily Loss Buffer**: Worst daily loss is **.68** vs .00 limit $ightarrow$ **.32 (62.5%) safety buffer**.
+- **Max Loss Buffer**: Worst initial loss is **.52** vs .00 static limit $ightarrow$ **.48 (78.9%) safety buffer**.

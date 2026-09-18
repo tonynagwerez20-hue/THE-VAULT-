@@ -56,6 +56,13 @@ void LogFeatureDiagnostics(datetime ts, string symbol, ENUM_TIMEFRAMES tf,
                (int)action, reason);
 }
 
+void LogMGLEShadow(datetime ts, string symbol, string macro_regime, double ry_z, double usd_z, double cftc_pct, string cftc_extreme, double geo_index, int active_levels_count)
+{
+   if(LOG_INFO < g_log_level) return;
+   PrintFormat("[AlgoMind][MGLE_SHADOW] ts=%s sym=%s reg=%s ry_z=%.2f usd_z=%.2f cftc_pct=%.1f%% cftc_ext=%s geo_idx=%.2f active_lvls=%d (SHADOW_MODE=1)",
+               TimeToString(ts, TIME_DATE|TIME_MINUTES), symbol, macro_regime, ry_z, usd_z, cftc_pct, cftc_extreme, geo_index, active_levels_count);
+}
+
 long NextDecisionId()
 {
    g_decision_seq++;

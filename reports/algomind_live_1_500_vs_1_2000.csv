@@ -4,10 +4,10 @@ Observed Account Leverage,1:500 (Historical),1:2000 (Active MT5 Server setting)
 "Required Margin per 0.01 lot (Gold $4,348)",$8.70,$2.17
 Free Margin at $500 Equity,$491.30,$497.83
 0.01 Lot Executable (Margin Check),YES (Margin $8.70 < $500),YES (Margin $2.17 < $500)
-MIN_LOT_EXCEEDS_RISK Rejections,49 / 49 (100%),49 / 49 (100%)
+MIN_LOT_EXCEEDS_RISK Rejections,86 / 86 (100%),86 / 86 (100%)
 Margin Rejections,0 (Free margin is sufficient),0 (Free margin is sufficient)
 Executed Trades Count,0 (Blocked by MIN_LOT_EXCEEDS_RISK),0 (Blocked by MIN_LOT_EXCEEDS_RISK)
 Intended Risk ($ / %),$2.50 / 0.50%,$2.50 / 0.50%
-Mean Minimum-Lot SL Loss ($),$12.83,$12.83
-Mean Actual Risk %,10.372%,10.372%
-Mean Risk Distortion,20.823x,20.823x
+Mean Minimum-Lot SL Loss ($),$9.93,$9.93
+Mean Actual Risk %,10.544%,10.544%
+Mean Risk Distortion,21.493x,21.493x

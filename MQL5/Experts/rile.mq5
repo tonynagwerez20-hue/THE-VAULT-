@@ -95,7 +95,7 @@ int OnInit()
    g_cfg.zscore_window       = 20;
    g_cfg.value_area_pct      = 0.70;
    g_cfg.pressure_threshold  = 0.25;
-   g_cfg.surge_threshold     = 0.60;
+   g_cfg.surge_threshold     = 0.35;
    g_cfg.score_threshold     = 0.65;
    g_cfg.score_margin        = 0.15;
    g_cfg.regime_threshold    = 0.60;

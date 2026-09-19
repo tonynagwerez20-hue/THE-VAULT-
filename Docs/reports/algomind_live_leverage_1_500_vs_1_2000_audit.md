@@ -66,8 +66,8 @@ From real MT5 terminal log files (`C:/Users/USER/AppData/Roaming/MetaQuotes/Term
 ## 6. Live Risk Mathematics Proof
 
 $$	ext{Required Margin} = rac{	ext{Gold Price} 	imes 100 	imes 0.01}{	ext{Leverage}}$$
-- At 1:500: $\$4,348 	imes 100 	imes 0.01 / 500 = \$8.70$
-- At 1:2000: $\$4,348 	imes 100 	imes 0.01 / 2000 = \$2.17$
+- At 1:500: $4,348 * 100 * 0.01 / 500 = $8.70
+- At 1:2000: $4,348 * 100 * 0.01 / 2000 = $2.17
 
 $$	ext{Monetary Loss at SL} = 	ext{Stop Distance} 	imes 	ext{Contract Size} 	imes 	ext{Volume}$$
 $$	ext{Monetary Loss at SL (0.01 lot)} = 	ext{Stop Distance} 	imes 100 	imes 0.01 = 	ext{Stop Distance (in USD)}$$

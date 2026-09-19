@@ -73,7 +73,11 @@ for file_name, line_num, log_str in live_logs_parsed:
         for p in parts:
             if '=' in p:
                 k, v = p.split('=', 1)
-                kv[k] = float(v)
+                v_clean = v.replace('x', '').replace('$', '').replace('%', '')
+                try:
+                    kv[k] = float(v_clean)
+                except ValueError:
+                    pass
         
         eq = kv.get('eq', 500.0)
         risk_amt = kv.get('risk_amt', 2.50)
@@ -491,8 +495,8 @@ From real MT5 terminal log files (`C:/Users/USER/AppData/Roaming/MetaQuotes/Term
 ## 6. Live Risk Mathematics Proof
 
 $$\text{Required Margin} = \frac{\text{Gold Price} \times 100 \times 0.01}{\text{Leverage}}$$
-- At 1:500: $\$4,348 \times 100 \times 0.01 / 500 = \$8.70$
-- At 1:2000: $\$4,348 \times 100 \times 0.01 / 2000 = \$2.17$
+- At 1:500: $4,348 * 100 * 0.01 / 500 = $8.70
+- At 1:2000: $4,348 * 100 * 0.01 / 2000 = $2.17
 
 $$\text{Monetary Loss at SL} = \text{Stop Distance} \times \text{Contract Size} \times \text{Volume}$$
 $$\text{Monetary Loss at SL (0.01 lot)} = \text{Stop Distance} \times 100 \times 0.01 = \text{Stop Distance (in USD)}$$
@@ -578,7 +582,7 @@ This report presents the historical simulation audit comparing **1:500** versus 
 ## 4. Key Simulation Takeaways
 1. **At $50 and $100**: Moving from 1:500 to 1:2000 eliminates margin rejections entirely (margin rejections drop from 758 to 0 at $50). However, trades transfer directly into `MIN_LOT_EXCEEDS_RISK` rejections.
 2. **At $500**: Required margin is already easily satisfied at 1:500 ($8.70 < $500). Therefore, moving to 1:2000 produces **IDENTICAL** trade execution counts, risk percentages, and drawdown curves.
-3. **Minimum Viable Balance**: To achieve genuine risk compliance ($\le 0.50\%$ risk per trade) on 100% of historical trades without relying on min-lot risk distortion, a balance of **$6,895** is required (for worst-case stop $34.48). For mean stop ($12.90), **$2,580** is required.
+3. **Minimum Viable Balance**: To achieve genuine risk compliance (<= 0.50% risk per trade) on 100% of historical trades without relying on min-lot risk distortion, a balance of **$6,895** is required (for worst-case stop $34.48). For mean stop ($12.90), **$2,580** is required.
 
 ---
 

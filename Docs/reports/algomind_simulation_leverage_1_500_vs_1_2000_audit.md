@@ -62,7 +62,7 @@ This report presents the historical simulation audit comparing **1:500** versus 
 ## 4. Key Simulation Takeaways
 1. **At $50 and $100**: Moving from 1:500 to 1:2000 eliminates margin rejections entirely (margin rejections drop from 758 to 0 at $50). However, trades transfer directly into `MIN_LOT_EXCEEDS_RISK` rejections.
 2. **At $500**: Required margin is already easily satisfied at 1:500 ($8.70 < $500). Therefore, moving to 1:2000 produces **IDENTICAL** trade execution counts, risk percentages, and drawdown curves.
-3. **Minimum Viable Balance**: To achieve genuine risk compliance ($\le 0.50\%$ risk per trade) on 100% of historical trades without relying on min-lot risk distortion, a balance of **$6,895** is required (for worst-case stop $34.48). For mean stop ($12.90), **$2,580** is required.
+3. **Minimum Viable Balance**: To achieve genuine risk compliance (<= 0.50% risk per trade) on 100% of historical trades without relying on min-lot risk distortion, a balance of **$6,895** is required (for worst-case stop $34.48). For mean stop ($12.90), **$2,580** is required.
 
 ---
 

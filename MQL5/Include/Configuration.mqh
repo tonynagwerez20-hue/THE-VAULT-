@@ -22,7 +22,7 @@ struct AlgoMindConfig
 
    //--- Delta
    double   pressure_threshold;   // 0.25
-   double   surge_threshold;      // 0.60
+   double   surge_threshold;      // 0.35 (Recalibrated from 0.60 for proxy fusion)
 
    //--- Strategy gate
    double   score_threshold;      // 0.65

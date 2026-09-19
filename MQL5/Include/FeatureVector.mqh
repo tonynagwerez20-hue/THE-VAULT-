@@ -104,8 +104,8 @@ bool BuildFeatureVector(const string symbol, const AlgoMindConfig &cfg,
       }
    }
 
-   fs.last_sweep_dir = 0;
-   fs.sweep_reject = false;
+   fs.last_sweep_dir = st.last_sweep_dir;
+   fs.sweep_reject   = st.sweep_reject;
    fs.acceptance_above = false;
    fs.acceptance_below = false;
 

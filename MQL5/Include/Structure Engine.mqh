@@ -62,7 +62,7 @@ bool FindLatestConfirmedSwing(const MqlRates &r[], int total, bool want_high,
    return false;
 }
 
-//--- BOS/CHOCH (Math Spec §7)
+//--- BOS/CHOCH/Sweep (Math Spec §7)
 struct StructureState
 {
    int      dir;              // -1/0/+1
@@ -72,6 +72,10 @@ struct StructureState
    bool     bear_choch;
    double   last_swing_high;
    double   last_swing_low;
+   bool     bull_sweep;
+   bool     bear_sweep;
+   bool     sweep_reject;
+   int      last_sweep_dir;   // +1=bull sweep (liquidity grab low), -1=bear sweep (liquidity grab high)
 };
 
 StructureState EvaluateStructure(const string symbol, ENUM_TIMEFRAMES tf,
@@ -82,6 +86,8 @@ StructureState EvaluateStructure(const string symbol, ENUM_TIMEFRAMES tf,
    s.bull_bos = false; s.bear_bos = false;
    s.bull_choch = false; s.bear_choch = false;
    s.last_swing_high = 0.0; s.last_swing_low = 0.0;
+   s.bull_sweep = false; s.bear_sweep = false;
+   s.sweep_reject = false; s.last_sweep_dir = 0;
 
    MqlRates r[];
    int got = CopyRates(symbol, tf, 1, 200, r);
@@ -94,10 +100,26 @@ StructureState EvaluateStructure(const string symbol, ENUM_TIMEFRAMES tf,
 
    // BOS uses last CLOSED bar's close vs confirmed swing level + 0.05*ATR
    double close_t = r[0].close;
+   double high_t  = r[0].high;
+   double low_t   = r[0].low;
+
    if(s.last_swing_high > 0.0 && close_t > s.last_swing_high + 0.05*atr)
       s.bull_bos = true;
    if(s.last_swing_low > 0.0 && close_t < s.last_swing_low - 0.05*atr)
       s.bear_bos = true;
+
+   // Liquidity Sweep Rejection: wick breaches swing level, but close rejects back inside
+   if(s.last_swing_low > 0.0 && low_t < s.last_swing_low && close_t >= s.last_swing_low)
+   {
+      s.bull_sweep = true;
+   }
+   if(s.last_swing_high > 0.0 && high_t > s.last_swing_high && close_t <= s.last_swing_high)
+   {
+      s.bear_sweep = true;
+   }
+
+   s.sweep_reject = (s.bull_sweep || s.bear_sweep);
+   s.last_sweep_dir = s.bull_sweep ? +1 : (s.bear_sweep ? -1 : 0);
 
    int new_dir = prev_dir;
    if(s.bull_bos) new_dir = +1;

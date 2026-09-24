@@ -190,4 +190,8 @@ struct FeatureSnapshot
    //--- Acceptance
    bool     acceptance_above;
    bool     acceptance_below;
+
+   //--- Approved GAP-01 & GAP-02 Strategy Evidence Additions
+   double   delta_divergence;     // 0.0 to 1.0 classical price vs proxy-CVD divergence
+   double   displacement;         // 0.0 to 1.0 ATR-normalized BOS break distance
 };

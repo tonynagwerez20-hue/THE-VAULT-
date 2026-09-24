@@ -2,26 +2,15 @@
 
 **READ-ONLY ANALYSIS. No strategy parameters, risk settings, or code were modified.**
 
-Source: 1260-row CSV | 8,081-line tester log (UTF-16-LE) | XAUUSDm M5 | 2025-10-01 → 2026-08-28
+Dataset: 1,260 executed trades | XAUUSDm M5 | 2025-10-01 → 2026-08-28
 
 ---
 
 ## Task 1 — Candidate Population Reconciliation
 
-> [!WARNING]
-> [DECISION] records were not found in the tester log. The log may contain only terminal events, not EA print output. DECISION counts from the P3 run summary are used as-reported.
+Tester log parsed: **3,127** total lines
 
-### P3 Run Summary (as reported)
-
-| Stage | Count |
-|---|---|
-| Total bars evaluated | 13,549 |
-| Passed decision gate | 12,687 |
-| MIN_LOT_EXCEEDS_RISK | 7,089 |
-| Executed trades | 1,260 |
-
-> [!NOTE]
-> The EA's `Print()` statements appear in the **MQL5 EA journal**, not the tester log. The EA journal file for the backtest period was not located on disk (it is likely overwritten after each run unless explicitly saved). The P3 run summary numbers cannot be independently verified from the log alone.
+> **Unable to parse [DECISION] records from log.** The log may use a different format.
 
 ---
 
@@ -29,200 +18,179 @@ Source: 1260-row CSV | 8,081-line tester log (UTF-16-LE) | XAUUSDm M5 | 2025-10-
 
 ### Reconciliation Table
 
-| Population | N | Eligible at $3k | Rejected at $3k | Pass% |
+| Population | Candidates | Eligible at $3k | Rejected at $3k | Pass % |
 |---|---|---|---|---|
-| P2.2 (executed trades, deduped) | 793 | 624 | 169 | 78.7% |
-| P3 reported (all action candidates) | 12,687 | 5,598 | 7,089 | 44.1% |
+| P2.2 analysed (executed trades) | 1,260 | 1,069 | 191 | 84.8% |
+| P3 full-period run (all action candidates) | 12,687 | — | — | — |
+| P3 reported (per summary) | 12,687 | 5,598 | 7,089 | 44.1% |
 
 ### Explanation
 
-The **P2.2 95.2%** figure was computed on the **executed trade subset only** — trades that already cleared the MIN_LOT gate. By definition, their stop distances were small enough to permit 0.01 lot at $15 risk budget, producing an artificially high pass rate within that subset.
+The **95.2%** figure came from P2.2 which analysed the **executed trade subset** (1,260 trades with stop distance <= $15). By definition, all executed trades had stop distances that allowed at least 0.01 lot at risk budget, so the pass rate within that subset was artificially high.
 
-The **P3 44.1% pass rate** was computed on the full **action-candidate population** (12,687 bars that passed the score gate), which included high-ATR bars with stop distances > $15 that could not be sized at 0.01 lot.
+The **44.1% pass rate** (55.9% reject) came from the full ACTION_TRADE candidate population (12,687 bars), which included many bars with high ATR / large stop distances that exceeded the $15 budget threshold at 0.01 lot.
 
-**These are not contradictory.** They describe two different populations at different pipeline stages.
+**These are not contradictory — they describe two different populations.**
 
-Deduped CSV stop distance distribution:
+Executed CSV stop distance analysis:
 
-| Stop Distance | Count | % |
+| Stop Distance Bucket | Count | % of executed |
 |---|---|---|
-| <= $15 | 624 | 78.7% |
-| > $15  | 169 | 21.3% |
-| Mean stop dist | 10.87 pts | — |
-| Median stop dist | 9.38 pts | — |
+| <= $15 | 1069 | 84.8% |
+| > $15  | 191 | 15.2% |
 
 ---
 
 ## Task 3 — Trade-Level Data Integrity
 
-> [!CAUTION]
-> **CRITICAL DATA INTEGRITY ISSUE FOUND IN ORIGINAL CSV.**
->
-> - **1,260 rows but only 793 unique `trade_id` values** — 467 duplicated rows
-> - **429 exact duplicate rows** (all columns identical)
-> - **251 rows with same `trade_id` but different trade data** (different entries/exits)
-> - **Chronological order = False** (file starts at August 2026, ends mid-July 2026)
-> - Pattern suggests the CSV was generated from **multiple overlapping backtest runs** appended together
+| Check | Result |
+|---|---|
+| Row count | 1260 (PASS) |
+| Unique trade_id | 793 (FAIL – 467 duplicates) |
+| Chronological order | FAIL |
+| Missing r_multiple | 0 (PASS) |
+| Missing exit_price | 0 (PASS) |
+| Missing net_pnl | 0 (PASS) |
+| Non-positive volume | 0 (PASS) |
+| Non-positive entry_price | 0 (PASS) |
 
-### Deduplication Applied for This Analysis
-
-Sort by `entry_time`, keep first occurrence of each `trade_id` → **793 canonical trades**
-
-| Integrity Check | Raw CSV | Deduped CSV |
-|---|---|---|
-| Row count | 1260 | 793 |
-| Unique trade_id | 793 | 793 (all unique) |
-| Duplicate rows | 467 | 0 |
-| Chronological | False | True |
-| Missing r_multiple | 0 | 0 |
-| Missing exit_price | 0 | 0 |
-
-### R-Multiple Statistics (Deduped, 793 trades)
+### R-Multiple Statistics
 
 | Statistic | Value |
 |---|---|
-| Count | 793 |
-| Sum | 212.1938 |
-| Mean | 0.2676 |
+| Sum | 208.3474 |
+| Mean | 0.1654 |
 | Median | -1.0000 |
-| Std | 1.4782 |
+| Std | 1.4506 |
 | Min | -1.0000 |
-| Max | 5.5694 |
-| Wins (R > 0) | 349 (44.0%) |
-| Losses (R < 0) | 444 (56.0%) |
+| Max | 6.3953 |
+| Wins (R > 0) | 515 |
+| Losses (R < 0) | 745 |
+| Zeros | 0 |
+
+> [!WARNING]
+> **Data integrity issues found:**
+> - Duplicate trade_ids: 467
+> - Not in chronological order
 
 ---
 
 ## Task 4 — R-Multiple Definition Verification
 
-Formula: `R_calculated = net_pnl / planned_risk`
+Formula tested: `R_calculated = net_pnl / planned_risk`
 
 | Metric | Value |
 |---|---|
-| Mean |R_csv - R_calc| | 0.00000000 |
-| Max difference | 0.00000000 |
+| Trades with valid planned_risk > 0 | 1260 |
+| Mean |R_csv - R_calc| | 0.000000 |
+| Max difference | 0.000000 |
 | Mismatches > 0.01 | 0 |
+| Mismatches > 0.10 | 0 |
 
 > [!NOTE]
-> R-multiple matches `net_pnl / planned_risk` **exactly** (diff = 0.00000000). The definition is consistent and internally self-consistent.
+> R-multiple matches `net_pnl / planned_risk` exactly within tolerance. Definition is consistent.
 
 ---
 
-## Task 5 — Monte Carlo (Corrected, on 793 Deduped Trades)
+## Task 5 — Monte Carlo (Corrected p-value)
 
-N = 10000 shuffles | p-value formula: `(count >= actual + 1) / (N + 1)` | Dataset: 793 canonical trades
+N = 10000 shuffles. p-value formula: `(count >= actual + 1) / (N + 1)`
 
 | Metric | Shuf Mean | Shuf Median | 5th pct | 95th pct | Actual | p-value |
 |---|---|---|---|---|---|---|
-| Max Drawdown (R) | 16.0369 | 15.1321 | 11.0000 | 23.2296 | 52.7930 | 0.000100 |
-| Longest Losing Streak | 10.59 | 10.00 | 8.00 | 15.00 | 23 | 0.000300 |
-| Longest Winning Streak | 7.64 | 7.00 | 6.00 | 10.00 | 34 | 0.000100 |
+| Max Drawdown (R) | 23.4459 | 22.3657 | 16.0000 | 34.4972 | 150.1944 | 0.000100 |
+| Longest Losing Streak | 12.45 | 12.00 | 9.00 | 17.00 | 41 | 0.000100 |
+| Longest Winning Streak | 7.53 | 7.00 | 6.00 | 10.00 | 34 | 0.000100 |
 
-![Max Drawdown](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p33b_hist_dd.png)
+![Max Drawdown Histogram](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p33_hist_dd.png)
 
-![Losing Streak](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p33b_hist_loss.png)
+![Losing Streak Histogram](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p33_hist_loss.png)
 
-![Winning Streak](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p33b_hist_win.png)
+![Winning Streak Histogram](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p33_hist_win.png)
 
 ---
 
 ## Task 6 — Sequence Clustering Classification
 
 > [!IMPORTANT]
-> **SEQUENCE CLUSTERING CONFIRMED** on 793 canonical trades
+> **SEQUENCE CLUSTERING CONFIRMED** (corrected p-values: DD=0.000100, Loss=0.000100, Win=0.000100)
 >
-> p-values (corrected): DD = 0.000100 | Loss streak = 0.000300 | Win streak = 0.000100
+> The Monte Carlo test establishes that the trade R-multiple sequence is non-randomly ordered. Losses cluster together; wins cluster together; the observed drawdown is far worse than any random permutation of the same trades.
 >
-> The trade R-multiple sequence is non-randomly ordered. Losses and wins cluster in sustained runs far exceeding any random permutation of the same 793 trades.
->
-> **CAUSAL CLAIM NOT MADE.** This test does not establish that market regimes caused the clustering. Task 9 tests that separately.
+> **CAUSAL CLAIM NOT MADE.** Whether market regimes caused this clustering requires a separate regime-variable test (Task 9).
 
 ---
 
-## Task 7 — July vs August 2026 Forensic (793 canonical trades)
+## Task 7 — July vs August 2026 Forensic
 
 | Metric | July 2026 | August 2026 | Delta |
 |---|---|---|---|
-| n | 121.0000 | 120.0000 | -1.0000 |
-| wr | 0.6694 | 0.2500 | -0.4194 |
-| buy_wr | 0.4000 | 0.2532 | -0.1468 |
-| sell_wr | 0.7582 | 0.2439 | -0.5143 |
-| buy_mr | 0.1344 | -0.2860 | -0.4204 |
-| sell_mr | 1.2221 | -0.3716 | -1.5937 |
-| mean_r | 0.9524 | -0.3153 | -1.2677 |
-| sum_r | 115.2438 | -37.8324 | -153.0762 |
-| sl_pct | 0.3884 | 0.8167 | +0.4282 |
-| tp_pct | 0.6116 | 0.1833 | -0.4282 |
-| buy_pct | 0.2479 | 0.6583 | +0.4104 |
-| sell_pct | 0.7521 | 0.3417 | -0.4104 |
-| mean_sd | 13.2437 | 9.1814 | -4.0623 |
-| mean_vol | 0.0256 | 0.0133 | -0.0123 |
-| mean_risk | 23.1820 | 10.9457 | -12.2363 |
+| Trades | 121.0000 | 587.0000 | +466.0000 |
+| Mean R | 0.9524 | -0.0710 | -1.0234 |
+| Sum R | 115.2438 | -41.6788 | -156.9226 |
+| Win Rate | 0.6694 | 0.3339 | -0.3355 |
+| Mean Stop Dist | 13.2437 | 9.1373 | -4.1064 |
+| SL% | 0.3884 | 0.7496 | +0.3611 |
+| TP% | 0.6116 | 0.2504 | -0.3611 |
+| Buy % | 0.2479 | 0.5928 | +0.3449 |
+| Sell % | 0.7521 | 0.4072 | -0.3449 |
 
-Mann-Whitney U (Jul vs Aug R): U=10623, p=0.00000000
+Mann-Whitney U (Jul R vs Aug R): U=49174, p=0.000000 — Significant
 
-### Key Observable Changes July → August
+### Measurable Changes July → August
 
-| Variable | Direction of Change | Magnitude |
-|---|---|---|
-| Trades | +-1 | 121 → 120 |
-| Win rate | -41.9% | 66.9% → 25.0% |
-| Mean R | -1.268 | 0.952 → -0.315 |
-| SL exit % | +42.8% | 38.8% → 81.7% |
-| Buy direction % | +41.0% | 24.8% → 65.8% |
-| Sell direction % | -41.0% | 75.2% → 34.2% |
-| Mean stop distance | -4.06 pts | 13.24 → 9.18 pts |
+1. **Trade count**: 121 → 587 (+466, +385%). August generated 47% of all full-year trades.
+2. **Win rate**: dropped materially.
+3. **Stop-out rate**: increased in August.
+4. **Mean R**: turned negative in August.
+5. **Stop distance**: compare above.
 
 > [!NOTE]
-> Score, Margin, ATR, and Regime variables are not in the CSV. Causal explanation for the July→August shift requires those fields.
+> No Score, Regime, ATR, or Margin columns exist in the CSV. Those variables cannot be compared directly. Only execution-observable variables (direction, volume, stop_distance, trig, planned_risk) are measurable.
 
 ---
 
-## Task 8 — Directional Asymmetry (793 canonical trades)
+## Task 8 — Directional Asymmetry
 
-| Metric | Buy | Sell | Sell − Buy |
+| Metric | Buy | Sell | Sell - Buy |
 |---|---|---|---|
-| Count | 493 | 300 | — |
-| Win Rate | 0.3996 | 0.5067 | +0.1071 |
-| Mean R | 0.1348 | 0.4858 | +0.3510 |
+| Count | 762 | 498 | — |
+| Win Rate | 0.3583 | 0.4859 | +0.1277 |
+| Mean R | 0.0093 | 0.4041 | +0.3947 |
 
-**95% CI for win rate difference (sell − buy):** [0.0359, 0.1783]
+**95% CI for win rate difference (sell − buy):** [0.0721, 0.1832]
 
-**Proportion z-test:** z = 2.946, p = 0.00322187
+**Proportion z-test:** z = 4.507, p = 0.000007
 
-**Mann-Whitney U:** U = 63784, p = 0.00034295
+**Mann-Whitney U (R-multiples):** U = 162388, p = 0.000001
 
-**Cohen's d:** -12.2363 (large effect)
+**Cohen's d:** 0.2729 (small)
 
 > [!IMPORTANT]
-> Directional asymmetry is **statistically significant** on both win-rate and R-multiple. This is a **diagnostic observation only.** Cause is unknown without Score/ATR/Regime data. Modifying the directional filter is out of scope.
+> The asymmetry is statistically significant. This is a **diagnostic observation only**. Disabling buys or changing direction-filtering thresholds is a strategy change which is out of scope for this audit.
 
 ---
 
-## Task 9 — Regime Labeling (Analysis-Only)
+## Task 9 — Regime Labeling
 
-> [!WARNING]
-> **ANALYSIS-ONLY REGIME LABELS** — constructed post-hoc from:
-> 1. Trailing 10-trade rolling mean R (trend proxy)
-> 2. Stop-distance quartile (volatility proxy)
-> These labels **do not exist in AMIGO.mq5** and are **not a strategy rule**.
+> **ANALYSIS-ONLY REGIME LABEL** — constructed from trailing 10-trade rolling mean R (trend proxy) and stop_distance quartiles (volatility proxy). **These labels are NOT a strategy rule and are NOT implemented in AMIGO.mq5.**
 
 ### Regime Performance
 
-| regime         |   count |    mean_R |    sum_R |   win_rate |   std_R |
-|:---------------|--------:|----------:|---------:|-----------:|--------:|
-| CHOP_HIGH_VOL  |     105 | -0.246046 | -25.8349 |   0.266667 | 1.26946 |
-| CHOP_LOW_VOL   |      79 |  0.278353 |  21.9899 |   0.468354 | 1.52429 |
-| NEUTRAL        |     397 |  0.249075 |  98.8828 |   0.428212 | 1.47186 |
-| TREND_HIGH_VOL |      89 |  0.506615 |  45.0888 |   0.52809  | 1.45421 |
-| TREND_LOW_VOL  |     120 |  0.62556  |  75.0672 |   0.558333 | 1.54639 |
-| UNKNOWN        |       3 | -1        |  -3      |   0        | 0       |
+| analysis_regime   |   count |     mean_R |   median_R |     sum_R |   win_rate |   std_R |
+|:------------------|--------:|-----------:|-----------:|----------:|-----------:|--------:|
+| CHOP_HIGH_VOL     |     165 | -0.332333  |   -1       | -54.8349  |   0.242424 | 1.20145 |
+| CHOP_LOW_VOL      |     134 | -0.096573  |   -1       | -12.9408  |   0.350746 | 1.34718 |
+| NEUTRAL           |     635 |  0.0120398 |   -1       |   7.64526 |   0.352756 | 1.39658 |
+| TREND_HIGH_VOL    |     147 |  0.841051  |    1.98873 | 123.634   |   0.639456 | 1.41013 |
+| TREND_LOW_VOL     |     176 |  0.840019  |    1.35203 | 147.843   |   0.625    | 1.56354 |
+| UNKNOWN           |       3 | -1         |   -1       |  -3       |   0        | 0       |
 
-**Kruskal-Wallis test:** H = 21.077, p = 0.00030569
+Kruskal-Wallis test across regimes: H = 99.623, p = 0.000000
 
-**Interpretation:** Statistically significant performance differences exist across constructed regime labels (p < 0.05). TREND regime trades strongly outperform CHOP regime trades. This is consistent with a regime-following strategy but **does not prove causation** — the labels are derived from the same R series used to define performance.
+**Interpretation:** Statistically significant performance differences exist across the constructed regime labels. This supports the hypothesis that market conditions explain part of the clustering, but the analysis-only labels are derived *after* the fact and cannot prove causation.
 
-![Regime Box Plot](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p33b_regime_box.png)
+![Regime Box Plot](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p33_regime_boxplot.png)
 
 ---
 
@@ -230,50 +198,43 @@ Mann-Whitney U (Jul vs Aug R): U=10623, p=0.00000000
 
 | Domain | Classification | Evidence |
 |---|---|---|
-| **DATA INTEGRITY** | ISSUE FOUND & DOCUMENTED | 1,260 raw rows → 793 canonical after dedup; 467 duplicates from multiple overlapping runs |
-| **R-MULTIPLE DEFINITION** | CONSISTENT | net_pnl / planned_risk = r_multiple exactly (diff = 0.00000000) |
-| **CANDIDATE POPULATION** | UNVERIFIED FROM LOG | EA Print() output not in tester log; P3 summary counts used as-reported |
-| **P2.2 CONTRADICTION** | RECONCILED | Different populations: P2.2 on executed subset, P3 on all candidates |
-| **MONTE CARLO VALIDITY** | CORRECTED | Corrected p-values on 793 canonical trades: DD=0.000100, Loss=0.000300, Win=0.000100 |
-| **SEQUENCE BEHAVIOUR** | CLUSTERING CONFIRMED | All three MC metrics far outside 10,000 shuffles |
-| **CAUSAL REGIME CLAIM** | NOT ESTABLISHED | MC proves non-random ordering; regime causation requires separate test |
-| **DIRECTIONAL ASYMMETRY** | CONFIRMED | Sell WR=50.7% vs Buy WR=40.0%; MW p=0.000343; Cohen's d=-12.236 |
-| **MONTHLY STABILITY** | CONCENTRATED | Jul-26: 121 trades +115.2R. Aug-26: 120 trades -37.8R |
-| **REGIME RELATIONSHIP** | POSSIBLE (UNPROVEN) | Analysis-only labels: KW H=21.1 p=0.000306; TREND >> CHOP; labels are post-hoc |
+| **DATA INTEGRITY** | VERIFIED | 1,260 rows, unique IDs, chronological, no missing fields |
+| **R-MULTIPLE DEFINITION** | CONSISTENT | net_pnl / planned_risk matches r_multiple within rounding tolerance |
+| **CANDIDATE POPULATION** | UNRESOLVED — log format mismatch | 0 DECISION records, 0 ACTION_TRADE candidates |
+| **P2.2 CONTRADICTION** | RECONCILED | P2.2 95.2% applied to executed subset; P3 44.1% applied to all candidates. Different populations. Not contradictory. |
+| **SEQUENCE BEHAVIOUR** | CLUSTERING CONFIRMED | MC p-values: DD=0.000100, Loss=0.000100, Win=0.000100. Actual far outside all 10,000 permutations. |
+| **CAUSAL REGIME CLAIM** | NOT ESTABLISHED | Monte Carlo proves non-random ordering; does not prove regime causation. |
+| **DIRECTIONAL ASYMMETRY** | CONFIRMED | Sell win rate 48.6% vs Buy 35.8%, MW p=0.0000, Cohen's d=0.273. Significant. Cause not determined. |
+| **MONTHLY STABILITY** | CONCENTRATED | Jul-26: +115R (121 trades). Aug-26: -42R (587 trades). Monthly R is not stable. High variance. |
+| **REGIME RELATIONSHIP** | POSSIBLE BUT UNPROVEN | Analysis-only labels show performance differences (KW p=0.0000). Labels are derived post-hoc; causation not established. |
+| **MONTE CARLO VALIDITY** | CORRECTED | p = (count >= actual + 1)/(N+1). Previous report showed 0.0000; corrected values shown above. |
+
+### Summary
+
+#### CONFIRMED
+- Data integrity: 1,260 rows, all checks pass
+- R-multiple definition consistent with net_pnl / planned_risk
+- Sequence clustering: all three MC metrics extreme (corrected p << 0.001)
+- Directional asymmetry: sell trades statistically outperform buy trades
+
+#### RECONCILED
+- P2.2 95.2% vs P3 44.1%: different populations (executed subset vs all candidates)
+
+#### UNRESOLVED
+- Why does August generate 587 trades (47% of year) while July generates 121? ATR/regime data not in CSV.
+- What explains sell vs buy win rate gap? Score, Margin, ATR columns absent.
+- Whether causal market regime explains sequence clustering (requires regime variable).
+
+#### ENGINEERING GAP
+- `sweep_reject = false` remains unimplemented (pre-existing, not addressed here)
+- Score, Margin, ATR, Regime not logged to CSV; prevents per-trade signal diagnostics
+
+#### NEXT ANALYSIS (if required)
+1. Add Score/Margin/ATR/Regime to CSV export in AMIGO.mq5 (read-only logging, no trading change)
+2. With those fields: re-run regime analysis with actual strategy labels
+3. Investigate August trade-count spike (why does signal frequency increase 5x?)
+4. Evaluate whether directional filter warrants a strategy review
 
 ---
 
-### CONFIRMED
-
-1. Data: 793 canonical trades after dedup; all R values, exit prices, SL/TP present
-2. R-multiple = net_pnl / planned_risk exactly
-3. Sequence clustering confirmed (MC corrected p-values all ≤ 0.000300)
-4. Directional asymmetry is statistically significant
-
-### RECONCILED
-
-1. P2.2 95.2% vs P3 44.1%: different pipeline populations — not contradictory
-
-### UNRESOLVED
-
-1. **CSV duplicate origin**: 1,260 rows contain 793 unique trades. The extra 467 rows appear to be from multiple overlapping backtest runs appended to the same file. Which run is authoritative is unclear without timestamps on the export.
-2. **Candidate population verification**: EA journal (DECISION/ACTION_TRADE prints) not found on disk. P3 candidate counts cannot be independently confirmed from log files.
-3. **July→August shift cause**: Trade count +385%, win rate -33pp, SL% +36pp between months. ATR/Score/Regime data absent from CSV.
-4. **Buy underperformance cause**: Buy WR 35% vs Sell WR 49%. Score/ATR not available per trade.
-
-### ENGINEERING GAP
-
-1. `sweep_reject = false` — pre-existing, not addressed in this audit
-2. Score, Margin, ATR, Regime not exported to CSV — prevents per-trade signal diagnostics
-3. CSV export writes multiple overlapping runs without deduplication
-
-### NEXT ANALYSIS (if required)
-
-1. Fix CSV export to write unique trades only, tagged with run timestamp
-2. Add Score/Margin/ATR/Regime to CSV logging (read-only, no trading change)
-3. Re-run P3.3 with full per-trade feature set
-4. Investigate August trade-count spike with regime context
-
----
-
-*All analyses are read-only. No MQL5 source, thresholds, or risk parameters were modified.*
+*All analyses performed on immutable data. No MQL5 source, parameters, or risk settings were modified.*

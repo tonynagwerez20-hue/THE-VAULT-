@@ -27,7 +27,19 @@
 #include <External Context Compactor.mqh>
 #include <ML gate hook.mqh>
 
+//--- Order-Flow ASAP / AlgoMind Native Engines
+#include <AM_FlowQuality.mqh>
+#include <AM_ProxyVWAP.mqh>
+#include <AM_ActivityProfile.mqh>
+#include <AM_Footprint.mqh>
+#include <AM_FlowPressure.mqh>
+#include <AM_FlowEvents.mqh>
+#include <AM_ProxyDOM.mqh>
+
 //--- Inputs
+input group "=== Execution Mode Safety ==="
+input bool   InpShadowOnly        = true;         // true = SHADOW MODE (blocks live OrderSend)
+
 input group "=== Symbol & Timeframes ==="
 input string InpSymbol            = "";           // empty = current symbol
 input ENUM_TIMEFRAMES InpTFExec   = PERIOD_M5;
@@ -83,6 +95,14 @@ ExternalContext g_ext;
 MarketSnapshot  g_snap;
 FeatureSnapshot g_feat;
 
+//--- Order-Flow Engine Instances
+CAM_ProxyVWAP       g_vwap_engine;
+CAM_Footprint       g_footprint_engine;
+CAM_ActivityProfile g_profile_engine;
+CAM_FlowPressure    g_pressure_engine;
+CAM_FlowEvents      g_events_engine;
+CAM_ProxyDOM        g_dom_engine;
+
 //+------------------------------------------------------------------+
 int OnInit()
 {
@@ -91,6 +111,7 @@ int OnInit()
    g_symbol = (StringLen(InpSymbol) > 0) ? InpSymbol : _Symbol;
 
    g_cfg.symbol              = g_symbol;
+   g_cfg.shadow_only         = InpShadowOnly;
    g_cfg.tf_exec             = InpTFExec;
    g_cfg.tf_context          = InpTFContext;
    g_cfg.tf_htf              = InpTFHTF;
@@ -204,8 +225,32 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
 {
+   //--- Diagnostic Point 1: Throttled OnTick Heartbeat (every 60 seconds)
+   static datetime s_last_tick_diag = 0;
+   if(TimeCurrent() - s_last_tick_diag >= 60)
+   {
+      double cur_bid = SymbolInfoDouble(g_symbol, SYMBOL_BID);
+      double cur_ask = SymbolInfoDouble(g_symbol, SYMBOL_ASK);
+      datetime cur_bar = iTime(g_symbol, g_cfg.tf_exec, 0);
+      PrintFormat("[RUNTIME_DIAG][OnTick] server_time=%s sym=%s bid=%.5f ask=%.5f cur_bar=%s last_bar=%s",
+                  TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES|TIME_SECONDS),
+                  g_symbol, cur_bid, cur_ask,
+                  TimeToString(cur_bar, TIME_DATE|TIME_MINUTES|TIME_SECONDS),
+                  TimeToString(g_last_bar_time, TIME_DATE|TIME_MINUTES|TIME_SECONDS));
+      s_last_tick_diag = TimeCurrent();
+   }
+
    //--- Risk update every tick
    RiskTick();
+
+   //--- Feed live tick observation into native order-flow engines
+   double last_bid = SymbolInfoDouble(g_symbol, SYMBOL_BID);
+   double last_ask = SymbolInfoDouble(g_symbol, SYMBOL_ASK);
+   double last_price = (last_bid > 0.0) ? last_bid : _Point;
+   long last_vol = SymbolInfoInteger(g_symbol, SYMBOL_VOLUME);
+   double tick_vol = (last_vol > 0) ? (double)last_vol : 1.0;
+   g_footprint_engine.AddTick(last_price, tick_vol, 0);
+   g_vwap_engine.AddObservation(last_price, tick_vol);
 
    //--- External context refresh (throttled to one read every 5 seconds)
    if(TimeCurrent() - g_last_ext_read >= 5)
@@ -231,6 +276,14 @@ void OnTick()
 
    //--- Decision only on new closed bar
    datetime bar_time = iTime(g_symbol, g_cfg.tf_exec, 0);
+   if(bar_time != g_last_bar_time)
+   {
+      PrintFormat("[RUNTIME_DIAG][NEW_BAR] server_time=%s bar_time=%s prev_last_bar=%s iTime_ok=%s",
+                  TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES|TIME_SECONDS),
+                  TimeToString(bar_time, TIME_DATE|TIME_MINUTES|TIME_SECONDS),
+                  TimeToString(g_last_bar_time, TIME_DATE|TIME_MINUTES|TIME_SECONDS),
+                  (bar_time > 0) ? "YES" : "NO");
+   }
    if(bar_time == g_last_bar_time) return;
    g_last_bar_time = bar_time;
 
@@ -240,27 +293,72 @@ void OnTick()
 //+------------------------------------------------------------------+
 void OnClosedBar()
 {
-   //--- 0) Session hour gate
+   //--- Diagnostic Point 3: OnClosedBar Entry & Session Audit
    MqlDateTime dt;
    TimeToStruct(TimeCurrent(), dt);
+   bool session_pass = (dt.hour >= g_cfg.session_start_hour && dt.hour < g_cfg.session_end_hour);
+   PrintFormat("[RUNTIME_DIAG][OnClosedBar] server_time=%s sym=%s tf=%d closed_bar=%s hour=%d session=[%d-%d] pass=%s",
+               TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES|TIME_SECONDS),
+               g_symbol, (int)g_cfg.tf_exec,
+               TimeToString(iTime(g_symbol, g_cfg.tf_exec, 0), TIME_DATE|TIME_MINUTES|TIME_SECONDS),
+               dt.hour, g_cfg.session_start_hour, g_cfg.session_end_hour,
+               session_pass ? "YES" : "NO");
+
+   //--- 0) Session hour gate
    if(dt.hour < g_cfg.session_start_hour || dt.hour >= g_cfg.session_end_hour)
    {
       return;
    }
 
    //--- 1) Snapshot
-   if(!BuildMarketSnapshot(g_symbol, g_snap))
+   bool snap_res = BuildMarketSnapshot(g_symbol, g_snap);
+   PrintFormat("[RUNTIME_DIAG][SNAPSHOT] server_time=%s success=%s bid=%.5f ask=%.5f dq=%d",
+               TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES|TIME_SECONDS),
+               snap_res ? "YES" : "NO", g_snap.bid, g_snap.ask, g_snap.data_quality);
+   if(!snap_res)
    {
       LogMsg(LOG_WARN, "BAR", "snapshot build failed");
       return;
    }
 
    //--- 2) Features
-   if(!BuildFeatureVector(g_symbol, g_cfg, g_feat))
+   bool feat_res = BuildFeatureVector(g_symbol, g_cfg, g_feat);
+   PrintFormat("[RUNTIME_DIAG][FEATURES] server_time=%s success=%s ts=%s atr14=%.5f fusion=%.2f",
+               TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES|TIME_SECONDS),
+               feat_res ? "YES" : "NO",
+               TimeToString(g_feat.timestamp, TIME_DATE|TIME_MINUTES|TIME_SECONDS),
+               g_feat.atr14, g_feat.fusion);
+   if(!feat_res)
    {
       LogMsg(LOG_WARN, "BAR", "feature build failed");
       return;
    }
+
+   //--- Order-Flow Native Calculations & Diagnostics
+   double fp_pressure = g_footprint_engine.CalculateFootprintPressure();
+   MQL_FootprintBin bins[];
+   g_footprint_engine.GetBins(bins);
+   g_profile_engine.Compute(bins, ArraySize(bins));
+
+   ENUM_PRESSURE_STATE p_state = g_pressure_engine.ClassifyState(fp_pressure);
+   g_pressure_engine.UpdateState(fp_pressure, g_footprint_engine.GetTotalActivity(), p_state);
+
+   MqlRates last_rates[];
+   double h_bar = 0.0, l_bar = 0.0;
+   if(CopyRates(g_symbol, g_cfg.tf_exec, 1, 1, last_rates) > 0)
+   {
+      h_bar = last_rates[0].high;
+      l_bar = last_rates[0].low;
+   }
+   datetime current_bar_t = iTime(g_symbol, g_cfg.tf_exec, 0);
+   g_events_engine.AddBar(current_bar_t, fp_pressure, p_state, h_bar, l_bar, g_footprint_engine.GetTotalActivity());
+
+   double cur_p = SymbolInfoDouble(g_symbol, SYMBOL_BID);
+   LogMsg(LOG_INFO, "FLOW_DIAG", StringFormat("ts=%s vwap=%.5f dev=%.2f poc=%.5f vah=%.5f val=%.5f cd=%.2f fp_press=%.4f state=%d shadow=%s",
+          TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES),
+          g_vwap_engine.GetVWAP(), g_vwap_engine.GetDeviation(cur_p, g_feat.atr14),
+          g_profile_engine.GetPOC(), g_profile_engine.GetVAH(), g_profile_engine.GetVAL(),
+          g_footprint_engine.GetCumulativeDelta(), fp_pressure, (int)p_state, g_cfg.shadow_only ? "TRUE" : "FALSE"));
 
    //--- 3) Publish snapshot for Python (external context)
    WriteSnapshotForExternal(g_cfg.bridge_outbox, g_snap, g_feat);

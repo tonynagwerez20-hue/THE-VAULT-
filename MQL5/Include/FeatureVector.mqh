@@ -109,6 +109,52 @@ bool BuildFeatureVector(const string symbol, const AlgoMindConfig &cfg,
    fs.acceptance_above = false;
    fs.acceptance_below = false;
 
+   //--- Approved GAP-01 & GAP-02 Strategy Evidence Calculations
+   //--- GAP-01: Classical Price vs Proxy-CVD Divergence
+   double div_bear = 0.0, div_bull = 0.0;
+   int sh_idx1 = -1, sh_idx2 = -1;
+   int sl_idx1 = -1, sl_idx2 = -1;
+   for(int i=2; i<got-2; i++)
+   {
+      if(IsConfirmedSwingHigh(r, i, 2))
+      {
+         if(sh_idx1 < 0) sh_idx1 = i;
+         else if(sh_idx2 < 0) { sh_idx2 = i; break; }
+      }
+   }
+   for(int i=2; i<got-2; i++)
+   {
+      if(IsConfirmedSwingLow(r, i, 2))
+      {
+         if(sl_idx1 < 0) sl_idx1 = i;
+         else if(sl_idx2 < 0) { sl_idx2 = i; break; }
+      }
+   }
+
+   if(sh_idx1 > 0 && sh_idx2 > sh_idx1)
+   {
+      double p1 = r[sh_idx2].high, p2 = r[sh_idx1].high;
+      double d1 = histA[sh_idx2],  d2 = histA[sh_idx1];
+      if(p2 > p1 && d2 < d1)
+         div_bear = Clip01(((p2 - p1) / atr + (d1 - d2)) / 2.0);
+   }
+   if(sl_idx1 > 0 && sl_idx2 > sl_idx1)
+   {
+      double p1 = r[sl_idx2].low, p2 = r[sl_idx1].low;
+      double d1 = histA[sl_idx2], d2 = histA[sl_idx1];
+      if(p2 < p1 && d2 > d1)
+         div_bull = Clip01(((p1 - p2) / atr + (d2 - d1)) / 2.0);
+   }
+   fs.delta_divergence = MathMax(div_bear, div_bull);
+
+   //--- GAP-02: ATR-Normalized Confirmed BOS Displacement
+   double disp_val = 0.0;
+   if(st.bull_bos && st.last_swing_high > 0.0 && r[0].close > st.last_swing_high)
+      disp_val = Clip01(((r[0].close - st.last_swing_high) / atr) / 1.5);
+   else if(st.bear_bos && st.last_swing_low > 0.0 && r[0].close < st.last_swing_low)
+      disp_val = Clip01(((st.last_swing_low - r[0].close) / atr) / 1.5);
+   fs.displacement = disp_val;
+
    return true;
 }
 //+------------------------------------------------------------------+

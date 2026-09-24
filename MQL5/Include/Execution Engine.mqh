@@ -133,6 +133,17 @@ ExecutionResult ExecuteIntent(const TradeIntent &ti, double lots,
       return r;
    }
 
+   //--- Shadow-only safety gate (prevents live order submission)
+   if(g_cfg.shadow_only)
+   {
+      LogMsg(LOG_INFO, "EXEC_SHADOW", StringFormat("[SHADOW MODE EXECUTION BLOCKED] dir=%d lots=%.2f price=%.5f sl=%.5f tp=%.5f score=%.3f hyp=%d",
+             ti.direction, lots, req.price, ti.stop, ti.target, ti.score, (int)ti.hypothesis));
+      r.accepted    = false;
+      r.retcode     = 10009; // TRADE_RETCODE_DONE equivalent or custom shadow code
+      r.comment     = "SHADOW_MODE_EXECUTION_BLOCKED";
+      return r;
+   }
+
    if(!OrderSend(req, res))
    {
       r.retcode = res.retcode;

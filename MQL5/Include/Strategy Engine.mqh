@@ -34,7 +34,7 @@ double MR_Evidence(const FeatureSnapshot &f, int dir)
    double stretch       = MathAbs(f.dev_vwap_atr);
    double stretch_score = Clip01((stretch - 1.0) / 1.5);
    double rej_score     = f.sweep_reject ? 1.0 : 0.0;
-   double div_score     = 0.0;
+   double div_score     = f.delta_divergence;
    double ret_val       = (f.value_state == 0) ? 1.0 : 0.0;
 
    //--- Directional stretch check: Long MR requires price below VWAP; Short MR requires price above VWAP
@@ -55,7 +55,7 @@ double ContinuationEvidence(const FeatureSnapshot &f, int dir)
       (dir == -1 && f.structure_dir == -1))
       structure = 1.0;
 
-   double disp   = 0.0;
+   double disp   = f.displacement;
    double accept = 0.0;
    if((dir == +1 && f.acceptance_above) ||
       (dir == -1 && f.acceptance_below))

@@ -70,6 +70,9 @@ struct AlgoMindConfig
    string   bridge_inbox;
    string   bridge_outbox;
    int      stale_threshold_s;     // seconds
+
+   //--- Execution Mode Safety
+   bool     shadow_only;           // true = SHADOW MODE (blocks live OrderSend calls)
 };
 
 AlgoMindConfig g_cfg;

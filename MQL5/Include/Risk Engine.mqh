@@ -80,71 +80,27 @@ bool RiskAllows(const AlgoMindConfig &cfg, string &reason)
    return true;
 }
 
-//--- Position size per Math Spec §24.2
+#include <Account Execution Engine.mqh>
+
+//--- Position size per Math Spec §24.2 (Unified with Account Execution Engine)
 double ComputeLotSize(string symbol, double entry, double stop, double risk_pct,
                       double &risk_actual_out, string &err)
 {
    risk_actual_out = 0.0;
    err = "";
 
-   double equity      = AccountInfoDouble(ACCOUNT_EQUITY);
-   double risk_amount = equity * (risk_pct / 100.0);
-   double tick_size   = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_SIZE);
-   double tick_value  = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_VALUE);
-   double vol_min     = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN);
-   double vol_max     = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MAX);
-   double vol_step    = SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP);
+   AccountExecutionEnvelope env = AccountExecutionEvaluate(
+      symbol, +1, entry, stop, entry + MathAbs(entry - stop), risk_pct, g_cfg, ACTION_TRADE
+   );
 
-   if(tick_size <= 0.0 || tick_value <= 0.0 || vol_step <= 0.0)
+   if(env.final_action != ACTION_TRADE)
    {
-      err = "INVALID_SYMBOL_PROPS";
+      err = env.reason;
       return 0.0;
    }
 
-   double stop_distance = MathAbs(entry - stop);
-   if(stop_distance <= 0.0)
-   {
-      err = "ZERO_STOP_DISTANCE";
-      return 0.0;
-   }
-
-   double loss_per_lot = (stop_distance / tick_size) * tick_value;
-   if(loss_per_lot <= 0.0)
-   {
-      err = "INVALID_LOSS_PER_LOT";
-      return 0.0;
-   }
-
-   double raw  = risk_amount / loss_per_lot;
-   double lots = MathFloor(raw / vol_step) * vol_step;
-
-   if(lots < vol_min)
-   {
-      double min_lot_loss = vol_min * loss_per_lot;
-      double distortion = (risk_amount > 0.0) ? (min_lot_loss / risk_amount) : 999.0;
-
-      if(g_cfg.allow_min_lot_override && (g_cfg.max_allowed_distortion <= 0.0 || distortion <= g_cfg.max_allowed_distortion))
-      {
-         lots = vol_min;
-         LogMsg(LOG_INFO, "SIZE_OVERRIDE", StringFormat("MIN_LOT_OVERRIDE eq=%.2f risk_amt=%.2f min_lot_loss=%.2f dist=%.2fx <= max_dist=%.2fx",
-                equity, risk_amount, min_lot_loss, distortion, g_cfg.max_allowed_distortion));
-      }
-      else if(min_lot_loss > risk_amount)
-      {
-         err = "MIN_LOT_EXCEEDS_RISK";
-         LogMsg(LOG_INFO, "SIZE_DIAG", StringFormat("eq=%.2f risk_amt=%.2f stop_dist=%.4f tick_sz=%.5f tick_val=%.2f loss_per_lot=%.2f min_lot_loss=%.2f min_vol=%.2f dist=%.2fx",
-                equity, risk_amount, stop_distance, tick_size, tick_value, loss_per_lot, min_lot_loss, vol_min, distortion));
-         return 0.0;
-      }
-      else
-      {
-         lots = vol_min;
-      }
-   }
-   if(lots > vol_max) lots = vol_max;
-
-   risk_actual_out = lots * loss_per_lot;
-   return lots;
+   risk_actual_out = env.actual_risk;
+   return env.executable_volume;
 }
 
 //--- Stop selection per Math Spec §24.4

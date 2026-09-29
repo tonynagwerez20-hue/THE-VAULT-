@@ -21,6 +21,7 @@
 #include <Regime Engine.mqh>
 #include <Strategy Engine.mqh>
 #include <Risk Engine.mqh>
+#include <Account Execution Engine.mqh>
 #include <Execution Engine.mqh>
 #include <Position Manager.mqh>
 #include <TransactionRecon.mqh>
@@ -54,6 +55,7 @@ input double InpPartialRR         = 2.0;
 input double InpPartialFraction   = 0.50;
 input double InpTrailATRMult      = 1.5;
 input double InpTrailActivateR    = 1.0;
+input ENUM_TRAILING_MODE InpTrailMode = TRAIL_DYNAMIC_25_PERCENT; // Trailing mode
 
 input group "=== Spread ==="
 input double InpMaxSpreadPoints   = 0.0;     // 0 = disabled
@@ -133,6 +135,7 @@ int OnInit()
    g_cfg.partial_fraction    = InpPartialFraction;
    g_cfg.trail_atr_mult      = InpTrailATRMult;
    g_cfg.trail_activate_r    = InpTrailActivateR;
+   g_cfg.trail_mode          = InpTrailMode;
    g_cfg.max_spread_atr_pct  = InpMaxSpreadATRPct;
    g_cfg.max_spread_points   = InpMaxSpreadPoints;
    g_cfg.session_start_hour  = InpSessionStartHour;
@@ -438,16 +441,19 @@ void OnClosedBar()
       return;
    }
 
-   //--- 10) Sizing
-   double actual_risk = 0.0;
-   string size_err;
-   double lots = ComputeLotSize(g_symbol, entry, sl, g_cfg.risk_per_trade_pct,
-                                actual_risk, size_err);
-   if(lots <= 0.0)
+   //--- 10) Account-Aware Execution Evaluation & Risk Sizing
+   AccountExecutionEnvelope acc_env = AccountExecutionEvaluate(
+      g_symbol, dr.direction, entry, sl, tp, g_cfg.risk_per_trade_pct, g_cfg, dr.action
+   );
+
+   if(acc_env.final_action != ACTION_TRADE)
    {
-      LogMsg(LOG_WARN, "SIZE", size_err);
+      LogMsg(LOG_WARN, "ACCOUNT_FEASIBILITY", StringFormat("BLOCKED status=%d reason=%s",
+             (int)acc_env.feasibility, acc_env.reason));
       return;
    }
+
+   double lots = acc_env.executable_volume;
 
    //--- 11) Build intent
    TradeIntent ti;
@@ -481,21 +487,32 @@ void OnClosedBar()
 
    //--- 12) Execute
    ExecutionResult er = ExecuteIntent(ti, lots, g_cfg);
-   if(!er.accepted)
+   if(!er.accepted && !g_cfg.shadow_only)
    {
       LogMsg(LOG_ERROR, "EXEC", StringFormat("fail retcode=%u %s",
              er.retcode, er.comment));
       return;
    }
-   LogMsg(LOG_INFO, "EXEC", StringFormat("filled dir=%d lots=%.2f price=%.5f",
-          dr.direction, lots, er.fill_price));
+   if(er.accepted)
+   {
+      LogMsg(LOG_INFO, "EXEC", StringFormat("filled dir=%d lots=%.2f price=%.5f",
+             dr.direction, lots, er.fill_price));
+   }
 
    //--- 13) Register position for management
    if(er.position_id == 0 && PositionSelect(g_symbol))
       er.position_id = (ulong)PositionGetInteger(POSITION_IDENTIFIER);
    if(er.position_id != 0)
+   {
       PositionManagerRegister(er.position_id, entry, sl, tp, dr.direction,
                               atr, g_cfg);
+   }
+   else if(g_cfg.shadow_only)
+   {
+      // In Shadow Mode, register synthetic position ticket (decision_id) to run post-entry shadow position management
+      PositionManagerRegister((ulong)decision_id, entry, sl, tp, dr.direction,
+                              atr, g_cfg);
+   }
 }
 
 //+------------------------------------------------------------------+

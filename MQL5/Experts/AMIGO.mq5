@@ -56,6 +56,9 @@ input double InpPartialFraction   = 0.50;
 input double InpTrailATRMult      = 1.5;
 input double InpTrailActivateR    = 1.0;
 input ENUM_TRAILING_MODE InpTrailMode = TRAIL_DYNAMIC_25_PERCENT; // Trailing mode
+input bool   InpAllowMinLotOverride   = true;    // Allow min lot override up to max distortion
+input double InpMaxAllowedDistortion  = 5.0;     // Max allowed risk distortion (5.0 = 5x)
+
 
 input group "=== Spread ==="
 input double InpMaxSpreadPoints   = 0.0;     // 0 = disabled
@@ -136,6 +139,8 @@ int OnInit()
    g_cfg.trail_atr_mult      = InpTrailATRMult;
    g_cfg.trail_activate_r    = InpTrailActivateR;
    g_cfg.trail_mode          = InpTrailMode;
+   g_cfg.allow_min_lot_override = InpAllowMinLotOverride;
+   g_cfg.max_allowed_distortion = InpMaxAllowedDistortion;
    g_cfg.max_spread_atr_pct  = InpMaxSpreadATRPct;
    g_cfg.max_spread_points   = InpMaxSpreadPoints;
    g_cfg.session_start_hour  = InpSessionStartHour;
@@ -179,25 +184,26 @@ int OnInit()
    double p_b_1_0001=0, p_b_1_0010=0, p_b_1_1000=0;
    double p_b_01_0001=0, p_b_01_0010=0, p_b_01_1000=0;
    double p_b_001_0001=0, p_b_001_0010=0, p_b_001_1000=0;
-   OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 1.00, 2000.000, 2000.001, p_b_1_0001);
-   OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 1.00, 2000.000, 2000.010, p_b_1_0010);
-   OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 1.00, 2000.000, 2001.000, p_b_1_1000);
+   bool ocp_ok = true;
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 1.00, 2000.000, 2000.001, p_b_1_0001);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 1.00, 2000.000, 2000.010, p_b_1_0010);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 1.00, 2000.000, 2001.000, p_b_1_1000);
 
-   OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.10, 2000.000, 2000.001, p_b_01_0001);
-   OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.10, 2000.000, 2000.010, p_b_01_0010);
-   OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.10, 2000.000, 2001.000, p_b_01_1000);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.10, 2000.000, 2000.001, p_b_01_0001);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.10, 2000.000, 2000.010, p_b_01_0010);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.10, 2000.000, 2001.000, p_b_01_1000);
 
-   OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.01, 2000.000, 2000.001, p_b_001_0001);
-   OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.01, 2000.000, 2000.010, p_b_001_0010);
-   OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.01, 2000.000, 2001.000, p_b_001_1000);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.01, 2000.000, 2000.001, p_b_001_0001);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.01, 2000.000, 2000.010, p_b_001_0010);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.01, 2000.000, 2001.000, p_b_001_1000);
 
    PrintFormat("[P22_AUDIT][TASK2_BUY] 1.00lot(0.001=%.4f, 0.01=%.4f, 1.00=%.4f) | 0.10lot(0.001=%.4f, 0.01=%.4f, 1.00=%.4f) | 0.01lot(0.001=%.4f, 0.01=%.4f, 1.00=%.4f)",
                p_b_1_0001, p_b_1_0010, p_b_1_1000, p_b_01_0001, p_b_01_0010, p_b_01_1000, p_b_001_0001, p_b_001_0010, p_b_001_1000);
 
    double p_s_1_1000=0, p_s_01_1000=0, p_s_001_1000=0;
-   OrderCalcProfit(ORDER_TYPE_SELL, g_symbol, 1.00, 2000.000, 1999.000, p_s_1_1000);
-   OrderCalcProfit(ORDER_TYPE_SELL, g_symbol, 0.10, 2000.000, 1999.000, p_s_01_1000);
-   OrderCalcProfit(ORDER_TYPE_SELL, g_symbol, 0.01, 2000.000, 1999.000, p_s_001_1000);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_SELL, g_symbol, 1.00, 2000.000, 1999.000, p_s_1_1000);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_SELL, g_symbol, 0.10, 2000.000, 1999.000, p_s_01_1000);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_SELL, g_symbol, 0.01, 2000.000, 1999.000, p_s_001_1000);
    PrintFormat("[P22_AUDIT][TASK2_SELL] 1.00lot(1.00=%.4f) | 0.10lot(1.00=%.4f) | 0.01lot(1.00=%.4f)",
                p_s_1_1000, p_s_01_1000, p_s_001_1000);
 
@@ -210,9 +216,16 @@ int OnInit()
       double raw_l = (2.50) / ((st_d / ts) * tv);
       double calc_lots = ComputeLotSize(g_symbol, 2000.0, 2000.0 - st_d, 0.5, act_risk, err);
       double ocp_min_loss = 0.0;
-      OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, v_min, 2000.0, 2000.0 - st_d, ocp_min_loss);
+      if(!OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, v_min, 2000.0, 2000.0 - st_d, ocp_min_loss))
+      {
+         ocp_ok = false;
+      }
       PrintFormat("[P22_AUDIT][TASK4] stop=%.2f risk_b=2.50 raw=%.5f norm=%.2f min_loss=%.2f ocp_min_loss=%.2f dec=%s",
                   st_d, raw_l, calc_lots, MathAbs(ocp_min_loss), MathAbs(ocp_min_loss), (calc_lots>0)?"APPROVED":"REJECTED");
+   }
+   if(!ocp_ok)
+   {
+      LogMsg(LOG_WARN, "INIT", "OrderCalcProfit audit experienced call failures");
    }
 
    return INIT_SUCCEEDED;
@@ -426,12 +439,29 @@ void OnClosedBar()
          structural_invalid = sp;
    }
 
-   double sl = SelectStop(g_symbol, dr.direction, entry, structural_invalid, atr);
-   double stop_dist = MathAbs(entry - sl);
+   double original_sl = SelectStop(g_symbol, dr.direction, entry, structural_invalid, atr);
+   double original_stop_dist = MathAbs(entry - original_sl);
    double tp;
-   if(dr.direction == +1) tp = entry + g_cfg.partial_rr * stop_dist;
-   else                   tp = entry - g_cfg.partial_rr * stop_dist;
+   if(dr.direction == +1) tp = entry + g_cfg.partial_rr * original_stop_dist;
+   else                   tp = entry - g_cfg.partial_rr * original_stop_dist;
    tp = NormalizeDouble(tp, (int)SymbolInfoInteger(g_symbol, SYMBOL_DIGITS));
+
+   //--- Account-Aware Adaptive Stop-Loss Evaluation Layer (Prompts §1-§19)
+   AdaptiveSLResult adapt_res = EvaluateAdaptiveStop(
+      g_symbol, dr.direction, entry, original_sl, tp, structural_invalid, atr, g_cfg.risk_per_trade_pct, g_cfg
+   );
+
+   // If adaptive SL was rejected, use original_sl so AccountExecutionEvaluate can properly classify infeasibility
+   double sl = (adapt_res.status == ADAPTIVE_SL_ACCEPTED) ? adapt_res.selected_sl : original_sl;
+   double stop_dist = MathAbs(entry - sl);
+
+   // Recalculate TP for adaptive SL using original strategy RR requirement
+   if(adapt_res.status == ADAPTIVE_SL_ACCEPTED)
+   {
+      if(dr.direction == +1) tp = entry + g_cfg.partial_rr * stop_dist;
+      else                   tp = entry - g_cfg.partial_rr * stop_dist;
+      tp = NormalizeDouble(tp, (int)SymbolInfoInteger(g_symbol, SYMBOL_DIGITS));
+   }
 
    //--- Spread vs stop distance check
    double spread = ask - bid;
@@ -445,6 +475,15 @@ void OnClosedBar()
    AccountExecutionEnvelope acc_env = AccountExecutionEvaluate(
       g_symbol, dr.direction, entry, sl, tp, g_cfg.risk_per_trade_pct, g_cfg, dr.action
    );
+
+   // Populate adaptive SL fields into execution envelope for diagnostics audit trail
+   acc_env.original_sl            = original_sl;
+   acc_env.original_stop_distance = original_stop_dist;
+   acc_env.adaptive_sl            = adapt_res.candidate_sl;
+   acc_env.selected_sl            = sl;
+   acc_env.max_account_stop_dist  = adapt_res.max_account_stop_dist;
+   acc_env.sl_adapt_status        = adapt_res.status;
+   acc_env.sl_adapt_reason        = adapt_res.reason;
 
    if(acc_env.final_action != ACTION_TRADE)
    {

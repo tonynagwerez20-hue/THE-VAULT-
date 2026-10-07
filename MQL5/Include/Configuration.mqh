@@ -41,6 +41,7 @@ struct AlgoMindConfig
    double   partial_fraction;     // 0.50
    double   trail_atr_mult;       // 1.5
    double   trail_activate_r;     // 1.0
+   ENUM_TRAILING_MODE trail_mode; // Trailing mode
 
    //--- Spread
    double   max_spread_atr_pct;   // 0.10 of stop distance

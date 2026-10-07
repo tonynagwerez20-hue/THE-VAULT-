@@ -37,6 +37,52 @@ enum ENUM_ACTION
    ACTION_NO_TRADE= 4
 };
 
+//--- Trailing mode enum
+enum ENUM_TRAILING_MODE
+{
+   TRAIL_OFF                 = 0,
+   TRAIL_DYNAMIC_25_PERCENT  = 1,
+   TRAIL_ATR                 = 2,
+   TRAIL_STRUCTURE           = 3,
+   TRAIL_ATR_PLUS_STRUCTURE  = 4
+};
+
+
+
+//--- Adaptive Stop-Loss Adaptation Status
+enum ENUM_SL_ADAPTATION_STATUS
+{
+   ORIGINAL_SL_EXECUTABLE = 0,
+   ADAPTIVE_SL_REQUIRED   = 1,
+   ADAPTIVE_SL_ACCEPTED   = 2,
+   ADAPTIVE_SL_REJECTED   = 3,
+   NO_VALID_SL            = 4
+};
+
+//--- Signal Execution Feasibility Classification
+enum ENUM_SIGNAL_EXECUTION_CLASSIFICATION
+{
+   SIGNAL_INVALID                  = 0,
+   SIGNAL_VALID_EXECUTABLE         = 1,
+   SIGNAL_VALID_ACCOUNT_INFEASIBLE = 2,
+   SIGNAL_VALID_BROKER_INFEASIBLE  = 3
+};
+
+//--- Adaptive Stop-Loss Result Diagnostic Struct
+struct AdaptiveSLResult
+{
+   ENUM_SL_ADAPTATION_STATUS status;
+   double                    original_sl;
+   double                    original_stop_dist;
+   double                    max_account_stop_dist;
+   double                    candidate_sl;
+   double                    candidate_stop_dist;
+   double                    selected_sl;
+   double                    selected_stop_dist;
+   double                    rr;
+   string                    reason;
+};
+
 //--- Data quality flags (bitmask)
 #define DQ_OK               0x0000
 #define DQ_MISSING_TICKS    0x0001

@@ -252,3 +252,595 @@ class TestSmallAccountSimulation:
         env_growth = evaluate_account_execution(acc_growth, cap, 1, 2000.0, 1998.0, 2004.0, target_risk_pct=0.5)
         assert env_growth.executable_volume >= 0.10
         assert env_growth.min_lot_status == MinLotStatus.NORMAL
+
+
+# ======================================================================
+# Hypothetical Exness Cent Account ($15 - $25, 1:2000 Leverage) Tests
+# ======================================================================
+class TestExnessCentAccount2000Leverage:
+    """Hypothetical simulation for Exness Cent account ($15-$25 balance, 1:2000 leverage).
+
+    Exness Cent Account Specifications:
+      - Account Currency: USC (Cent USD) or USD (where 1 USD = 100 Cent units, or $15 USD = 1,500 USC)
+      - Symbol: XAUUSDm / XAUUSDcent
+      - Min Lot: 0.01 lot (on cent account, 1.0 lot = 1 oz gold or 10 oz gold depending on cent contract size, typically contract_size=100 or 1.0).
+      - Leverage: 1:2000 (0.05% margin requirement)
+
+    We test 2 standard configurations:
+      Config A: Standard Standard/Cent Broker Symbol Spec (Contract Size = 100 oz, Tick Value = $1.00 per tick/lot)
+      Config B: Pure Cent Account Symbol Spec (1 USD = 100 USC, Balance = 1500 - 2500 USC, Contract Size = 1.0 oz, Tick Value = 0.01 USC)
+    """
+
+    def test_exness_cent_15_usd_standard_symbol_spec(self):
+        """$15 USD Balance, 1:2000 Leverage, Standard Gold Symbol (Contract 100, StopDist = 2.00).
+
+        - Target Risk 0.5% of $15 = $0.075
+        - Stop Distance = $2.00 (XAUUSD 2000.0 -> 1998.0)
+        - Risk per Lot (0.01 tick) = $200 per lot
+        - Raw Volume = $0.075 / $200 = 0.000375 lots < 0.01 min
+        - Actual Risk at Min Lot 0.01 = 0.01 * $200 = $2.00 (13.33% of account!)
+        - Risk Distortion = $2.00 / $0.075 = 26.67x
+        - Max Allowed Distortion Policy = 5.0x
+        -> Result: MIN_LOT_UNSAFE -> NO_TRADE (Fail-closed protecting $15 account from 13.3% loss per trade)
+        """
+        acc = AccountIdentification(
+            login=888001,
+            broker="Exness",
+            server="Exness-Real20",
+            currency="USD",
+            balance=15.0,
+            equity=15.0,
+            margin_free=15.0,
+            leverage=2000.0
+        )
+        cap = SymbolCapabilityProfile(
+            symbol="XAUUSDm",
+            tick_size=0.01,
+            tick_value=1.00,
+            contract_size=100.0,
+            volume_min=0.01,
+            volume_step=0.01
+        )
+
+        env = evaluate_account_execution(
+            account=acc,
+            symbol_cap=cap,
+            direction=1,
+            entry=2000.0,
+            stop=1998.0,
+            target=2004.0,
+            target_risk_pct=0.5,
+            max_allowed_distortion=5.0,
+            allow_min_lot_override=True
+        )
+
+        assert env.account.account_class == AccountClass.MICRO
+        assert env.min_lot_status == MinLotStatus.MIN_LOT_UNSAFE
+        assert env.feasibility == FeasibilityStatus.MIN_LOT_UNSAFE
+        assert env.final_action == Action.NO_TRADE
+        assert env.reason == "MIN_LOT_UNSAFE"
+        assert abs(env.actual_risk - 2.00) < 1e-4
+        assert abs(env.actual_risk_pct - 13.3333) < 1e-2
+        assert abs(env.risk_distortion - 26.6666) < 1e-2
+        # Since trade is rejected (MIN_LOT_UNSAFE), executable volume is 0.0, so required_margin is $0.00
+        assert env.required_margin == 0.0
+
+
+    def test_exness_cent_25_usd_standard_symbol_spec(self):
+        """$25 USD Balance, 1:2000 Leverage, Standard Gold Symbol (Contract 100, StopDist = 2.00).
+
+        - Target Risk 0.5% of $25 = $0.125
+        - Actual Risk at Min Lot 0.01 = $2.00 (8.0% of account)
+        - Risk Distortion = $2.00 / $0.125 = 16.0x > 5.0x
+        -> Result: MIN_LOT_UNSAFE -> NO_TRADE
+        """
+        acc = AccountIdentification(
+            login=888002,
+            broker="Exness",
+            server="Exness-Real20",
+            currency="USD",
+            balance=25.0,
+            equity=25.0,
+            margin_free=25.0,
+            leverage=2000.0
+        )
+        cap = SymbolCapabilityProfile(
+            symbol="XAUUSDm",
+            tick_size=0.01,
+            tick_value=1.00,
+            contract_size=100.0,
+            volume_min=0.01,
+            volume_step=0.01
+        )
+
+        env = evaluate_account_execution(
+            account=acc,
+            symbol_cap=cap,
+            direction=1,
+            entry=2000.0,
+            stop=1998.0,
+            target=2004.0,
+            target_risk_pct=0.5,
+            max_allowed_distortion=5.0,
+            allow_min_lot_override=True
+        )
+
+        assert env.min_lot_status == MinLotStatus.MIN_LOT_UNSAFE
+        assert env.final_action == Action.NO_TRADE
+        assert abs(env.risk_distortion - 16.0) < 1e-4
+
+    def test_exness_cent_15_usd_accommodated_under_relaxed_policy(self):
+        """$15 USD Balance, 1:2000 Leverage, relaxed distortion policy (max 30x distortion allowed).
+
+        If user/owner explicitly relaxes distortion policy for Micro accounts (e.g. allowing up to 13.3% risk):
+        - Risk Distortion = 26.67x <= 30.0x -> MIN_LOT_ACCOMMODATED -> TRADE (0.01 lot executable)
+        - Required Margin = $1.00 (Free Margin = $15.00) -> Margin check passes!
+        """
+        acc = AccountIdentification(
+            login=888001,
+            broker="Exness",
+            server="Exness-Real20",
+            currency="USD",
+            balance=15.0,
+            equity=15.0,
+            margin_free=15.0,
+            leverage=2000.0
+        )
+        cap = SymbolCapabilityProfile(
+            symbol="XAUUSDm",
+            tick_size=0.01,
+            tick_value=1.00,
+            contract_size=100.0,
+            volume_min=0.01,
+            volume_step=0.01
+        )
+
+        env = evaluate_account_execution(
+            account=acc,
+            symbol_cap=cap,
+            direction=1,
+            entry=2000.0,
+            stop=1998.0,
+            target=2004.0,
+            target_risk_pct=0.5,
+            max_allowed_distortion=30.0,  # Explicit relaxed policy test
+            allow_min_lot_override=True
+        )
+
+        assert env.min_lot_status == MinLotStatus.MIN_LOT_ACCOMMODATED
+        assert env.feasibility == FeasibilityStatus.MIN_LOT_ACCOMMODATED
+        assert env.final_action == Action.TRADE
+        assert env.executable_volume == 0.01
+        assert abs(env.required_margin - 1.00) < 1e-4
+
+    def test_exness_pure_cent_account_denomination(self):
+        """Pure Exness Cent Account (1 USD = 100 USC).
+
+        Account Balance: 2,500 USC ($25 USD)
+        Symbol: XAUUSDcent (1 cent lot = 1 oz gold or contract size 100 with tick_value in USC = 1.00 USC per tick)
+        - Equity = 2500 USC
+        - Target Risk 0.5% = 12.5 USC ($0.125 USD)
+        - Stop Distance = 2.00 pts (200 ticks)
+        - Risk per cent lot = 200 ticks * 0.01 tick value (USC) = 2.00 USC per cent lot (or $0.02 USD)
+        - Raw Volume = 12.5 / 2.00 = 6.25 cent lots
+        - VolumeMin = 0.01 cent lot
+        -> Result: Raw Volume (6.25 lots) >= Min Lot (0.01) -> STATE A NORMAL -> TRADE!
+        """
+        acc = AccountIdentification(
+            login=888003,
+            broker="Exness",
+            server="Exness-Cent2",
+            currency="USC",
+            balance=2500.0,  # 2500 USC = $25 USD
+            equity=2500.0,
+            margin_free=2500.0,
+            leverage=2000.0
+        )
+        cap = SymbolCapabilityProfile(
+            symbol="XAUUSDcent",
+            tick_size=0.01,
+            tick_value=0.01,  # 0.01 USC per tick for 1 cent lot (1 oz contract size)
+            contract_size=1.0,
+            volume_min=0.01,
+            volume_step=0.01
+        )
+
+        env = evaluate_account_execution(
+            account=acc,
+            symbol_cap=cap,
+            direction=1,
+            entry=2000.0,
+            stop=1998.0,
+            target=2004.0,
+            target_risk_pct=0.5,
+            max_allowed_distortion=5.0
+        )
+
+        assert env.min_lot_status == MinLotStatus.NORMAL
+        assert env.feasibility == FeasibilityStatus.NORMAL
+        assert env.final_action == Action.TRADE
+        assert env.executable_volume == 6.25
+        assert abs(env.actual_risk - 12.5) < 1e-4
+        assert abs(env.actual_risk_pct - 0.5) < 1e-4
+        assert abs(env.risk_distortion - 1.0) < 1e-4
+        # Required Margin for 6.25 cent lots at 1:2000 leverage = (6.25 * 1.0 * 2000) / 2000 = 6.25 USC ($0.0625 USD)
+        assert abs(env.required_margin - 6.25) < 1e-4
+
+
+# ======================================================================
+# Section 23 & 24: Account-Aware Adaptive Stop-Loss Test Matrix
+# ======================================================================
+from algomind.account_execution import (
+    SLAdaptationStatus, AdaptiveSLResult, evaluate_adaptive_stop
+)
+
+
+class TestAccountAwareAdaptiveStopLoss:
+
+    def test_original_sl_executable(self):
+        """Original SL is within account max stop distance -> ORIGINAL_SL_EXECUTABLE."""
+        cap = SymbolCapabilityProfile(symbol="XAUUSDm", tick_size=0.01, tick_value=1.00, volume_min=0.01)
+        # Equity = $10,000, 0.5% risk = $50. Max risk = $250. Max stop dist = 250 / 100 = 2.50
+        # Original stop dist = 0.50 <= 2.50 -> Original SL executable
+        res = evaluate_adaptive_stop(
+            symbol_cap=cap, equity=10000.0, direction=1, entry=2000.0, original_sl=1999.5, target=2004.0, target_risk_pct=0.5
+        )
+        assert res.status == SLAdaptationStatus.ORIGINAL_SL_EXECUTABLE
+        assert res.selected_sl == 1999.5
+        assert res.reason == "ORIGINAL_SL_EXECUTABLE"
+
+    def test_original_sl_too_wide_valid_tighter_candidate_exists(self):
+        """Original SL too wide, valid tighter strategy structural candidate exists -> ADAPTIVE_SL_ACCEPTED."""
+        cap = SymbolCapabilityProfile(symbol="XAUUSDm", tick_size=0.01, tick_value=1.00, volume_min=0.01)
+        # Equity = $16.15, 0.5% risk = $0.08. Max 5x risk = $0.40. Max stop dist = 0.40 / 100 = 0.40
+        # Original SL = 1973.214 (stop dist 26.786 > 0.40).
+        # Valid structural swing low = 1999.80 (dist 0.20 <= 0.40). TP = 2004.0 -> RR = 4.2 / 0.20 = 21.0 >= 2.0
+        res = evaluate_adaptive_stop(
+            symbol_cap=cap,
+            equity=16.15,
+            direction=1,
+            entry=2000.0,
+            original_sl=1973.214,
+            target=2004.0,
+            structural_invalid=1999.80,
+            atr=0.30,
+            target_risk_pct=0.5,
+            max_allowed_distortion=5.0,
+        )
+        assert res.status == SLAdaptationStatus.ADAPTIVE_SL_ACCEPTED
+        assert res.selected_sl == 1999.80
+        assert abs(res.candidate_stop_dist - 0.20) < 1e-4
+        assert res.reason == "VALID_STRATEGY_STRUCTURE"
+
+    def test_original_sl_too_wide_candidate_violates_structure(self):
+        """Original SL too wide, structural candidate is invalid (wrong side of original SL) -> NO_TRADE."""
+        cap = SymbolCapabilityProfile(symbol="XAUUSDm", tick_size=0.01, tick_value=1.00, volume_min=0.01)
+        # Structural level = 1970.0 (worse than original SL 1973.214)
+        res = evaluate_adaptive_stop(
+            symbol_cap=cap,
+            equity=16.15,
+            direction=1,
+            entry=2000.0,
+            original_sl=1973.214,
+            target=2004.0,
+            structural_invalid=1970.0,
+            atr=0.0,
+            target_risk_pct=0.5,
+            max_allowed_distortion=5.0,
+        )
+        assert res.status == SLAdaptationStatus.ADAPTIVE_SL_REJECTED
+        assert res.selected_sl == 1973.214
+        assert res.reason == "NO_VALID_ADAPTIVE_SL"
+
+    def test_candidate_violates_rr(self):
+        """Candidate stop loss produces RR < 2.0 -> ADAPTIVE_SL_REJECTED."""
+        cap = SymbolCapabilityProfile(symbol="XAUUSDm", tick_size=0.01, tick_value=1.00, volume_min=0.01)
+        # Entry = 2000.0, Target = 2000.50 (reward = 0.50). Candidate SL = 1999.70 (stop dist = 0.30).
+        # RR = 0.50 / 0.30 = 1.67 < 2.00 -> Rejected!
+        res = evaluate_adaptive_stop(
+            symbol_cap=cap,
+            equity=16.15,
+            direction=1,
+            entry=2000.0,
+            original_sl=1973.214,
+            target=2000.50,
+            structural_invalid=1999.70,
+            atr=0.0,
+            target_risk_pct=0.5,
+            max_allowed_distortion=5.0,
+            min_rr_required=2.0,
+        )
+        assert res.status == SLAdaptationStatus.ADAPTIVE_SL_REJECTED
+        assert res.reason == "NO_VALID_ADAPTIVE_SL"
+
+    def test_candidate_exceeds_account_ceiling(self):
+        """Candidate stop loss distance exceeds account-compatible maximum -> ADAPTIVE_SL_REJECTED."""
+        cap = SymbolCapabilityProfile(symbol="XAUUSDm", tick_size=0.01, tick_value=1.00, volume_min=0.01)
+        # Max account dist = 0.40. Candidate SL = 1999.00 (dist = 1.00 > 0.40)
+        res = evaluate_adaptive_stop(
+            symbol_cap=cap,
+            equity=16.15,
+            direction=1,
+            entry=2000.0,
+            original_sl=1973.214,
+            target=2004.0,
+            structural_invalid=1999.00,
+            atr=0.0,
+            target_risk_pct=0.5,
+            max_allowed_distortion=5.0,
+        )
+        assert res.status == SLAdaptationStatus.ADAPTIVE_SL_REJECTED
+
+    def test_candidate_violates_broker_min_stop_distance(self):
+        """Candidate stop loss violates broker stops_level -> ADAPTIVE_SL_REJECTED."""
+        cap = SymbolCapabilityProfile(symbol="XAUUSDm", tick_size=0.01, tick_value=1.00, volume_min=0.01, stops_level=50, point=0.01)
+        # Stops level = 50 * 0.01 = 0.50 pts. Candidate SL = 1999.80 (dist = 0.20 < 0.50)
+        res = evaluate_adaptive_stop(
+            symbol_cap=cap,
+            equity=16.15,
+            direction=1,
+            entry=2000.0,
+            original_sl=1973.214,
+            target=2004.0,
+            structural_invalid=1999.80,
+            atr=0.0,
+            target_risk_pct=0.5,
+        )
+        assert res.status == SLAdaptationStatus.ADAPTIVE_SL_REJECTED
+
+    def test_buy_invalid_candidate(self):
+        """BUY candidate SL >= entry -> REJECT."""
+        cap = SymbolCapabilityProfile(symbol="XAUUSDm", tick_size=0.01, tick_value=1.00, volume_min=0.01)
+        res = evaluate_adaptive_stop(
+            symbol_cap=cap,
+            equity=16.15,
+            direction=1,
+            entry=2000.0,
+            original_sl=1973.214,
+            target=2004.0,
+            structural_invalid=2000.50, # invalid SL above entry
+            atr=0.0,
+            target_risk_pct=0.5,
+        )
+        assert res.status == SLAdaptationStatus.ADAPTIVE_SL_REJECTED
+
+    def test_sell_invalid_candidate(self):
+        """SELL candidate SL <= entry -> REJECT."""
+        cap = SymbolCapabilityProfile(symbol="XAUUSDm", tick_size=0.01, tick_value=1.00, volume_min=0.01)
+        res = evaluate_adaptive_stop(
+            symbol_cap=cap,
+            equity=16.15,
+            direction=-1,
+            entry=2000.0,
+            original_sl=2026.786,
+            target=1996.0,
+            structural_invalid=1999.50, # invalid SL below entry for SELL
+            atr=0.0,
+            target_risk_pct=0.5,
+        )
+        assert res.status == SLAdaptationStatus.ADAPTIVE_SL_REJECTED
+
+    def test_multiple_candidates_hierarchy(self):
+        """Verifies candidate selection follows Strategy Hierarchy (Structure > ATR)."""
+        cap = SymbolCapabilityProfile(symbol="XAUUSDm", tick_size=0.01, tick_value=1.00, volume_min=0.01)
+        # Candidate 1 (Structure): 1999.80 (dist 0.20)
+        # Candidate 2 (ATR): 1999.70 (dist 0.30)
+        # System MUST select Candidate 1 (Structure)
+        res = evaluate_adaptive_stop(
+            symbol_cap=cap,
+            equity=16.15,
+            direction=1,
+            entry=2000.0,
+            original_sl=1973.214,
+            target=2004.0,
+            structural_invalid=1999.80,
+            atr=0.30,
+            target_risk_pct=0.5,
+            max_allowed_distortion=5.0,
+        )
+        assert res.status == SLAdaptationStatus.ADAPTIVE_SL_ACCEPTED
+        assert res.selected_sl == 1999.80
+        assert res.reason == "VALID_STRATEGY_STRUCTURE"
+
+    def test_final_volume_risk_uses_executable_volume(self):
+        """Actual risk must be calculated using normalized executable volume, not raw volume."""
+        acc = AccountIdentification(equity=16.15, balance=16.15, margin_free=16.15, leverage=2000.0)
+        cap = SymbolCapabilityProfile(symbol="XAUUSDm", tick_size=0.01, tick_value=1.00, volume_min=0.01)
+        
+        env = evaluate_account_execution(
+            account=acc,
+            symbol_cap=cap,
+            direction=1,
+            entry=2000.0,
+            stop=1973.214,
+            target=2004.0,
+            target_risk_pct=0.5,
+            original_sl=1973.214,
+            structural_invalid=1999.80,
+            atr=0.30,
+        )
+        assert env.sl_adapt_status == SLAdaptationStatus.ADAPTIVE_SL_ACCEPTED
+        assert env.executable_volume == 0.01
+        # Actual risk must equal 0.01 lot * (0.20 stop dist / 0.01 tick) * $1.00 = $20.00... wait:
+        # 0.20 stop dist -> risk per lot = (0.20/0.01)*1 = $20 per lot. 0.01 lot * $20 = $0.20 actual risk!
+        assert abs(env.actual_risk - 0.20) < 1e-4
+
+    def test_live_runtime_16_15_equity_sweep(self):
+        """Full verification of $16.15 live runtime example with adaptive SL."""
+        acc = AccountIdentification(equity=16.15, balance=16.15, margin_free=16.15, leverage=2000.0)
+        cap = SymbolCapabilityProfile(symbol="XAUUSDm", tick_size=0.01, tick_value=1.00, volume_min=0.01)
+        
+        env = evaluate_account_execution(
+            account=acc,
+            symbol_cap=cap,
+            direction=1,
+            entry=2000.0,
+            stop=1973.214,
+            target=2004.0,
+            target_risk_pct=0.5,
+            original_sl=1973.214,
+            structural_invalid=1999.80,
+            atr=0.30,
+        )
+        
+        assert env.original_sl == 1973.214
+        assert env.selected_sl == 1999.80
+        assert env.executable_volume == 0.01
+        assert abs(env.actual_risk - 0.20) < 1e-4
+        assert abs(env.target_risk_amount - 0.08075) < 1e-4
+        assert env.final_action == Action.TRADE
+        
+        # Verify diagnostic logs contain [AlgoMind][SL_ADAPT]
+        sl_adapt_logs = [d for d in env.diagnostics if "[AlgoMind][SL_ADAPT]" in d]
+        assert len(sl_adapt_logs) == 1
+        assert "sym=XAUUSDm" in sl_adapt_logs[0]
+        assert "status=ACCEPTED" in sl_adapt_logs[0]
+        assert "reason=VALID_STRATEGY_STRUCTURE" in sl_adapt_logs[0]
+
+
+from algomind.account_execution import SignalExecutionClassification, SymbolTradeMode
+
+
+class TestCasesABCDFourStateFeasibility:
+    """Explicit Verification of the 4 Mandatory Feasibility Cases (Prompt REQ-03)."""
+
+    def test_case_a_primary_sl_executable(self):
+        """Case A: Strategy-valid + Primary SL valid + RR >= 2.0 + Account feasible = SIGNAL_VALID_EXECUTABLE."""
+        acc = AccountIdentification(equity=10000.0, balance=10000.0)
+        cap = SymbolCapabilityProfile(symbol="XAUUSDm", tick_size=0.01, tick_value=1.00, volume_min=0.01)
+
+        env = evaluate_account_execution(
+            account=acc,
+            symbol_cap=cap,
+            direction=1,
+            entry=2000.0,
+            stop=1998.0,
+            target=2004.0,
+            target_risk_pct=0.5,
+            strategy_action=Action.TRADE
+        )
+
+        assert env.execution_classification == SignalExecutionClassification.SIGNAL_VALID_EXECUTABLE
+        assert env.final_action == Action.TRADE
+        assert env.min_lot_status == MinLotStatus.NORMAL
+        size_diags = [d for d in env.diagnostics if "[SIZE_DIAG]" in d]
+        assert len(size_diags) == 1
+        assert "classification=SIGNAL_VALID_EXECUTABLE" in size_diags[0]
+
+    def test_case_b_tighter_adaptive_sl_executable(self):
+        """Case B: Primary SL too wide -> Tighter valid strategy SL candidate exists and passes all gates = SIGNAL_VALID_EXECUTABLE."""
+        acc = AccountIdentification(equity=16.15, balance=16.15, margin_free=16.15, leverage=2000.0)
+        cap = SymbolCapabilityProfile(symbol="XAUUSDm", tick_size=0.01, tick_value=1.00, volume_min=0.01)
+
+        env = evaluate_account_execution(
+            account=acc,
+            symbol_cap=cap,
+            direction=1,
+            entry=2000.0,
+            stop=1955.0,  # Primary SL too wide ($45 dist)
+            target=2004.0,
+            target_risk_pct=0.5,
+            original_sl=1955.0,
+            structural_invalid=1999.80, # Tighter valid structural SL candidate ($0.20 dist)
+            atr=0.30,
+            strategy_action=Action.TRADE
+        )
+
+        assert env.execution_classification == SignalExecutionClassification.SIGNAL_VALID_EXECUTABLE
+        assert env.final_action == Action.TRADE
+        assert env.selected_sl == 1999.80
+        assert env.sl_adapt_status == SLAdaptationStatus.ADAPTIVE_SL_ACCEPTED
+
+    def test_case_c_genuinely_infeasible(self):
+        """Case C: Primary SL too wide -> No valid strategy candidate fits account risk ceiling = SIGNAL_VALID_ACCOUNT_INFEASIBLE."""
+        acc = AccountIdentification(equity=16.15, balance=16.15, margin_free=16.15, leverage=2000.0)
+        cap = SymbolCapabilityProfile(symbol="XAUUSDm", tick_size=0.01, tick_value=1.00, volume_min=0.01)
+
+        env = evaluate_account_execution(
+            account=acc,
+            symbol_cap=cap,
+            direction=1,
+            entry=2000.0,
+            stop=1955.0,  # Primary SL too wide ($45 dist -> min lot loss $45.00 > max risk $0.40375)
+            target=2004.0,
+            target_risk_pct=0.5,
+            original_sl=1955.0,
+            structural_invalid=0.0, # No tighter structural candidate
+            atr=0.0,                # No tighter ATR candidate
+            strategy_action=Action.TRADE
+        )
+
+        assert env.execution_classification == SignalExecutionClassification.SIGNAL_VALID_ACCOUNT_INFEASIBLE
+        assert env.final_action == Action.NO_TRADE
+        assert env.executable_volume == 0.0
+        assert env.reason == "MIN_LOT_UNSAFE"
+        size_diags = [d for d in env.diagnostics if "[SIZE_DIAG]" in d]
+        assert len(size_diags) == 1
+        assert "classification=SIGNAL_VALID_ACCOUNT_INFEASIBLE" in size_diags[0]
+
+    def test_case_d_broker_constraint(self):
+        """Case D: Strategy-valid + otherwise account-feasible + broker trade disabled = SIGNAL_VALID_BROKER_INFEASIBLE."""
+        acc = AccountIdentification(equity=10000.0, balance=10000.0)
+        cap = SymbolCapabilityProfile(symbol="XAUUSDm", trade_mode=SymbolTradeMode.DISABLED.value) # 0 = SYMBOL_TRADE_MODE_DISABLED
+
+        env = evaluate_account_execution(
+            account=acc,
+            symbol_cap=cap,
+            direction=1,
+            entry=2000.0,
+            stop=1998.0,
+            target=2004.0,
+            target_risk_pct=0.5,
+            strategy_action=Action.TRADE
+        )
+
+        assert env.execution_classification == SignalExecutionClassification.SIGNAL_VALID_BROKER_INFEASIBLE
+        assert env.final_action == Action.NO_TRADE
+        assert env.reason == "SYMBOL_TRADE_MODE_DISABLED"
+
+    def test_strategy_invalid(self):
+        """Strategy decision != ACTION_TRADE remains SIGNAL_INVALID."""
+        acc = AccountIdentification(equity=10000.0, balance=10000.0)
+        cap = SymbolCapabilityProfile()
+
+        env = evaluate_account_execution(
+            account=acc,
+            symbol_cap=cap,
+            direction=1,
+            entry=2000.0,
+            stop=1998.0,
+            target=2004.0,
+            target_risk_pct=0.5,
+            strategy_action=Action.NO_TRADE
+        )
+
+        assert env.execution_classification == SignalExecutionClassification.SIGNAL_INVALID
+        assert env.final_action == Action.NO_TRADE
+        assert env.reason == "STRATEGY_NOT_TRADE"
+
+    def test_october_7_replay_scenario(self):
+        """Replay exact October 7 condition: $16.15 equity, $45.00 stop dist, 0.01 min lot.
+        Verify system rejects as SIGNAL_VALID_ACCOUNT_INFEASIBLE rather than forcing 0.01 lot or shrinking SL.
+        """
+        acc = AccountIdentification(equity=16.15, balance=16.15, margin_free=16.15, leverage=2000.0)
+        cap = SymbolCapabilityProfile(symbol="XAUUSDm", tick_size=0.001, tick_value=0.10, volume_min=0.01)
+
+        env = evaluate_account_execution(
+            account=acc,
+            symbol_cap=cap,
+            direction=1,
+            entry=2650.00,
+            stop=2605.00,  # $45.00 stop distance
+            target=2740.00,
+            target_risk_pct=0.5,
+            original_sl=2605.00,
+            strategy_action=Action.TRADE
+        )
+
+        assert env.execution_classification == SignalExecutionClassification.SIGNAL_VALID_ACCOUNT_INFEASIBLE
+        assert env.final_action == Action.NO_TRADE
+        assert env.executable_volume == 0.0
+        assert env.selected_sl == 2605.00 # SL remained un-shrunk
+        assert env.risk_distortion > 500.0 # ~557x distortion
+
+

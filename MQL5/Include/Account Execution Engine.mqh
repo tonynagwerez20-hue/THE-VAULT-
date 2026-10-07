@@ -118,11 +118,21 @@ struct AccountExecutionEnvelope
    double   risk_distortion;
    double   required_margin;
    
+   //--- Adaptive Stop-Loss Envelope Tracking (Prompt §4, §5, §19)
+   double                    original_sl;
+   double                    original_stop_distance;
+   double                    adaptive_sl;
+   double                    selected_sl;
+   double                    max_account_stop_dist;
+   ENUM_SL_ADAPTATION_STATUS sl_adapt_status;
+   string                    sl_adapt_reason;
+
    //--- Execution Feasibility States
-   ENUM_MIN_LOT_STATUS      min_lot_status;
-   ENUM_ACCOUNT_FEASIBILITY feasibility;
-   ENUM_ACTION              final_action;
-   string                   reason;
+   ENUM_MIN_LOT_STATUS                  min_lot_status;
+   ENUM_ACCOUNT_FEASIBILITY             feasibility;
+   ENUM_SIGNAL_EXECUTION_CLASSIFICATION execution_classification;
+   ENUM_ACTION                          final_action;
+   string                               reason;
 };
 
 //+------------------------------------------------------------------+
@@ -337,9 +347,10 @@ AccountExecutionEnvelope AccountExecutionEvaluate(
    string acc_err;
    if(!ValidateAccountIdentification(env.account, acc_err))
    {
-      env.feasibility  = FEASIBILITY_BROKER_BLOCKED;
-      env.final_action = ACTION_NO_TRADE;
-      env.reason       = "ACCOUNT_INVALID:" + acc_err;
+      env.feasibility              = FEASIBILITY_BROKER_BLOCKED;
+      env.execution_classification = SIGNAL_VALID_BROKER_INFEASIBLE;
+      env.final_action             = ACTION_NO_TRADE;
+      env.reason                   = "ACCOUNT_INVALID:" + acc_err;
       LogAccountExecutionDiagnostic(env);
       return env;
    }
@@ -351,9 +362,10 @@ AccountExecutionEnvelope AccountExecutionEvaluate(
    string spec_err;
    if(!ValidateSymbolCapability(env.symbol_cap, spec_err))
    {
-      env.feasibility  = FEASIBILITY_INVALID_SYMBOL_SPEC;
-      env.final_action = ACTION_NO_TRADE;
-      env.reason       = "INVALID_SYMBOL_SPEC:" + spec_err;
+      env.feasibility              = FEASIBILITY_INVALID_SYMBOL_SPEC;
+      env.execution_classification = SIGNAL_VALID_BROKER_INFEASIBLE;
+      env.final_action             = ACTION_NO_TRADE;
+      env.reason                   = "INVALID_SYMBOL_SPEC:" + spec_err;
       LogAccountExecutionDiagnostic(env);
       return env;
    }
@@ -361,9 +373,10 @@ AccountExecutionEnvelope AccountExecutionEvaluate(
    //--- 5. Account/Broker Permission Check
    if(env.symbol_cap.trade_mode == SYMBOL_TRADE_MODE_DISABLED)
    {
-      env.feasibility  = FEASIBILITY_BROKER_BLOCKED;
-      env.final_action = ACTION_NO_TRADE;
-      env.reason       = "SYMBOL_TRADE_MODE_DISABLED";
+      env.feasibility              = FEASIBILITY_BROKER_BLOCKED;
+      env.execution_classification = SIGNAL_VALID_BROKER_INFEASIBLE;
+      env.final_action             = ACTION_NO_TRADE;
+      env.reason                   = "SYMBOL_TRADE_MODE_DISABLED";
       LogAccountExecutionDiagnostic(env);
       return env;
    }
@@ -371,17 +384,19 @@ AccountExecutionEnvelope AccountExecutionEvaluate(
    //--- 6. Strategy Gate Respect (Account layer MUST NEVER override a strategy NO_TRADE)
    if(strategy_proposed_action != ACTION_TRADE)
    {
-      env.final_action = strategy_proposed_action;
-      env.reason       = "STRATEGY_NOT_TRADE";
+      env.execution_classification = SIGNAL_INVALID;
+      env.final_action             = strategy_proposed_action;
+      env.reason                   = "STRATEGY_NOT_TRADE";
       return env;
    }
 
    //--- 7. Geometry & Stop Distance Validation
    if(env.stop_distance <= 0.0)
    {
-      env.feasibility  = FEASIBILITY_STOPS_INVALID;
-      env.final_action = ACTION_NO_TRADE;
-      env.reason       = "ZERO_STOP_DISTANCE";
+      env.feasibility              = FEASIBILITY_STOPS_INVALID;
+      env.execution_classification = SIGNAL_VALID_BROKER_INFEASIBLE;
+      env.final_action             = ACTION_NO_TRADE;
+      env.reason                   = "ZERO_STOP_DISTANCE";
       LogAccountExecutionDiagnostic(env);
       return env;
    }
@@ -389,22 +404,24 @@ AccountExecutionEnvelope AccountExecutionEvaluate(
    double min_stop_dist = env.symbol_cap.stops_level * env.symbol_cap.point;
    if(min_stop_dist > 0.0 && env.stop_distance < min_stop_dist)
    {
-      env.feasibility  = FEASIBILITY_STOPS_INVALID;
-      env.final_action = ACTION_NO_TRADE;
-      env.reason       = "STOP_BELOW_STOPS_LEVEL";
+      env.feasibility              = FEASIBILITY_STOPS_INVALID;
+      env.execution_classification = SIGNAL_VALID_BROKER_INFEASIBLE;
+      env.final_action             = ACTION_NO_TRADE;
+      env.reason                   = "STOP_BELOW_STOPS_LEVEL";
       LogAccountExecutionDiagnostic(env);
       return env;
    }
 
    //--- 8. Risk Sizing & 3-State Minimum Lot Sizing (Prompt §9, §10, §11)
    env.target_risk_amount = env.account.equity * (target_risk_pct / 100.0);
-   env.risk_per_lot       = (env.stop_distance / env.symbol_cap.tick_size) * env.symbol_cap.tick_value;
+   env.risk_per_lot       = (env.symbol_cap.tick_size > 0.0) ? ((env.stop_distance / env.symbol_cap.tick_size) * env.symbol_cap.tick_value) : 0.0;
    
    if(env.risk_per_lot <= 0.0)
    {
-      env.feasibility  = FEASIBILITY_INVALID_SYMBOL_SPEC;
-      env.final_action = ACTION_NO_TRADE;
-      env.reason       = "ZERO_RISK_PER_LOT";
+      env.feasibility              = FEASIBILITY_INVALID_SYMBOL_SPEC;
+      env.execution_classification = SIGNAL_VALID_BROKER_INFEASIBLE;
+      env.final_action             = ACTION_NO_TRADE;
+      env.reason                   = "ZERO_RISK_PER_LOT";
       LogAccountExecutionDiagnostic(env);
       return env;
    }
@@ -424,6 +441,7 @@ AccountExecutionEnvelope AccountExecutionEvaluate(
       env.actual_risk_pct = (env.account.equity > 0.0) ? (env.actual_risk / env.account.equity * 100.0) : 0.0;
       env.risk_distortion = (env.target_risk_amount > 0.0) ? (env.actual_risk / env.target_risk_amount) : 1.0;
       env.feasibility     = FEASIBILITY_NORMAL;
+      env.execution_classification = SIGNAL_VALID_EXECUTABLE;
    }
    else
    {
@@ -432,30 +450,31 @@ AccountExecutionEnvelope AccountExecutionEvaluate(
       double min_lot_risk_pct = (env.account.equity > 0.0) ? (min_lot_risk / env.account.equity * 100.0) : 999.0;
       double distortion       = (env.target_risk_amount > 0.0) ? (min_lot_risk / env.target_risk_amount) : 999.0;
 
-      // Note: max_allowed_distortion parameter threshold is marked REQUIRES DECISION (Prompt §18)
       double max_distortion = (cfg.max_allowed_distortion > 0.0) ? cfg.max_allowed_distortion : 1.0;
 
       if(cfg.allow_min_lot_override && distortion <= max_distortion)
       {
          // STATE B: MINIMUM-LOT ACCOMMODATED
-         env.min_lot_status    = MIN_LOT_ACCOMMODATED;
-         env.executable_volume = env.symbol_cap.volume_min;
-         env.actual_risk       = min_lot_risk;
-         env.actual_risk_pct   = min_lot_risk_pct;
-         env.risk_distortion   = distortion;
-         env.feasibility       = FEASIBILITY_MIN_LOT_ACCOMMODATED;
+         env.min_lot_status           = MIN_LOT_ACCOMMODATED;
+         env.executable_volume        = env.symbol_cap.volume_min;
+         env.actual_risk              = min_lot_risk;
+         env.actual_risk_pct          = min_lot_risk_pct;
+         env.risk_distortion          = distortion;
+         env.feasibility              = FEASIBILITY_MIN_LOT_ACCOMMODATED;
+         env.execution_classification = SIGNAL_VALID_EXECUTABLE;
       }
       else
       {
          // STATE C: MINIMUM-LOT UNSAFE
-         env.min_lot_status    = MIN_LOT_UNSAFE;
-         env.executable_volume = 0.0;
-         env.actual_risk       = min_lot_risk;
-         env.actual_risk_pct   = min_lot_risk_pct;
-         env.risk_distortion   = distortion;
-         env.feasibility       = FEASIBILITY_MIN_LOT_UNSAFE;
-         env.final_action      = ACTION_NO_TRADE;
-         env.reason            = "MIN_LOT_UNSAFE";
+         env.min_lot_status           = MIN_LOT_UNSAFE;
+         env.executable_volume        = 0.0;
+         env.actual_risk              = min_lot_risk;
+         env.actual_risk_pct          = min_lot_risk_pct;
+         env.risk_distortion          = distortion;
+         env.feasibility              = FEASIBILITY_MIN_LOT_UNSAFE;
+         env.execution_classification = SIGNAL_VALID_ACCOUNT_INFEASIBLE;
+         env.final_action             = ACTION_NO_TRADE;
+         env.reason                   = "MIN_LOT_UNSAFE";
          LogAccountExecutionDiagnostic(env);
          return env;
       }
@@ -476,16 +495,18 @@ AccountExecutionEnvelope AccountExecutionEvaluate(
 
    if(env.account.margin_free > 0.0 && env.required_margin > env.account.margin_free * 0.95)
    {
-      env.feasibility  = FEASIBILITY_MARGIN_BLOCKED;
-      env.final_action = ACTION_NO_TRADE;
-      env.reason       = "INSUFFICIENT_MARGIN";
+      env.feasibility              = FEASIBILITY_MARGIN_BLOCKED;
+      env.execution_classification = SIGNAL_VALID_ACCOUNT_INFEASIBLE;
+      env.final_action             = ACTION_NO_TRADE;
+      env.reason                   = "INSUFFICIENT_MARGIN";
       LogAccountExecutionDiagnostic(env);
       return env;
    }
 
    //--- 10. Final Action Resolution
-   env.final_action = ACTION_TRADE;
-   env.reason       = (env.min_lot_status == MIN_LOT_ACCOMMODATED) ? "MIN_LOT_ACCOMMODATED" : "OK";
+   env.execution_classification = SIGNAL_VALID_EXECUTABLE;
+   env.final_action             = ACTION_TRADE;
+   env.reason                   = (env.min_lot_status == MIN_LOT_ACCOMMODATED) ? "MIN_LOT_ACCOMMODATED" : "OK";
 
    //--- 11. Structured Diagnostic Output (Prompt §15, §19 Data Provenance)
    LogAccountExecutionDiagnostic(env);
@@ -514,6 +535,10 @@ void LogAccountExecutionDiagnostic(const AccountExecutionEnvelope &env)
                     (env.symbol_cap.tick_value_source == SRC_ORDERCALCPROFIT_FALLBACK) ? "ORDERCALCPROFIT_FALLBACK" :
                     (env.symbol_cap.tick_value_source == SRC_DERIVED)                  ? "DERIVED" : "UNAVAILABLE";
 
+   string class_str = (env.execution_classification == SIGNAL_VALID_EXECUTABLE)         ? "SIGNAL_VALID_EXECUTABLE" :
+                      (env.execution_classification == SIGNAL_VALID_ACCOUNT_INFEASIBLE)  ? "SIGNAL_VALID_ACCOUNT_INFEASIBLE" :
+                      (env.execution_classification == SIGNAL_VALID_BROKER_INFEASIBLE)   ? "SIGNAL_VALID_BROKER_INFEASIBLE" : "SIGNAL_INVALID";
+
    PrintFormat("[ACCOUNT_ID] login=%I64d company=%s server=%s currency=%s balance=%.2f equity=%.2f free_margin=%.2f leverage=%.0f margin_mode=%d trade_allowed=%s expert_allowed=%s class=%s",
                env.account.login, env.account.broker, env.account.server, env.account.currency,
                env.account.balance, env.account.equity, env.account.margin_free, env.account.leverage,
@@ -534,6 +559,39 @@ void LogAccountExecutionDiagnostic(const AccountExecutionEnvelope &env)
    PrintFormat("[ACCOUNT_HANDLING] class=%s status=%d min_lot_status=%s margin_req=$%.2f",
                class_name, (int)env.feasibility, min_lot_str, env.required_margin);
 
-   PrintFormat("[FINAL_ACTION] action=%s reason=%s", act_str, env.reason);
+   string adapt_status_str = (env.sl_adapt_status == ORIGINAL_SL_EXECUTABLE) ? "ORIGINAL_SL_EXECUTABLE" :
+                             (env.sl_adapt_status == ADAPTIVE_SL_REQUIRED)   ? "ADAPTIVE_SL_REQUIRED" :
+                             (env.sl_adapt_status == ADAPTIVE_SL_ACCEPTED)   ? "ACCEPTED" :
+                             (env.sl_adapt_status == ADAPTIVE_SL_REJECTED)   ? "REJECTED" : "NO_VALID_SL";
+
+   double rr_val = (env.stop_distance > 0.0) ? (MathAbs(env.target - env.entry) / env.stop_distance) : 0.0;
+
+   PrintFormat("[AlgoMind][SL_ADAPT] sym=%s dir=%s entry=%.5f original_sl=%.5f original_dist=%.5f adaptive_required=%d max_account_stop_dist=%.5f candidate_sl=%.5f candidate_dist=%.5f selected_sl=%.5f rr=%.2f target_risk=%.2f actual_risk=%.2f actual_risk_pct=%.2f final_volume=%.2f status=%s reason=%s",
+               env.symbol_cap.symbol, (env.direction == +1) ? "BUY" : "SELL", env.entry, env.original_sl, env.original_stop_distance,
+               (env.sl_adapt_status != ORIGINAL_SL_EXECUTABLE) ? 1 : 0, env.max_account_stop_dist, env.adaptive_sl,
+               (env.adaptive_sl > 0.0) ? MathAbs(env.entry - env.adaptive_sl) : 0.0, env.selected_sl, rr_val,
+               env.target_risk_amount, env.actual_risk, env.actual_risk_pct, env.executable_volume,
+               adapt_status_str, (StringLen(env.sl_adapt_reason) > 0) ? env.sl_adapt_reason : env.reason);
+
+   //--- Comprehensive Auditable Size Diagnostic (Prompt REQ-07)
+   double max_distortion = (g_cfg.max_allowed_distortion > 0.0) ? g_cfg.max_allowed_distortion : 1.0;
+   double max_risk_allowed = env.target_risk_amount * max_distortion;
+   double stop_dist_ticks = (env.symbol_cap.tick_size > 0.0) ? (env.stop_distance / env.symbol_cap.tick_size) : 0.0;
+   double min_lot_loss = env.symbol_cap.volume_min * env.risk_per_lot;
+   double target_risk_pct_dec = (g_cfg.risk_per_trade_pct > 0.0) ? (g_cfg.risk_per_trade_pct / 100.0) : 0.005;
+   double req_equity = (target_risk_pct_dec * max_distortion > 0.0) ? (min_lot_loss / (target_risk_pct_dec * max_distortion)) : 0.0;
+   double broker_min_stop = env.symbol_cap.stops_level * env.symbol_cap.point;
+   string sl_source_str = (env.sl_adapt_status == ADAPTIVE_SL_ACCEPTED) ? env.sl_adapt_reason : "PRIMARY_STRUCTURE";
+   int cand_count = (env.sl_adapt_status != ORIGINAL_SL_EXECUTABLE) ? 2 : 1;
+   int exec_cand_count = (env.sl_adapt_status == ADAPTIVE_SL_ACCEPTED || env.sl_adapt_status == ORIGINAL_SL_EXECUTABLE) ? 1 : 0;
+
+   PrintFormat("[SIZE_DIAG] equity=%.2f target_risk=%.2f max_risk=%.2f entry=%.5f primary_sl=%.5f selected_sl=%.5f sl_source=%s stop_dist_price=%.5f stop_dist_ticks=%.0f min_volume=%.2f min_lot_loss=%.2f distortion=%.2fx max_distortion=%.2fx required_equity=%.2f broker_min_stop=%.5f rr=%.2f candidate_count=%d executable_candidate_count=%d classification=%s reason=%s",
+               env.account.equity, env.target_risk_amount, max_risk_allowed, env.entry,
+               env.original_sl, env.selected_sl, sl_source_str, env.stop_distance,
+               stop_dist_ticks, env.symbol_cap.volume_min, min_lot_loss, env.risk_distortion,
+               max_distortion, req_equity, broker_min_stop, rr_val,
+               cand_count, exec_cand_count, class_str, env.reason);
+
+   PrintFormat("[FINAL_ACTION] action=%s classification=%s reason=%s", act_str, class_str, env.reason);
 }
 //+------------------------------------------------------------------+

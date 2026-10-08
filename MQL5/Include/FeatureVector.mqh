@@ -114,7 +114,8 @@ bool BuildFeatureVector(const string symbol, const AlgoMindConfig &cfg,
    double div_bear = 0.0, div_bull = 0.0;
    int sh_idx1 = -1, sh_idx2 = -1;
    int sl_idx1 = -1, sl_idx2 = -1;
-   for(int i=2; i<got-2; i++)
+   int max_lookback = MathMin(20, got - 2);
+   for(int i=2; i<max_lookback; i++)
    {
       if(IsConfirmedSwingHigh(r, i, 2))
       {
@@ -122,7 +123,7 @@ bool BuildFeatureVector(const string symbol, const AlgoMindConfig &cfg,
          else if(sh_idx2 < 0) { sh_idx2 = i; break; }
       }
    }
-   for(int i=2; i<got-2; i++)
+   for(int i=2; i<max_lookback; i++)
    {
       if(IsConfirmedSwingLow(r, i, 2))
       {
@@ -131,14 +132,15 @@ bool BuildFeatureVector(const string symbol, const AlgoMindConfig &cfg,
       }
    }
 
-   if(sh_idx1 > 0 && sh_idx2 > sh_idx1)
+   int hist_size = ArraySize(histA);
+   if(sh_idx1 > 0 && sh_idx2 > sh_idx1 && sh_idx2 < hist_size)
    {
       double p1 = r[sh_idx2].high, p2 = r[sh_idx1].high;
       double d1 = histA[sh_idx2],  d2 = histA[sh_idx1];
       if(p2 > p1 && d2 < d1)
          div_bear = Clip01(((p2 - p1) / atr + (d1 - d2)) / 2.0);
    }
-   if(sl_idx1 > 0 && sl_idx2 > sl_idx1)
+   if(sl_idx1 > 0 && sl_idx2 > sl_idx1 && sl_idx2 < hist_size)
    {
       double p1 = r[sl_idx2].low, p2 = r[sl_idx1].low;
       double d1 = histA[sl_idx2], d2 = histA[sl_idx1];

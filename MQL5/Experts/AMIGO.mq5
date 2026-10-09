@@ -92,6 +92,10 @@ input string InpMLModelPath       = "";
 input group "=== Logging ==="
 input int    InpLogLevel          = 1;       // 0=DEBUG 1=INFO 2=WARN 3=ERROR
 
+input group "=== Dual-Account Isolation ==="
+input long   InpExpectedLogin     = 0;        // 0 = unconstrained
+input ulong  InpMagicNumber       = 20260908; // Scoped Magic Number
+
 //--- Globals
 string          g_symbol;
 datetime        g_last_bar_time = 0;
@@ -113,9 +117,18 @@ int OnInit()
 {
    LogInit(InpLogLevel);
 
+   if(InpExpectedLogin > 0 && AccountInfoInteger(ACCOUNT_LOGIN) != InpExpectedLogin)
+   {
+      PrintFormat("[ACCOUNT_MISMATCH] Expected login %I64d but connected to %I64d. INIT_FAILED.",
+                  InpExpectedLogin, AccountInfoInteger(ACCOUNT_LOGIN));
+      return INIT_FAILED;
+   }
+
    g_symbol = (StringLen(InpSymbol) > 0) ? InpSymbol : _Symbol;
 
    g_cfg.symbol              = g_symbol;
+   g_cfg.magic_number        = InpMagicNumber;
+   g_cfg.expected_login      = InpExpectedLogin;
    g_cfg.shadow_only         = InpShadowOnly;
    g_cfg.tf_exec             = InpTFExec;
    g_cfg.tf_context          = InpTFContext;

@@ -74,6 +74,10 @@ struct AlgoMindConfig
 
    //--- Execution Mode Safety
    bool     shadow_only;           // true = SHADOW MODE (blocks live OrderSend calls)
+
+   //--- Dual-Account Isolation Metadata (Additive)
+   ulong    magic_number;          // Scoped Magic Number
+   long     expected_login;        // Identity validation (0 = unconstrained/audit-only)
 };
 
 AlgoMindConfig g_cfg;

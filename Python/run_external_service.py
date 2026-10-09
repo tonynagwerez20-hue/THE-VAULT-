@@ -59,10 +59,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--mkt", required=True, help="Full path to MarketSnapshot file")
     ap.add_argument("--out", required=True, help="Full path to write ExternalContext file")
+    ap.add_argument("--out2", default=None, help="Optional secondary path to write ExternalContext file (e.g. Account B)")
     ap.add_argument("--interval", type=float, default=5.0, help="Loop interval seconds")
     args = ap.parse_args()
 
-    print(f"[ExternalService] started; mkt={args.mkt} out={args.out}")
+    targets = [args.out]
+    if args.out2:
+        targets.append(args.out2)
+
+    print(f"[ExternalService] started; mkt={args.mkt} targets={targets}")
     print("[ExternalService] CFTC source: official cftc.gov ZIPs (autonomous)")
     print("[ExternalService] News source: ForexFactory XML (autonomous)")
     print("[ExternalService] Options source: CBOE -> yfinance fallback")
@@ -71,7 +76,8 @@ def main():
         try:
             now = datetime.now(timezone.utc)
             ctx = build_context(args.mkt, now)
-            write_external_context(args.out, ctx)
+            for target in targets:
+                write_external_context(target, ctx)
             print(f"[ExternalService] wrote ctx "
                   f"cftc={ctx.cftc_valid} opt={ctx.options_valid} "
                   f"src={ctx.options_source} news={ctx.news_valid} "

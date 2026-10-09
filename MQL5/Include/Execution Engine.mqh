@@ -112,7 +112,7 @@ ExecutionResult ExecuteIntent(const TradeIntent &ti, double lots,
    req.sl           = ti.stop;
    req.tp           = ti.target;
    req.deviation    = 20;
-   req.magic        = 20260908;
+   req.magic        = (cfg.magic_number > 0) ? cfg.magic_number : 20260908;
    req.comment      = "AlgoMind";
    //--- Set appropriate order filling mode based on symbol capabilities (per MQL5 reference)
    uint filling = (uint)SymbolInfoInteger(ti.symbol, SYMBOL_FILLING_MODE);

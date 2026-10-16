@@ -19,38 +19,73 @@ from algomind.external.cftc_adapter import compute_context as cftc_ctx
 from algomind.external.options_adapter import compute_context as options_ctx
 from algomind.external.news_adapter import compute_context as news_ctx
 
+_last_cftc_fetch = 0.0
+_cached_cftc = None
+
+_last_options_fetch = 0.0
+_cached_options = None
+
+_last_news_fetch = 0.0
+_cached_news = None
+
 
 def build_context(mkt_path: str, now: datetime) -> ExternalContext:
+    global _last_cftc_fetch, _cached_cftc
+    global _last_options_fetch, _cached_options
+    global _last_news_fetch, _cached_news
+
     ctx = ExternalContext(timestamp=int(now.timestamp()))
     snap = read_market_snapshot(mkt_path)
+    now_ts = now.timestamp()
 
-    # --- CFTC (autonomous, official cftc.gov source)
-    try:
-        for k, v in cftc_ctx(now).items():
+    # --- CFTC (autonomous, official cftc.gov source, refresh every 1 hour)
+    if _cached_cftc is None or (now_ts - _last_cftc_fetch) >= 3600.0:
+        try:
+            _cached_cftc = cftc_ctx(now)
+            _last_cftc_fetch = now_ts
+        except Exception:
+            _cached_cftc = None
+
+    if _cached_cftc and _cached_cftc.get("cftc_valid"):
+        for k, v in _cached_cftc.items():
             setattr(ctx, k, v)
-    except Exception:
+    else:
         ctx.cftc_valid = False
         ctx.data_quality |= DataQuality.EXTERNAL_ABSENT
 
-    # --- Options (CBOE -> yfinance fallback)
-    try:
-        spot = snap.close if snap and snap.close > 0 else 0.0
-        atr = snap.atr14 if snap else 0.0
-        for k, v in options_ctx(spot, atr, gc_price=None, now=now).items():
+    # --- Options (CBOE -> yfinance fallback, refresh every 60s)
+    spot = snap.close if snap and snap.close > 0 else 0.0
+    atr = snap.atr14 if snap else 0.0
+    if _cached_options is None or (now_ts - _last_options_fetch) >= 60.0:
+        try:
+            _cached_options = options_ctx(spot, atr, gc_price=None, now=now)
+            _last_options_fetch = now_ts
+        except Exception:
+            _cached_options = None
+
+    if _cached_options and _cached_options.get("options_valid"):
+        for k, v in _cached_options.items():
             setattr(ctx, k, v)
-    except Exception:
+    else:
         ctx.options_valid = False
         ctx.options_source = "NONE"
         ctx.data_quality |= DataQuality.EXTERNAL_ABSENT
 
-    # --- News (autonomous, ForexFactory XML feed)
-    try:
-        for k, v in news_ctx(now, buffer_minutes=30, reaction_bars=3,
-                             bar_minutes=5).items():
+    # --- News (autonomous, ForexFactory XML feed, refresh every 60s)
+    if _cached_news is None or (now_ts - _last_news_fetch) >= 60.0:
+        try:
+            _cached_news = news_ctx(now, buffer_minutes=30, reaction_bars=3,
+                                    bar_minutes=5)
+            _last_news_fetch = now_ts
+        except Exception:
+            _cached_news = None
+
+    if _cached_news and _cached_news.get("news_valid"):
+        for k, v in _cached_news.items():
             setattr(ctx, k, v)
-    except Exception:
+    else:
         ctx.news_valid = False
-        ctx.data_quality |= DataQuality.EXTERNAL_ABSENT
+        # Note: news is only valid/active during news events; if inactive, not an external error unless fetch failed completely
 
     return ctx
 

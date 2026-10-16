@@ -22,12 +22,16 @@ import requests
 
 CFTC_BASE = "https://www.cftc.gov/files/dea/history"
 
-# CFTC filename conventions (D5 §11.1).
+# CFTC filename conventions:
+# Futures-only disaggregated: fut_disagg_txt_{year}.zip
+# Combined futures+options: com_disagg_txt_{year}.zip
+# Financial futures: fut_fin_txt_{year}.zip
+# Legacy COT: deacot{year}.zip
 REPORT_FILES = {
-    "disaggregated_fut":   "f_disagg_txt_{year}.zip",
+    "disaggregated_fut":   "fut_disagg_txt_{year}.zip",
     "disaggregated_futopt":"com_disagg_txt_{year}.zip",
-    "traders_in_financial_fut": "f_fin_txt_{year}.zip",
-    "legacy_fut":          "fut_disagg_txt_{year}.zip",
+    "traders_in_financial_fut": "fut_fin_txt_{year}.zip",
+    "legacy_fut":          "deacot{year}.zip",
 }
 
 _ET_STD = timedelta(hours=-5)
@@ -58,7 +62,7 @@ def _download_year(year: int, report_type: str) -> Optional[pd.DataFrame]:
     fname = tmpl.format(year=year)
     url = f"{CFTC_BASE}/{fname}"
     try:
-        r = requests.get(url, timeout=60)
+        r = requests.get(url, timeout=60, headers={"User-Agent": "AlgoMind/1.0 (research)"})
         if r.status_code != 200:
             return None
         with zipfile.ZipFile(io.BytesIO(r.content)) as z:
@@ -93,22 +97,29 @@ def fetch_gold_managed_money(lookback_years: int = 3) -> list[dict]:
 
         market_col = next((c for c in df.columns
                            if "Market" in c and "Exchange" in c), None)
-        date_col   = next((c for c in df.columns if "Report_Date" in c), None)
+        date_col   = next((c for c in df.columns if "Report_Date" in c or "As_of_Date" in c), None)
         long_col   = next((c for c in df.columns
                            if "M_Money" in c and "Long" in c), None)
         short_col  = next((c for c in df.columns
                            if "M_Money" in c and "Short" in c), None)
         oi_col     = next((c for c in df.columns
                            if "Open_Interest_All" in c), None)
+        code_col   = next((c for c in df.columns
+                           if "Contract_Market_Code" in c), None)
 
         if not all([market_col, date_col, long_col, short_col]):
             continue
 
-        gold = df[df[market_col].astype(str).str.contains(
-            "GOLD", case=False, na=False)]
+        # Standard COMEX Gold code is 088691
+        if code_col:
+            gold = df[df[code_col].astype(str).str.strip() == "088691"]
+        else:
+            gold = df[df[market_col].astype(str).str.startswith("GOLD - COMMODITY EXCHANGE INC")]
+
         for _, row in gold.iterrows():
             try:
-                rd = pd.to_datetime(row[date_col], format="%m/%d/%Y").to_pydatetime()
+                date_val = str(row[date_col]).strip()
+                rd = pd.to_datetime(date_val).to_pydatetime()
                 rd = rd.replace(tzinfo=timezone.utc)
             except (ValueError, TypeError):
                 continue

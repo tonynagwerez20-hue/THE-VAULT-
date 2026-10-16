@@ -19,8 +19,32 @@ def _atomic_write(path: str, content: str) -> None:
     with open(tmp, "w", encoding="utf-8") as f:
         f.write(content)
         f.flush()
-        os.fsync(f.fileno())
-    os.replace(tmp, path)
+        try:
+            os.fsync(f.fileno())
+        except OSError:
+            pass
+
+    # Windows atomic replacement with retry (handles brief lock by MQL5 reader)
+    for attempt in range(5):
+        try:
+            os.replace(tmp, path)
+            return
+        except PermissionError:
+            time.sleep(0.05 * (attempt + 1))
+        except OSError:
+            time.sleep(0.05 * (attempt + 1))
+
+    # Fallback if os.replace is still blocked: overwrite directly
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+            f.flush()
+    finally:
+        if os.path.exists(tmp):
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
 
 
 def read_market_snapshot(path: str) -> Optional[MarketSnapshotIn]:

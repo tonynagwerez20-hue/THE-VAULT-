@@ -22,6 +22,7 @@
 #include <Strategy Engine.mqh>
 #include <Risk Engine.mqh>
 #include <Account Execution Engine.mqh>
+#include <RiskController.mqh>
 #include <Execution Engine.mqh>
 #include <Position Manager.mqh>
 #include <TransactionRecon.mqh>
@@ -169,6 +170,7 @@ int OnInit()
    g_cfg.stale_threshold_s   = InpStaleThresholdSec;
 
    RiskInit();
+   RiskControllerInit();
    ZeroMemory(g_ext);
 
    //--- Start the position-manager / reconciliation timer.
@@ -271,6 +273,7 @@ void OnTick()
 
    //--- Risk update every tick
    RiskTick();
+   RiskControllerUpdate();
 
    //--- Feed live tick observation into native order-flow engines
    double last_bid = SymbolInfoDouble(g_symbol, SYMBOL_BID);
@@ -460,8 +463,22 @@ void OnClosedBar()
    tp = NormalizeDouble(tp, (int)SymbolInfoInteger(g_symbol, SYMBOL_DIGITS));
 
    //--- Account-Aware Adaptive Stop-Loss Evaluation Layer (Prompts §1-§19)
+   // 1. Evaluate Automatic Equity-Responsive Risk Controller
+   AdaptiveRiskResult risk_auto = RiskControllerEvaluate(g_symbol, entry, original_sl, g_cfg, g_risk.daily_locked);
+   RiskControllerLogDiagnostic(risk_auto);
+
+   if(!risk_auto.trade_allowed)
+   {
+      LogMsg(LOG_WARN, "RISK_AUTO_BLOCKED", StringFormat("status=%s reason=%s risk_budget=%.5f",
+             (risk_auto.risk_state == RISK_STATE_DAILY_STOP) ? "DAILY_STOP" : "UNSAFE",
+             risk_auto.reason, risk_auto.risk_budget));
+      return;
+   }
+
+   double effective_risk_pct = risk_auto.effective_risk_percent;
+
    AdaptiveSLResult adapt_res = EvaluateAdaptiveStop(
-      g_symbol, dr.direction, entry, original_sl, tp, structural_invalid, atr, g_cfg.risk_per_trade_pct, g_cfg
+      g_symbol, dr.direction, entry, original_sl, tp, structural_invalid, atr, effective_risk_pct, g_cfg
    );
 
    // If adaptive SL was rejected, use original_sl so AccountExecutionEvaluate can properly classify infeasibility
@@ -486,7 +503,7 @@ void OnClosedBar()
 
    //--- 10) Account-Aware Execution Evaluation & Risk Sizing
    AccountExecutionEnvelope acc_env = AccountExecutionEvaluate(
-      g_symbol, dr.direction, entry, sl, tp, g_cfg.risk_per_trade_pct, g_cfg, dr.action
+      g_symbol, dr.direction, entry, sl, tp, effective_risk_pct, g_cfg, dr.action, risk_auto.max_allowed_distortion
    );
 
    // Populate adaptive SL fields into execution envelope for diagnostics audit trail

@@ -18,16 +18,7 @@ enum ENUM_DATA_SOURCE
    SRC_DERIVED                  = 3
 };
 
-//--- Enums
-enum ENUM_ACCOUNT_CLASS
-{
-   ACCOUNT_CLASS_UNKNOWN   = 0,
-   ACCOUNT_CLASS_MICRO     = 1,   // < $100 (Thresholds: REQUIRES DECISION)
-   ACCOUNT_CLASS_SMALL     = 2,   // $100 - $1,000
-   ACCOUNT_CLASS_STANDARD  = 3,   // $1,000 - $10,000
-   ACCOUNT_CLASS_LARGE     = 4,   // > $10,000
-   ACCOUNT_CLASS_PROP      = 5    // Prop-firm challenge account
-};
+//--- Enums (ENUM_ACCOUNT_CLASS is canonically defined in Contracts header.mqh)
 
 enum ENUM_MIN_LOT_STATUS
 {
@@ -325,7 +316,8 @@ AccountExecutionEnvelope AccountExecutionEvaluate(
    double target,
    double target_risk_pct,
    const AlgoMindConfig &cfg,
-   ENUM_ACTION strategy_proposed_action
+   ENUM_ACTION strategy_proposed_action,
+   double max_allowed_distortion_override = 0.0
 )
 {
    AccountExecutionEnvelope env;
@@ -450,7 +442,8 @@ AccountExecutionEnvelope AccountExecutionEvaluate(
       double min_lot_risk_pct = (env.account.equity > 0.0) ? (min_lot_risk / env.account.equity * 100.0) : 999.0;
       double distortion       = (env.target_risk_amount > 0.0) ? (min_lot_risk / env.target_risk_amount) : 999.0;
 
-      double max_distortion = (cfg.max_allowed_distortion > 0.0) ? cfg.max_allowed_distortion : 1.0;
+      double max_distortion = (max_allowed_distortion_override > 0.0) ? max_allowed_distortion_override :
+                              ((cfg.max_allowed_distortion > 0.0) ? cfg.max_allowed_distortion : 1.0);
 
       if(cfg.allow_min_lot_override && distortion <= max_distortion)
       {

@@ -59,6 +59,50 @@ enum ENUM_SL_ADAPTATION_STATUS
    NO_VALID_SL            = 4
 };
 
+//--- Account Classification Enum (Authoritative Contract)
+enum ENUM_ACCOUNT_CLASS
+{
+   ACCOUNT_CLASS_UNKNOWN   = 0,
+   ACCOUNT_CLASS_MICRO     = 1,   // < $100 (Thresholds: REQUIRES DECISION)
+   ACCOUNT_CLASS_SMALL     = 2,   // $100 - $1,000
+   ACCOUNT_CLASS_STANDARD  = 3,   // $1,000 - $10,000
+   ACCOUNT_CLASS_LARGE     = 4,   // > $10,000
+   ACCOUNT_CLASS_PROP      = 5    // Prop-firm challenge account
+};
+
+//--- Operational Risk State for Equity-Responsive Risk Layer
+enum ENUM_RISK_STATE
+{
+   RISK_STATE_NORMAL      = 0,   // Base risk (0.50%)
+   RISK_STATE_CAUTION     = 1,   // Throttled risk (0.35% default)
+   RISK_STATE_RECOVERY    = 2,   // Throttled risk (0.25% default)
+   RISK_STATE_DAILY_STOP  = 3,   // Daily drawdown halt (0.00%)
+   RISK_STATE_UNSAFE      = 4    // Feasibility/execution blocked (0.00%)
+};
+
+//--- Canonical Adaptive Risk Result Contract
+struct AdaptiveRiskResult
+{
+   double             equity;
+   double             balance;
+   double             high_water_equity;
+   double             growth_percent;
+   double             drawdown_percent;
+   double             base_risk_percent;
+   double             effective_risk_percent;
+   double             risk_budget;
+   ENUM_ACCOUNT_CLASS account_class;
+   ENUM_RISK_STATE    risk_state;
+   double             minimum_lot;
+   double             minimum_lot_loss;
+   double             distortion;
+   double             max_allowed_distortion;
+   double             required_risk_percent;
+   double             minimum_viable_equity;
+   bool               trade_allowed;
+   string             reason;
+};
+
 //--- Signal Execution Feasibility Classification
 enum ENUM_SIGNAL_EXECUTION_CLASSIFICATION
 {

@@ -143,12 +143,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--mkt", default="C:/Users/USER/AppData/Roaming/MetaQuotes/Terminal/D0E8209F77C8CF37AD8BF550E51FF075/MQL5/Files/algomind_mkt_out.txt")
     ap.add_argument("--out", default="C:/Users/USER/AppData/Roaming/MetaQuotes/Terminal/D0E8209F77C8CF37AD8BF550E51FF075/MQL5/Files/algomind_mgle_in.txt")
+    ap.add_argument("--out2", default=None, help="Optional secondary path to write MGLE file (e.g. Account B)")
     ap.add_argument("--interval", type=float, default=5.0)
     args = ap.parse_args()
 
+    targets = [args.out]
+    if args.out2:
+        targets.append(args.out2)
+
     print(f"[MGLEService] Started autonomous loop. Interval={args.interval}s")
     print(f"[MGLEService] Reading market snapshot from: {args.mkt}")
-    print(f"[MGLEService] Writing MGLE Shadow Context to: {args.out}")
+    print(f"[MGLEService] Writing MGLE Shadow Context to: {targets}")
 
     db = MGLEDatabase()
 
@@ -156,7 +161,8 @@ def main():
         try:
             now_dt = datetime.now(timezone.utc)
             snap = build_mgle_snapshot(now_dt, args.mkt, db)
-            write_mgle_bridge_file(args.out, snap)
+            for target in targets:
+                write_mgle_bridge_file(target, snap)
             print(f"[{now_dt.strftime('%H:%M:%S')}] [MGLEService] Wrote snapshot: "
                   f"regime={snap.macro_regime_label} ry_z={snap.real_yield_z:.2f} "
                   f"usd_z={snap.usd_index_z:.2f} cftc_pct={snap.cftc_net_percentile:.1f}% "

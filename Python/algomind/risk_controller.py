@@ -55,11 +55,11 @@ class AdaptiveRiskResult:
 
 # Spline Anchor Points (Equity, Risk %, Max Distortion) - Section 3 Approved Defaults
 DEFAULT_RISK_CURVE: List[Tuple[float, float, float]] = [
-    (10.0, 1.50, 8.0),
-    (50.0, 1.25, 6.0),
-    (100.0, 1.00, 5.0),
-    (250.0, 0.75, 4.0),
-    (500.0, 0.50, 3.0),
+    (10.0, 1.50, 5.0),
+    (50.0, 1.25, 4.0),
+    (100.0, 1.00, 3.5),
+    (250.0, 0.75, 3.0),
+    (500.0, 0.50, 2.5),
     (1000.0, 0.50, 2.0),
     (5000.0, 0.50, 1.5),
     (10000.0, 0.50, 1.0),

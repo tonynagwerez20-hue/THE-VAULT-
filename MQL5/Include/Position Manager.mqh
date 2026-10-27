@@ -23,6 +23,7 @@ struct PositionState
    double             be_trigger_price;       // Entry +/- (0.50 * |target - entry|)
    double             last_applied_stop;      // Last stop loss successfully applied/confirmed
    ENUM_TRAILING_MODE trailing_mode;
+   ENUM_HORIZON       horizon;                // Trading horizon: Scalping, Intraday, Swing
    datetime           opened;
 };
 
@@ -45,7 +46,8 @@ double RoundVolume(string symbol, double raw)
 }
 
 void PositionManagerRegister(ulong pid, double entry, double stop, double target,
-                             int dir, double atr, const AlgoMindConfig &cfg)
+                             int dir, double atr, const AlgoMindConfig &cfg,
+                             ENUM_HORIZON horiz = HORIZON_INTRADAY)
 {
    int n = ArraySize(g_positions);
    ArrayResize(g_positions, n + 1);
@@ -67,10 +69,12 @@ void PositionManagerRegister(ulong pid, double entry, double stop, double target
    g_positions[n].be_trigger_price      = be_trigger;
    g_positions[n].last_applied_stop     = stop;
    g_positions[n].trailing_mode         = cfg.trail_mode;
+   g_positions[n].horizon               = horiz;
    g_positions[n].opened                = TimeCurrent();
 
-   LogMsg(LOG_INFO, "POSITION_MGMT", StringFormat("ticket=%I64u dir=%s entry=%.5f current=%.5f tp=%.5f be_trigger=%.5f trail_mode=%d",
-          pid, (dir == +1) ? "BUY" : "SELL", entry, entry, target, be_trigger, (int)cfg.trail_mode));
+   string h_name = (horiz == HORIZON_SCALPING) ? "SCALPING" : (horiz == HORIZON_SWING) ? "SWING" : "INTRADAY";
+   LogMsg(LOG_INFO, "POSITION_MGMT", StringFormat("ticket=%I64u horizon=%s dir=%s entry=%.5f current=%.5f tp=%.5f be_trigger=%.5f trail_mode=%d",
+          pid, h_name, (dir == +1) ? "BUY" : "SELL", entry, entry, target, be_trigger, (int)cfg.trail_mode));
 }
 
 void PositionManagerTick(const AlgoMindConfig &cfg)

@@ -133,3 +133,86 @@ StructureState EvaluateStructure(const string symbol, ENUM_TIMEFRAMES tf,
    s.dir = new_dir;
    return s;
 }
+
+//+------------------------------------------------------------------+
+//| Section 6: Top-Down Market Analysis Multi-Timeframe Structure    |
+//| H4 (Macro Regime), H1 (Trend Structure), M15 (Local Value), M5 (Exec) |
+//+------------------------------------------------------------------+
+struct TopDownContext
+{
+   int    d1_dir;           // +1 bull, -1 bear, 0 neutral (Macro Swing context)
+   int    h4_dir;           // +1 bull, -1 bear, 0 neutral
+   int    h1_dir;           // +1 bull, -1 bear, 0 neutral
+   int    m15_dir;          // +1 bull, -1 bear, 0 neutral
+   int    m5_dir;           // +1 bull, -1 bear, 0 neutral
+   bool   aligned;          // True when H4, H1, and M15 have non-conflicting alignment
+   bool   conflict;         // True when H4/H1 directional context directly contradicts M5
+   double alignment_score;  // Multi-timeframe synthesis weight in [0.0, 1.0]
+   string summary;          // Diagnostic summary
+};
+
+TopDownContext EvaluateTopDownContext(const string symbol, double m5_atr)
+{
+   TopDownContext td;
+   td.d1_dir  = 0;
+   td.h4_dir  = 0;
+   td.h1_dir  = 0;
+   td.m15_dir = 0;
+   td.m5_dir  = 0;
+   td.aligned = false;
+   td.conflict = false;
+   td.alignment_score = 0.50;
+   td.summary = "UNINITIALIZED";
+
+   // 1. Evaluate D1 macro regime (causal: closed bars only)
+   StructureState d1_state = EvaluateStructure(symbol, PERIOD_D1, m5_atr * 8.0, 0);
+   td.d1_dir = d1_state.dir;
+
+   // 2. Evaluate H4 broader structural direction (causal: closed bars only)
+   StructureState h4_state = EvaluateStructure(symbol, PERIOD_H4, m5_atr * 4.0, 0);
+   td.h4_dir = h4_state.dir;
+
+   // 3. Evaluate H1 intermediate structural direction
+   StructureState h1_state = EvaluateStructure(symbol, PERIOD_H1, m5_atr * 2.0, 0);
+   td.h1_dir = h1_state.dir;
+
+   // 4. Evaluate M15 local structural direction
+   StructureState m15_state = EvaluateStructure(symbol, PERIOD_M15, m5_atr * 1.5, 0);
+   td.m15_dir = m15_state.dir;
+
+   // 5. Synthesize alignment and conflicts
+   int htf_bias = 0;
+   if(td.h4_dir == td.h1_dir && td.h4_dir != 0)
+      htf_bias = td.h4_dir;
+   else if(td.h1_dir != 0)
+      htf_bias = td.h1_dir;
+   else
+      htf_bias = td.h4_dir;
+
+   if(htf_bias != 0 && td.m15_dir != 0)
+   {
+      if(htf_bias == td.m15_dir)
+      {
+         td.aligned = true;
+         td.conflict = false;
+         td.alignment_score = 0.85;
+         td.summary = (htf_bias == 1) ? "BULLISH_HTF_ALIGNMENT" : "BEARISH_HTF_ALIGNMENT";
+      }
+      else
+      {
+         td.aligned = false;
+         td.conflict = true;
+         td.alignment_score = 0.25;
+         td.summary = "HTF_LTF_CONFLICT";
+      }
+   }
+   else
+   {
+      td.aligned = false;
+      td.conflict = false;
+      td.alignment_score = 0.50;
+      td.summary = "BALANCED_OR_INSUFFICIENT_HTF_DATA";
+   }
+
+   return td;
+}

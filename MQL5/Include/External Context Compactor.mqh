@@ -81,6 +81,7 @@ bool ReadExternalContext(string path, ExternalContext &ctx, string &err)
       else if(k == "news_valid")        ctx.news_valid             = (v == "1");
       else if(k == "news_ts")           ctx.news_event_ts          = (datetime)StringToInteger(v);
       else if(k == "news_active")       ctx.news_active_window     = (v == "1");
+      else if(k == "news_released")     ctx.news_released          = (v == "1");
       else if(k == "news_surprise")     ctx.news_surprise          = StringToDouble(v);
       else if(k == "news_rel_surprise") ctx.news_relative_surprise = StringToDouble(v);
    }
@@ -92,7 +93,7 @@ bool ReadExternalContext(string path, ExternalContext &ctx, string &err)
       ctx.data_quality |= DQ_SCHEMA_MISMATCH;
    }
 
-   //--- Point-in-time correctness: reject anything stamped in the future.
+   //--- Point-in-time correctness: reject observations stamped in the future.
    datetime now = TimeCurrent();
    if(ctx.cftc_valid && ctx.cftc_publication_ts > now)
    {
@@ -104,7 +105,11 @@ bool ReadExternalContext(string path, ExternalContext &ctx, string &err)
       ctx.options_valid = false;
       ctx.data_quality |= DQ_STALE_EXTERNAL;
    }
-   if(ctx.news_valid && ctx.news_event_ts > now)
+   // Note: news_event_ts is the scheduled release timestamp, which can be in the future
+   // during the pre-event blackout/buffer window (e.g. 30 min before release).
+   // Reject as look-ahead if the payload claims the outcome has already been released (news_released == true)
+   // before the scheduled event time has arrived.
+   if(ctx.news_valid && ctx.news_event_ts > now && ctx.news_released)
    {
       ctx.news_valid    = false;
       ctx.data_quality |= DQ_STALE_EXTERNAL;

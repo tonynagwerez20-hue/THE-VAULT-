@@ -21,6 +21,13 @@ class DataQuality:
     FATAL           = 0x8000
 
 
+class Horizon:
+    """Trading Horizons matching MQL5 ENUM_HORIZON."""
+    SCALPING = 1  # Seconds to minutes: tick/M1 activity & response, M5 context
+    INTRADAY = 2  # Minutes to hours: M5 setup, M15 structure, H1 direction
+    SWING    = 3  # Hours to days: H4/H1 structure, D1 macro context
+
+
 @dataclass
 class ExternalContext:
     """Canonical external-context payload exchanged with MQL5."""
@@ -49,6 +56,7 @@ class ExternalContext:
     news_valid: bool = False
     news_event_ts: int = 0
     news_active_window: bool = False
+    news_released: bool = False
     news_surprise: float = 0.0
     news_relative_surprise: float = 0.0
 
@@ -75,6 +83,7 @@ class ExternalContext:
             "news_valid":        d["news_valid"],
             "news_ts":           d["news_event_ts"],
             "news_active":       d["news_active_window"],
+            "news_released":     d["news_released"],
             "news_surprise":     d["news_surprise"],
             "news_rel_surprise": d["news_relative_surprise"],
         }

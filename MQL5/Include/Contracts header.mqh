@@ -37,6 +37,14 @@ enum ENUM_ACTION
    ACTION_NO_TRADE= 4
 };
 
+//--- Trading Horizon (Section 1 Three-Horizon Architecture)
+enum ENUM_HORIZON
+{
+   HORIZON_SCALPING = 1,  // Seconds to minutes: tick/M1 activity & response, M5 context
+   HORIZON_INTRADAY = 2,  // Minutes to hours: M5 setup, M15 structure, H1 direction
+   HORIZON_SWING    = 3   // Hours to days: H4/H1 structure, D1 macro context
+};
+
 //--- Trailing mode enum
 enum ENUM_TRAILING_MODE
 {
@@ -229,6 +237,7 @@ struct ExternalContext
    bool     news_valid;
    datetime news_event_ts;
    bool     news_active_window;
+   bool     news_released;        // Explicit flag: outcome is actually published
    double   news_surprise;
    double   news_relative_surprise;
 };

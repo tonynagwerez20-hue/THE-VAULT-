@@ -154,6 +154,14 @@ DecisionResult Decide(const StrategyScores &s, const RegimeState &rs,
       return d;
    }
 
+   //--- News blackout window gate (Section 10 & Math Spec §21)
+   if(ext.news_valid && ext.news_active_window)
+   {
+      d.action = ACTION_NO_TRADE;
+      d.reason = "NEWS_ACTIVE_WINDOW";
+      return d;
+   }
+
    //--- Score gate
    if(d.best_score < cfg.score_threshold || d.margin < cfg.score_margin)
    {

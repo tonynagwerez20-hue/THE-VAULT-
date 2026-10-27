@@ -52,6 +52,7 @@ class PositionState:
     be_trigger_price: float = 0.0
     last_applied_stop: float = 0.0
     trailing_mode: TrailingMode = TrailingMode.DYNAMIC_25_PERCENT
+    horizon: int = 2  # 1: SCALPING, 2: INTRADAY, 3: SWING
     opened_time: float = 0.0
     is_closed: bool = False
     close_reason: Optional[str] = None

@@ -342,6 +342,28 @@ void OnClosedBar()
       return;
    }
 
+   //--- Session boundary reset (Section 8 & 9 Footprint and Profile Semantics)
+   // Footprint/VWAP are intraday auction tools representing the active trading session.
+   // To support overnight sessions (e.g. 22:00 to 06:00) without destroying profile state at midnight,
+   // reset occurs strictly upon entering a new session (session open transition).
+   static bool s_was_in_session = false;
+   static int  s_last_session_open_epoch = -1;
+
+   datetime now_t = TimeCurrent();
+   int session_open_date_tag = (int)((now_t - g_cfg.session_start_hour * 3600) / 86400);
+
+   bool session_just_started = (!s_was_in_session && session_pass);
+   if(session_just_started || (session_pass && s_last_session_open_epoch != session_open_date_tag))
+   {
+      // New trading session started: reset intraday accumulation
+      g_footprint_engine.Reset();
+      g_vwap_engine.Reset();
+      s_last_session_open_epoch = session_open_date_tag;
+      LogMsg(LOG_INFO, "FLOW", StringFormat("Trading session reset at server_time=%s session_tag=%d: cleared footprint bins and VWAP engine",
+             TimeToString(now_t, TIME_DATE|TIME_MINUTES|TIME_SECONDS), session_open_date_tag));
+   }
+   s_was_in_session = session_pass;
+
    //--- 1) Snapshot
    bool snap_res = BuildMarketSnapshot(g_symbol, g_snap);
    PrintFormat("[RUNTIME_DIAG][SNAPSHOT] server_time=%s success=%s bid=%.5f ask=%.5f dq=%d",
@@ -391,6 +413,13 @@ void OnClosedBar()
           g_vwap_engine.GetVWAP(), g_vwap_engine.GetDeviation(cur_p, g_feat.atr14),
           g_profile_engine.GetPOC(), g_profile_engine.GetVAH(), g_profile_engine.GetVAL(),
           g_footprint_engine.GetCumulativeDelta(), fp_pressure, (int)p_state, g_cfg.shadow_only ? "TRUE" : "FALSE"));
+
+   //--- Diagnostic Top-Down Multi-Timeframe Context (Section 7)
+   TopDownContext td = EvaluateTopDownContext(g_symbol, g_feat.atr14);
+   LogMsg(LOG_INFO, "TOPDOWN_DIAG", StringFormat("ts=%s d1=%d h4=%d h1=%d m15=%d aligned=%s score=%.2f summary=%s",
+          TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES),
+          td.d1_dir, td.h4_dir, td.h1_dir, td.m15_dir,
+          td.aligned ? "TRUE" : "FALSE", td.alignment_score, td.summary));
 
    //--- 3) Publish snapshot for Python (external context)
    WriteSnapshotForExternal(g_cfg.bridge_outbox, g_snap, g_feat);

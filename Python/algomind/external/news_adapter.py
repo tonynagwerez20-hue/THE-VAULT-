@@ -142,6 +142,7 @@ def compute_context(now: datetime,
             "news_valid":             True,
             "news_event_ts":          int(e.scheduled_ts.timestamp()),
             "news_active_window":     True,
+            "news_released":          False,
             "news_surprise":          0.0,
             "news_relative_surprise": 0.0,
         }
@@ -151,6 +152,7 @@ def compute_context(now: datetime,
             if f is not None and a is not None:
                 surprise = a - f
                 rel = surprise / max(abs(f), 1e-9)
+                out["news_released"] = True
                 out["news_surprise"] = surprise
                 out["news_relative_surprise"] = rel
         return out
@@ -158,5 +160,6 @@ def compute_context(now: datetime,
     return {"news_valid": False,
             "news_event_ts": 0,
             "news_active_window": False,
+            "news_released": False,
             "news_surprise": 0.0,
             "news_relative_surprise": 0.0}

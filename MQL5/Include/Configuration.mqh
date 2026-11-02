@@ -1,13 +1,6 @@
 #property strict
 
-//--- Custom trailing-stop mode enumeration
-enum ENUM_TRAILING_MODE
-{
-   TRAIL_NONE,
-   TRAIL_FIXED,
-   TRAIL_ATR,
-   TRAIL_DYNAMIC_25_PERCENT
-};
+#include <Contracts header.mqh>
 
 //--- Inputs are declared in main EA. This struct holds the resolved config.
 struct AmigoConfig

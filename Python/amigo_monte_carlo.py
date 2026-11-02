@@ -1,4 +1,4 @@
-﻿"""
+"""
 Amigo AMIGO — Monte Carlo Simulation & Out-of-Sample Test
 =============================================================
 Backtest context:
@@ -560,7 +560,7 @@ def make_figure(mc_results: dict, oos_results: dict, sens_results: list,
 
     plt.savefig(save_path, dpi=140, bbox_inches="tight", facecolor=fig.get_facecolor())
     plt.close(fig)
-    print(f"[MC] Figure saved → {save_path}")
+    print(f"[MC] Figure saved -> {save_path}")
 
 
 # -------------------------------------------------------------

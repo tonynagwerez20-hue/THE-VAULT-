@@ -1,4 +1,4 @@
-﻿//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 //|                                                     Amigo.mq5 |
 //|                    Deterministic MQL5-first trading core         |
 //|                    (ML gate present but disabled by default)     |
@@ -47,6 +47,9 @@ input string InpSymbol            = "";           // empty = current symbol
 input ENUM_TIMEFRAMES InpTFExec   = PERIOD_M5;
 input ENUM_TIMEFRAMES InpTFContext= PERIOD_M15;
 input ENUM_TIMEFRAMES InpTFHTF    = PERIOD_H1;
+input ENUM_TIMEFRAMES InpTFM1      = PERIOD_M1;
+input ENUM_TIMEFRAMES InpTFM30     = PERIOD_M30;
+input ENUM_TIMEFRAMES InpTFH4      = PERIOD_H4;
 
 input group "=== Risk (starting research params) ==="
 input double InpRiskPerTrade      = 0.5;     // % per trade
@@ -134,6 +137,9 @@ int OnInit()
    g_cfg.tf_exec             = InpTFExec;
    g_cfg.tf_context          = InpTFContext;
    g_cfg.tf_htf              = InpTFHTF;
+   g_cfg.tf_m1               = InpTFM1;
+   g_cfg.tf_m30              = InpTFM30;
+   g_cfg.tf_h4               = InpTFH4;
    g_cfg.atr_period          = 14;
    g_cfg.swing_k             = 2;
    g_cfg.zscore_window       = 20;

@@ -1,4 +1,13 @@
-﻿#property strict
+#property strict
+
+//--- Custom trailing-stop mode enumeration
+enum ENUM_TRAILING_MODE
+{
+   TRAIL_NONE,
+   TRAIL_FIXED,
+   TRAIL_ATR,
+   TRAIL_DYNAMIC_25_PERCENT
+};
 
 //--- Inputs are declared in main EA. This struct holds the resolved config.
 struct AmigoConfig
@@ -6,12 +15,17 @@ struct AmigoConfig
    //--- Symbol
    string   symbol;
 
-   //--- Timeframes
+   //--- Timeframes (original)
    ENUM_TIMEFRAMES tf_exec;       // M5
    ENUM_TIMEFRAMES tf_context;    // M15
    ENUM_TIMEFRAMES tf_htf;        // H1
 
-   //--- Feature periods (per Math Spec §1)
+   //--- Timeframes (new – top-down multi-horizon)
+   ENUM_TIMEFRAMES tf_m1;         // M1  – scalping horizon
+   ENUM_TIMEFRAMES tf_m30;        // M30 – intraday swing
+   ENUM_TIMEFRAMES tf_h4;         // H4  – swing / trend
+
+   //--- Feature periods (per Math Spec S1)
    int      atr_period;           // 14
    int      swing_k;              // 2
    int      zscore_window;        // 20
@@ -33,7 +47,7 @@ struct AmigoConfig
    double   regime_hysteresis;    // 0.10
    int      regime_persistence;   // 2
 
-   //--- Risk (per Math Spec §24)
+   //--- Risk (per Math Spec S24)
    double   risk_per_trade_pct;   // 0.5
    double   daily_loss_pct;       // 2.0
    double   total_dd_pct;         // 5.0
@@ -59,7 +73,7 @@ struct AmigoConfig
    bool     allow_min_lot_override; // false = strict EA risk cap; true = allow min lot override
    double   max_allowed_distortion; // e.g. 5.0 = allow up to 5x risk distortion
 
-   //--- External context influence caps (per Math Spec §27)
+   //--- External context influence caps (per Math Spec S27)
    double   options_max_influence; // 0.10
    double   cftc_max_influence;    // 0.05
 

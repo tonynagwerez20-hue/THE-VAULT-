@@ -1,4 +1,4 @@
-﻿"""
+"""
 Amigo MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
 ==================================================================
 Serious Macro Level Engine & Multi-Timeframe Decomposition (v1.0)
@@ -91,14 +91,16 @@ class MacroLevelEngine:
     @staticmethod
     def decompose_macro_level(parent: MacroLevel, current_atr: float) -> List[MacroLevel]:
         """
-        DECOMPOSES parent MacroLevel into H4, H1, M15, and M5 hierarchy.
+        DECOMPOSES parent MacroLevel into H4, H1, M30, M15, M5, and M1 hierarchy.
         Preserves parent_level_id identity across timeframes.
         """
         tf_scales = {
             "H4": 1.00,
             "H1": 0.60,
+            "M30": 0.45,
             "M15": 0.35,
-            "M5": 0.20
+            "M5": 0.20,
+            "M1": 0.10
         }
         
         children: List[MacroLevel] = []

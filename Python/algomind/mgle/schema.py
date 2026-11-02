@@ -1,4 +1,4 @@
-﻿"""
+"""
 Amigo MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
 ==================================================================
 Canonical Master Schema & Data Quality Definitions (v1.0)
@@ -98,8 +98,8 @@ class OptionsProxyLevel:
 @dataclass
 class MacroLevel:
     level_id: str
-    parent_level_id: Optional[str]      # Non-null for child levels (H4, H1, M15, M5)
-    timeframe: str                      # "MACRO", "H4", "H1", "M15", "M5"
+    parent_level_id: Optional[str]      # Non-null for child levels (H4, H1, M30, M15, M5, M1)
+    timeframe: str                      # "MACRO", "H4", "H1", "M30", "M15", "M5", "M1"
     price_center: float
     upper_bound: float
     lower_bound: float

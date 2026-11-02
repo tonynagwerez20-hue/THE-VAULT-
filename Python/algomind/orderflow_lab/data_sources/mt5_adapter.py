@@ -1,4 +1,4 @@
-"""MT5 Data Source Adapter.
+﻿"""MT5 Data Source Adapter.
 
 Extracts MT5 tick/OHLC data from log files, export CSVs, or MetaTrader 5 Files directory.
 Appends strict provenance metadata: DataQualityTag = PROXY.
@@ -9,7 +9,7 @@ import glob
 import pandas as pd
 import numpy as np
 from typing import List, Tuple
-from algomind.orderflow_lab.schema import (
+from Amigo.orderflow_lab.schema import (
     OrderFlowTick, SourceMetadata, DataQualityTag
 )
 
@@ -79,3 +79,4 @@ class MT5Adapter:
         if not os.path.exists(file_path):
             return pd.DataFrame()
         return pd.read_csv(file_path)
+

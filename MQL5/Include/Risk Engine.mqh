@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //| RiskEngine.mqh - hard risk, sizing, stop selection               |
 //+------------------------------------------------------------------+
 #property strict
@@ -54,7 +54,7 @@ void RiskTick()
    if(g_cfg.total_dd_pct   > 0.0 && dd_pct         >= g_cfg.total_dd_pct)   g_risk.total_locked = true;
 }
 
-bool RiskAllows(const AlgoMindConfig &cfg, string &reason)
+bool RiskAllows(const AmigoConfig &cfg, string &reason)
 {
    if(g_risk.daily_locked)
    {
@@ -145,7 +145,7 @@ double SelectStop(string symbol, int direction, double entry,
 AdaptiveSLResult EvaluateAdaptiveStop(string symbol, int direction, double entry,
                                       double original_sl, double target,
                                       double structural_invalid, double atr,
-                                      double target_risk_pct, const AlgoMindConfig &cfg)
+                                      double target_risk_pct, const AmigoConfig &cfg)
 {
    AdaptiveSLResult res;
    ZeroMemory(res);

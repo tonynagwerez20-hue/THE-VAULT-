@@ -1,5 +1,5 @@
-# SHADOW DECISION TRACE AUDIT REPORT
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# SHADOW DECISION TRACE AUDIT REPORT
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 
 ---
@@ -8,29 +8,29 @@
 
 ```text
 [1. Tick Arrival (M5 Bar Close)]
-               │
-               ▼
+               â”‚
+               â–¼
 [2. Feature Snapshot Assembly (`BuildFeatureSnapshot`)]
-               │
-               ▼
-[3. External Context Read (`ReadExternalContext` from `algomind_ext_in.txt`)]
-               │
-               ▼
+               â”‚
+               â–¼
+[3. External Context Read (`ReadExternalContext` from `Amigo_ext_in.txt`)]
+               â”‚
+               â–¼
 [4. Regime Evaluation (`EvaluateRegime` in `Regime Engine.mqh`)]
-               │
-               ▼
+               â”‚
+               â–¼
 [5. Strategy Scoring (`ScoreStrategies` in `Strategy Engine.mqh`)]
-               │
-               ▼
+               â”‚
+               â–¼
 [6. Shadow Flow Log Generation (`FlowShadowLogEntry.to_log_string()`)]
-               │
-               ▼
+               â”‚
+               â–¼
 [7. Decision Gate (`Decide` in `Strategy Engine.mqh`)]
-               │
-               ▼
+               â”‚
+               â–¼
 [8. Hard Risk Check (`CheckRiskLimits` in `Risk Engine.mqh`)]
-               │
-               ▼
+               â”‚
+               â–¼
 [9. Canonical Log Output (`LogMsg` / `[FLOW_SHADOW]`)]
 ```
 
@@ -48,3 +48,4 @@ Every shadow decision evaluates both live strategy scores and shadow flow metric
 ## 3. Disconnected Feature Audit
 - **Cumulative Delta (`m_cumulative_delta`)**: Accurately calculated in `AM_Footprint.mqh` and `proxy_footprint.py`, but logged for shadow evaluation; NOT currently wired into `Decide()` scoring to prevent un-validated strategy changes. Status: `IMPLEMENTED BUT NOT CONNECTED TO DECISION PATH`.
 - **ATR Event Reaction (`EventReactionEngine`)**: Evaluated in Python research lab; NOT currently wired into MQL5 trade entry gates. Status: `IMPLEMENTED BUT NOT CONNECTED TO DECISION PATH`.
+

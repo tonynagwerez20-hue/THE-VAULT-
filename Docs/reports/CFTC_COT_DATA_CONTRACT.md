@@ -1,5 +1,5 @@
-# CFTC / COT DATA CONTRACT SPECIFICATION
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# CFTC / COT DATA CONTRACT SPECIFICATION
+**Amigo / ASAP Retail Order-Flow System**
 
 ## 1. Governance & Data Philosophy
 CFTC Commitments of Traders (COT) data provides macro positional context. It is **NOT** an intraday execution trigger.
@@ -31,3 +31,4 @@ data_quality              : String ("TRUE")
 COT context modulates strategy scoring via capped influence ($\pm 0.05$ score modifier):
 - Extremely Bullish COT ($\ge 90th$ percentile commercial hedging / money manager shorting): $-0.05$ long modifier (overcrowded long).
 - Extremely Bearish COT ($\le 10th$ percentile): $+0.05$ long modifier (extreme short positioning / reversal setup).
+

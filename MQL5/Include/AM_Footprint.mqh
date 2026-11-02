@@ -1,10 +1,10 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //|                                                 AM_Footprint.mqh |
-//|                                  Copyright 2026, AlgoMind / ASAP |
+//|                                  Copyright 2026, Amigo / ASAP |
 //|                                        Zero-Cost Order-Flow EA   |
 //+------------------------------------------------------------------+
-#property copyright "AlgoMind / ASAP"
-#property link      "https://algomind.local"
+#property copyright "Amigo / ASAP"
+#property link      "https://Amigo.local"
 #property strict
 
 #include "AM_FlowQuality.mqh"
@@ -158,3 +158,4 @@ public:
 
    int GetBinCount(void) const { return m_bin_count; }
   };
+

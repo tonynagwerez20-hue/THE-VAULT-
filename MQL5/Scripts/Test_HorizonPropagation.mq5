@@ -1,0 +1,38 @@
+﻿//+------------------------------------------------------------------+
+//|   Test_HorizonPropagation.mq5                                     |
+//+------------------------------------------------------------------+
+#property script_show_inputs
+
+#include "..\\Include\\Configuration.mqh"
+#include "..\\Include\\Position Manager.mqh"
+#include "..\\Include\\Structure Engine.mqh"
+#include "..\\Include\\External Context Compactor.mqh"
+#include "..\\Include\\RiskController.mqh"
+
+void OnStart()
+  {
+   // Initialize minimal configuration
+   AmigoConfig cfg;
+   cfg.Init();
+
+   // Create a dummy ExternalContext (no news)
+   ExternalContext ctx;
+   ctx.news_event_ts = 0;
+   ctx.news_released = false;
+
+   // Register a dummy position with horizon SCALPING
+   double entry = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   double stop = entry - 0.0010; // 10 pips stop
+   double target = entry + 0.0020; // 20 pips target
+   PositionState pos;
+   pos.horizon = ENUM_HORIZON::SCALPING;
+   // Use the registration function (MQL5 side)
+   RegisterPosition(entry, stop, target, pos.horizon, /*initial_stop=*/stop, /*initial_target=*/target);
+
+   // Print horizon to the log for verification
+   Print("[TEST] Registered position horizon: ", EnumToString(pos.horizon));
+
+   // Optionally invoke decision engine to see if horizon influences logic
+   // (not required for this propagation test)
+  }
+

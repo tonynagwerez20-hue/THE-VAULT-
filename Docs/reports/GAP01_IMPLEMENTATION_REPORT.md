@@ -1,7 +1,7 @@
-# AlgoMind / ASAP — GAP-01 Implementation Report: Classical Price ↔ Proxy-CVD Divergence
+﻿# Amigo / ASAP â€” GAP-01 Implementation Report: Classical Price â†” Proxy-CVD Divergence
 
 ## Executive Summary
-This report documents the implementation and verification of **GAP-01 (Classical Price ↔ Proxy-CVD Swing Divergence)** within the AlgoMind production codebase (`MQL5/Include/`). GAP-01 completes the Mean-Reversion strategy evidence calculation by replacing the previous `0.0` placeholder with a mathematically rigorous, normalized divergence score ($0.0 \to 1.0$).
+This report documents the implementation and verification of **GAP-01 (Classical Price â†” Proxy-CVD Swing Divergence)** within the Amigo production codebase (`MQL5/Include/`). GAP-01 completes the Mean-Reversion strategy evidence calculation by replacing the previous `0.0` placeholder with a mathematically rigorous, normalized divergence score ($0.0 \to 1.0$).
 
 ---
 
@@ -37,3 +37,4 @@ $$\text{MR\_Evidence} = 0.40 \cdot \text{stretch\_score} + 0.25 \cdot \text{rej\
 1. **Compilation Verification**: Compiled via `MetaEditor64.exe` into `AMIGO.ex5`. Resulted in **0 errors**, **13 audit warnings**.
 2. **Account Invariance**: The divergence score is computed strictly from market price action and proxy order-flow data before any risk sizing or account check. It produces identical values across all account sizes ($5 to $100,000+).
 3. **Safety / Shadow Mode**: Execution gates remain strictly governed by `InpShadowOnly = true`. No real trades are executed.
+

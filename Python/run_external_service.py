@@ -1,4 +1,4 @@
-"""AlgoMind external-information service — AUTONOMOUS.
+﻿"""Amigo external-information service — AUTONOMOUS.
 
 Fetches CFTC COT (official cftc.gov ZIPs), ForexFactory news (XML),
 and GLD options (CBOE primary, yfinance fallback).
@@ -11,13 +11,13 @@ import argparse
 import time
 from datetime import datetime, timezone
 
-from algomind.schema import ExternalContext, DataQuality
-from algomind.bridge.local_bridge import (
+from Amigo.schema import ExternalContext, DataQuality
+from Amigo.bridge.local_bridge import (
     read_market_snapshot, write_external_context,
 )
-from algomind.external.cftc_adapter import compute_context as cftc_ctx
-from algomind.external.options_adapter import compute_context as options_ctx
-from algomind.external.news_adapter import compute_context as news_ctx
+from Amigo.external.cftc_adapter import compute_context as cftc_ctx
+from Amigo.external.options_adapter import compute_context as options_ctx
+from Amigo.external.news_adapter import compute_context as news_ctx
 
 _last_cftc_fetch = 0.0
 _cached_cftc = None
@@ -127,3 +127,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

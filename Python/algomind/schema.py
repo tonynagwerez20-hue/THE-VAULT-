@@ -1,4 +1,4 @@
-"""AlgoMind canonical schema definitions (Python side).
+﻿"""Amigo canonical schema definitions (Python side).
 
 Mirrors Contract.mqh. Any field-name or type change is a breaking
 change and requires a new schema version per D3 §31.
@@ -130,3 +130,4 @@ def parse_kv_file(path: str) -> dict:
     except (FileNotFoundError, OSError):
         pass
     return out
+

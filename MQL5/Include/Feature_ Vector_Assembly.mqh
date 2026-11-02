@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //| FeatureVector.mqh - canonical feature assembly                   |
 //+------------------------------------------------------------------+
 #property strict
@@ -11,7 +11,7 @@
 #include <FVG Engine.mqh>
 #include <Auction.mqh>
 
-bool BuildFeatureVector(const string symbol, const AlgoMindConfig &cfg,
+bool BuildFeatureVector(const string symbol, const AmigoConfig &cfg,
                         FeatureSnapshot &fs)
 {
    fs.timestamp = TimeCurrent();

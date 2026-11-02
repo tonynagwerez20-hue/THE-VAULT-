@@ -1,4 +1,4 @@
-"""Price-Bin Engine (spec §18).
+﻿"""Price-Bin Engine (spec §18).
 
 Receives a stream of OrderFlowTick objects and aggregates them into
 price-level bins for a given timeframe window.
@@ -13,7 +13,7 @@ from __future__ import annotations
 import math
 from typing import Dict, List, Optional
 
-from algomind.orderflow_lab.schema import (
+from Amigo.orderflow_lab.schema import (
     OrderFlowTick, FootprintBin, DataQualityTag
 )
 
@@ -128,3 +128,4 @@ class PriceBinEngine:
         self.compute_price_response()
         self.compute_pressure()
         return self.bins
+

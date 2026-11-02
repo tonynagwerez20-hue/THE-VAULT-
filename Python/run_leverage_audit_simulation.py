@@ -1,6 +1,6 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
-ALGOMIND MASTER FORENSIC AUDIT ENGINE — 1:500 vs 1:2000 LEVERAGE
+Amigo MASTER FORENSIC AUDIT ENGINE — 1:500 vs 1:2000 LEVERAGE
 ================================================================
 Independent quantitative investigation answering:
 1. LIVE QUESTION: What actually happens on real MT5 account at 1:2000 leverage?
@@ -22,7 +22,7 @@ os.makedirs("Docs/reports", exist_ok=True)
 os.makedirs("reports", exist_ok=True)
 
 print("=" * 80)
-print("ALGOMIND MASTER FORENSIC AUDIT — 1:500 vs 1:2000 LEVERAGE")
+print("Amigo MASTER FORENSIC AUDIT — 1:500 vs 1:2000 LEVERAGE")
 print("=" * 80)
 
 # ==============================================================================
@@ -34,8 +34,8 @@ print("\n--- TRACK 1: LIVE MT5 ACCOUNT & SYMBOL AUDIT ---")
 mql5_files_dir = "C:/Users/USER/AppData/Roaming/MetaQuotes/Terminal/D0E8209F77C8CF37AD8BF550E51FF075/MQL5/Files"
 mql5_logs_dir = "C:/Users/USER/AppData/Roaming/MetaQuotes/Terminal/D0E8209F77C8CF37AD8BF550E51FF075/MQL5/Logs"
 
-live_mkt_out = os.path.join(mql5_files_dir, "algomind_mkt_out.txt")
-live_ext_in = os.path.join(mql5_files_dir, "algomind_ext_in.txt")
+live_mkt_out = os.path.join(mql5_files_dir, "Amigo_mkt_out.txt")
+live_ext_in = os.path.join(mql5_files_dir, "Amigo_ext_in.txt")
 
 live_mkt_data = {}
 if os.path.exists(live_mkt_out):
@@ -45,7 +45,7 @@ if os.path.exists(live_mkt_out):
                 k, v = line.strip().split('=', 1)
                 live_mkt_data[k] = v
 
-print("Live Market Snapshot (from algomind_mkt_out.txt):")
+print("Live Market Snapshot (from Amigo_mkt_out.txt):")
 for k, v in live_mkt_data.items():
     print(f"  {k} = {v}")
 
@@ -67,7 +67,7 @@ live_trade_audit_rows = []
 for file_name, line_num, log_str in live_logs_parsed:
     if '[SIZE_DIAG]' in log_str:
         # Example format:
-        # [AlgoMind][INFO][SIZE_DIAG] eq=500.00 risk_amt=2.50 stop_dist=13.5040 tick_sz=0.00100 tick_val=0.10 loss_per_lot=1350.40 min_lot_loss=13.50 min_vol=0.01
+        # [Amigo][INFO][SIZE_DIAG] eq=500.00 risk_amt=2.50 stop_dist=13.5040 tick_sz=0.00100 tick_val=0.10 loss_per_lot=1350.40 min_lot_loss=13.50 min_vol=0.01
         parts = log_str.split('[SIZE_DIAG]')[1].strip().split()
         kv = {}
         for p in parts:
@@ -120,8 +120,8 @@ for file_name, line_num, log_str in live_logs_parsed:
         })
 
 df_live_audit = pd.DataFrame(live_trade_audit_rows)
-df_live_audit.to_csv("reports/algomind_live_trade_audit.csv", index=False)
-print(f"Saved {len(df_live_audit)} live trade audit log entries to reports/algomind_live_trade_audit.csv")
+df_live_audit.to_csv("reports/Amigo_live_trade_audit.csv", index=False)
+print(f"Saved {len(df_live_audit)} live trade audit log entries to reports/Amigo_live_trade_audit.csv")
 
 # Create Live Summary Comparison (1:500 vs 1:2000)
 live_summary = [{
@@ -175,8 +175,8 @@ live_summary = [{
 }]
 
 df_live_summary = pd.DataFrame(live_summary)
-df_live_summary.to_csv("reports/algomind_live_1_500_vs_1_2000.csv", index=False)
-print("Saved live summary comparison to reports/algomind_live_1_500_vs_1_2000.csv")
+df_live_summary.to_csv("reports/Amigo_live_1_500_vs_1_2000.csv", index=False)
+print("Saved live summary comparison to reports/Amigo_live_1_500_vs_1_2000.csv")
 
 # ==============================================================================
 # SECTION 2: HISTORICAL SIMULATION AUDIT (TRACK 2)
@@ -249,7 +249,7 @@ for lev in leverage_levels:
             intended_vol = math.floor(raw_vol / lot_step) * lot_step
             
             # Check 2: Minimum Lot Risk Compliance vs Forced Execution
-            # In strict AlgoMind EA mode, if intended_vol < min_lot and min_lot_loss > risk_usd,
+            # In strict Amigo EA mode, if intended_vol < min_lot and min_lot_loss > risk_usd,
             # EA rejects with MIN_LOT_EXCEEDS_RISK.
             min_lot_loss = min_lot * loss_per_lot
             
@@ -347,12 +347,12 @@ for lev in leverage_levels:
         })
 
 df_sim_matrix = pd.DataFrame(sim_matrix_results)
-df_sim_matrix.to_csv("reports/algomind_simulation_1_500_vs_1_2000.csv", index=False)
-print("Saved simulation matrix results to reports/algomind_simulation_1_500_vs_1_2000.csv")
+df_sim_matrix.to_csv("reports/Amigo_simulation_1_500_vs_1_2000.csv", index=False)
+print("Saved simulation matrix results to reports/Amigo_simulation_1_500_vs_1_2000.csv")
 
 df_sim_trades = pd.DataFrame(sim_trade_audit_rows)
-df_sim_trades.to_csv("reports/algomind_simulation_trade_audit.csv", index=False)
-print(f"Saved {len(df_sim_trades)} trade-level simulation audit rows ($500 balance) to reports/algomind_simulation_trade_audit.csv")
+df_sim_trades.to_csv("reports/Amigo_simulation_trade_audit.csv", index=False)
+print(f"Saved {len(df_sim_trades)} trade-level simulation audit rows ($500 balance) to reports/Amigo_simulation_trade_audit.csv")
 
 # ==============================================================================
 # SECTION 3: STOP DISTANCE & MINIMUM VIABLE BALANCE AUDIT
@@ -393,8 +393,8 @@ for label, sd in stop_dist_stats.items():
     })
 
 df_min_lot_risk = pd.DataFrame(min_lot_risk_rows)
-df_min_lot_risk.to_csv("reports/algomind_minimum_lot_risk_analysis.csv", index=False)
-print("Saved minimum lot risk analysis to reports/algomind_minimum_lot_risk_analysis.csv")
+df_min_lot_risk.to_csv("reports/Amigo_minimum_lot_risk_analysis.csv", index=False)
+print("Saved minimum lot risk analysis to reports/Amigo_minimum_lot_risk_analysis.csv")
 
 # Minimum Viable Balance Table across Risk Thresholds
 risk_thresholds = [0.0025, 0.0050, 0.0075, 0.0100, 0.0125, 0.0150, 0.0200, 0.0250, 0.0500]
@@ -416,8 +416,8 @@ for r_thresh in risk_thresholds:
     })
 
 df_mvb = pd.DataFrame(mvb_rows)
-df_mvb.to_csv("reports/algomind_minimum_viable_balance_analysis.csv", index=False)
-print("Saved minimum viable balance analysis to reports/algomind_minimum_viable_balance_analysis.csv")
+df_mvb.to_csv("reports/Amigo_minimum_viable_balance_analysis.csv", index=False)
+print("Saved minimum viable balance analysis to reports/Amigo_minimum_viable_balance_analysis.csv")
 
 # ==============================================================================
 # SECTION 4: GENERATE DETAILED MARKDOWN REPORTS
@@ -425,12 +425,12 @@ print("Saved minimum viable balance analysis to reports/algomind_minimum_viable_
 print("\n--- GENERATING MARKDOWN AUDIT REPORTS ---")
 
 # 1. LIVE MARKDOWN REPORT
-live_report_path = "Docs/reports/algomind_live_leverage_1_500_vs_1_2000_audit.md"
+live_report_path = "Docs/reports/Amigo_live_leverage_1_500_vs_1_2000_audit.md"
 with open(live_report_path, 'w') as f:
-    f.write("""# ALGOMIND LIVE LEVERAGE 1:500 VS 1:2000 FORENSIC AUDIT
+    f.write("""# Amigo LIVE LEVERAGE 1:500 VS 1:2000 FORENSIC AUDIT
 
 ## 1. Executive Summary
-This document reports the live MT5 account findings when evaluating the transition from **1:500** to **1:2000** leverage on an active `$500` account running the frozen **AlgoMind / AMIGO** trading architecture.
+This document reports the live MT5 account findings when evaluating the transition from **1:500** to **1:2000** leverage on an active `$500` account running the frozen **Amigo / AMIGO** trading architecture.
 
 > [!CRITICAL]
 > **LIVE VERDICT**: Changing leverage from 1:500 to 1:2000 **reduces required margin** from ~$8.70 to ~$2.17 per 0.01 lot, but has **ZERO EFFECT** on position sizing or risk protection. The EA **REJECTS ALL TRADES** on a $500 account at 0.5% risk with `[SIZE] MIN_LOT_EXCEEDS_RISK`. Higher leverage does NOT solve the minimum lot risk constraint.
@@ -480,8 +480,8 @@ This document reports the live MT5 account findings when evaluating the transiti
 From real MT5 terminal log files (`C:/Users/USER/AppData/Roaming/MetaQuotes/Terminal/.../MQL5/Logs`), 100% of signals evaluated by the EA's Risk Engine resulted in:
 
 ```text
-[AlgoMind][INFO][SIZE_DIAG] eq=500.00 risk_amt=2.50 stop_dist=13.5040 tick_sz=0.00100 tick_val=0.10 loss_per_lot=1350.40 min_lot_loss=13.50 min_vol=0.01
-[AlgoMind][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
+[Amigo][INFO][SIZE_DIAG] eq=500.00 risk_amt=2.50 stop_dist=13.5040 tick_sz=0.00100 tick_val=0.10 loss_per_lot=1350.40 min_lot_loss=13.50 min_vol=0.01
+[Amigo][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
 ```
 
 ### Rejection Category Counts:
@@ -516,9 +516,9 @@ $$\text{Higher Leverage} \implies \text{Lower SL Loss} \quad (\text{FALSE})$$
 print(f"Written live audit report to {live_report_path}")
 
 # 2. SIMULATION MARKDOWN REPORT
-sim_report_path = "Docs/reports/algomind_simulation_leverage_1_500_vs_1_2000_audit.md"
+sim_report_path = "Docs/reports/Amigo_simulation_leverage_1_500_vs_1_2000_audit.md"
 with open(sim_report_path, 'w') as f:
-    f.write("""# ALGOMIND SIMULATION LEVERAGE 1:500 VS 1:2000 FORENSIC AUDIT
+    f.write("""# Amigo SIMULATION LEVERAGE 1:500 VS 1:2000 FORENSIC AUDIT
 
 ## 1. Executive Summary
 This report presents the historical simulation audit comparing **1:500** versus **1:2000** leverage across 13 account balance levels ($5 to $5,000) using the complete 759-trade OOS dataset (`amigo_position_ledger_759.csv`).
@@ -595,3 +595,4 @@ print(f"Written simulation audit report to {sim_report_path}")
 print("=" * 80)
 print("MASTER FORENSIC AUDIT ENGINE COMPLETE")
 print("=" * 80)
+

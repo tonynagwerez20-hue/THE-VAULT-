@@ -1,4 +1,4 @@
-"""Portara Futures Historical Data Adapter.
+﻿"""Portara Futures Historical Data Adapter.
 
 Ingests free complimentary Portara COMEX GC futures tick data samples.
 Appends strict provenance metadata: DataQualityTag = TRUE.
@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 import pandas as pd
 from typing import List
-from algomind.orderflow_lab.schema import (
+from Amigo.orderflow_lab.schema import (
     OrderFlowTick, SourceMetadata, DataQualityTag
 )
 
@@ -70,3 +70,4 @@ class PortaraAdapter:
                 quality_tag=DataQualityTag.TRUE
             ))
         return ticks
+

@@ -1,7 +1,7 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //| Test_ShadowHarness.mq5 - Isolated Shadow Gate Execution Harness  |
 //+------------------------------------------------------------------+
-#property copyright "AlgoMind Safety Gate Audit"
+#property copyright "Amigo Safety Gate Audit"
 #property version   "1.00"
 #property script_show_inputs
 
@@ -45,7 +45,7 @@ void OnStart()
    // Intent 1: XAUUSD BUY
    ZeroMemory(test_intents[0]);
    test_intents[0].intent_id        = 9001;
-   test_intents[0].schema_version   = ALGOMIND_SCHEMA_VERSION;
+   test_intents[0].schema_version   = Amigo_SCHEMA_VERSION;
    test_intents[0].symbol           = _Symbol;
    test_intents[0].direction        = +1;
    test_intents[0].timestamp        = TimeCurrent();
@@ -62,7 +62,7 @@ void OnStart()
    // Intent 2: XAUUSD SELL
    ZeroMemory(test_intents[1]);
    test_intents[1].intent_id        = 9002;
-   test_intents[1].schema_version   = ALGOMIND_SCHEMA_VERSION;
+   test_intents[1].schema_version   = Amigo_SCHEMA_VERSION;
    test_intents[1].symbol           = _Symbol;
    test_intents[1].direction        = -1;
    test_intents[1].timestamp        = TimeCurrent();
@@ -79,7 +79,7 @@ void OnStart()
    // Intent 3: XAUUSD BUY (Second Iteration)
    ZeroMemory(test_intents[2]);
    test_intents[2].intent_id        = 9003;
-   test_intents[2].schema_version   = ALGOMIND_SCHEMA_VERSION;
+   test_intents[2].schema_version   = Amigo_SCHEMA_VERSION;
    test_intents[2].symbol           = _Symbol;
    test_intents[2].direction        = +1;
    test_intents[2].timestamp        = TimeCurrent();
@@ -169,3 +169,4 @@ void OnStart()
       PrintFormat("[HARNESS_FINAL] FAIL - Interception failed for %d intents!", mock_submission_count);
    }
 }
+

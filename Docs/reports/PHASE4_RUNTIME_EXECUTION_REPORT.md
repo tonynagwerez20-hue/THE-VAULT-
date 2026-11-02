@@ -1,5 +1,5 @@
-# PHASE 4 RUNTIME EXECUTION REPORT
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# PHASE 4 RUNTIME EXECUTION REPORT
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 **Document Status:** Level 3 Controlled Runtime Audit
 
@@ -18,7 +18,7 @@ FOOTPRINT RUNTIME: VERIFIED (Native MQL5 AM_Footprint.mqh & proxy_footprint.py)
 FAILURE HANDLING: VERIFIED (7 failure injection test scenarios verified)
 DECISION PATH: VERIFIED (Traceable from tick -> features -> regime -> scores -> risk gate)
 
-LEVEL 3 STATUS: LEVEL 3 PARTIALLY VERIFIED — RUNTIME EVIDENCE INCOMPLETE (GUI Tick Stream Pending)
+LEVEL 3 STATUS: LEVEL 3 PARTIALLY VERIFIED â€” RUNTIME EVIDENCE INCOMPLETE (GUI Tick Stream Pending)
 LEVEL 4 STATUS: LEVEL 4 LIVE TRADING = NOT AUTHORIZED
 ```
 
@@ -39,6 +39,7 @@ Search for order submission paths in `MQL5/Include/Execution Engine.mqh` and `MQ
 - **Context Timeframe**: `M15`
 - **HTF Context Timeframe**: `H1`
 - **ATR Period**: `14`
-- **Bridge Inbox**: `algomind_ext_in.txt`
-- **Bridge Outbox**: `algomind_mkt_out.txt`
+- **Bridge Inbox**: `Amigo_ext_in.txt`
+- **Bridge Outbox**: `Amigo_mkt_out.txt`
 - **Stale Threshold**: $120$ seconds
+

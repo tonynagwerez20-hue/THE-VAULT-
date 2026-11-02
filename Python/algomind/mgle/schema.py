@@ -1,5 +1,5 @@
-"""
-ALGOMIND MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
+﻿"""
+Amigo MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
 ==================================================================
 Canonical Master Schema & Data Quality Definitions (v1.0)
 Strictly enforces Point-in-Time (PIT) causality and provenance tracking.
@@ -152,3 +152,4 @@ class MGLESnapshot:
     # Provenance Summary
     data_quality_bitmask: int = DataQualityBitmask.OK
     shadow_mode: bool = True            # MUST REMAIN TRUE
+

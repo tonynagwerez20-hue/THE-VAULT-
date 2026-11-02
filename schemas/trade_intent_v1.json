@@ -1,7 +1,7 @@
-{
+﻿{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "algomind/trade_intent_v1",
-  "title": "AlgoMind TradeIntent v1",
+  "$id": "Amigo/trade_intent_v1",
+  "title": "Amigo TradeIntent v1",
   "description": "Canonical trade intent produced by the MQL5 decision gate.",
   "type": "object",
   "required": [
@@ -34,3 +34,4 @@
   },
   "additionalProperties": false
 }
+

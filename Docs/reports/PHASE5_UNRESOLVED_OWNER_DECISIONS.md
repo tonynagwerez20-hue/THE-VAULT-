@@ -1,8 +1,8 @@
-# PHASE 5 — UNRESOLVED OWNER DECISIONS
+﻿# PHASE 5 â€” UNRESOLVED OWNER DECISIONS
 
 **Document Status**: Authoritative Governance Register  
 **Date**: 24 September 2026  
-**System**: AlgoMind / ASAP Retail Order-Flow System  
+**System**: Amigo / ASAP Retail Order-Flow System  
 
 ---
 
@@ -25,3 +25,4 @@ The following quantitative, architectural, and operational decisions remain open
 ## 2. Recommended Action
 
 Keep all decisions at their **Default Baseline** during Phase 5 shadow testing. Record owner decisions as explicit user directives prior to any future Phase 6 optimization or promotion attempt.
+

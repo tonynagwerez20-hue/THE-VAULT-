@@ -1,4 +1,4 @@
-"""Hyperliquid Gold / Klustra Reference Adapter.
+﻿"""Hyperliquid Gold / Klustra Reference Adapter.
 
 Ingests free Hyperliquid gold order-flow data as an independent crypto-perp reference stream.
 Appends strict provenance metadata: DataQualityTag = PROXY.
@@ -8,7 +8,7 @@ from __future__ import annotations
 import os
 import pandas as pd
 from typing import List
-from algomind.orderflow_lab.schema import (
+from Amigo.orderflow_lab.schema import (
     OrderFlowTick, SourceMetadata, DataQualityTag
 )
 
@@ -63,3 +63,4 @@ class HyperliquidAdapter:
                 quality_tag=DataQualityTag.PROXY
             ))
         return ticks
+

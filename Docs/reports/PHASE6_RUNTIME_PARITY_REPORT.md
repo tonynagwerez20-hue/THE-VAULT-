@@ -1,14 +1,14 @@
-# PHASE 6 — RUNTIME PARITY REPORT
+﻿# PHASE 6 â€” RUNTIME PARITY REPORT
 
 **Document Status**: Authoritative Engineering Audit  
 **Date**: 24 September 2026  
-**System**: AlgoMind / ASAP Retail Order-Flow System  
+**System**: Amigo / ASAP Retail Order-Flow System  
 
 ---
 
 ## 1. Parity Audit Standard
 
-Per Phase 6 Section 11, claiming live runtime parity between Python (`algomind/orderflow_lab`) and MQL5 (`AM_*.mqh`) requires simultaneous capture of a shared live tick stream from MT5 and Python, followed by step-by-step mathematical comparison of tick classification, footprint pressure, VWAP, and cumulative delta.
+Per Phase 6 Section 11, claiming live runtime parity between Python (`Amigo/orderflow_lab`) and MQL5 (`AM_*.mqh`) requires simultaneous capture of a shared live tick stream from MT5 and Python, followed by step-by-step mathematical comparison of tick classification, footprint pressure, VWAP, and cumulative delta.
 
 ---
 
@@ -30,3 +30,4 @@ Per Phase 6 Section 11, claiming live runtime parity between Python (`algomind/o
 PYTHON <-> MQL5 RUNTIME PARITY: UNVERIFIED (Awaiting Shared Live Stream Capture)
 ===================================================================
 ```
+

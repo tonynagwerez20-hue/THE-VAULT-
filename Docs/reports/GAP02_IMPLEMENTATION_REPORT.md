@@ -1,7 +1,7 @@
-# AlgoMind / ASAP — GAP-02 Implementation Report: ATR-Normalized Confirmed BOS Displacement
+﻿# Amigo / ASAP â€” GAP-02 Implementation Report: ATR-Normalized Confirmed BOS Displacement
 
 ## Executive Summary
-This report documents the implementation and verification of **GAP-02 (ATR-Normalized Confirmed BOS Displacement)** within the AlgoMind production codebase (`MQL5/Include/`). GAP-02 completes the Continuation strategy evidence calculation by replacing the previous `0.0` placeholder with an ATR-normalized displacement score ($0.0 \to 1.0$).
+This report documents the implementation and verification of **GAP-02 (ATR-Normalized Confirmed BOS Displacement)** within the Amigo production codebase (`MQL5/Include/`). GAP-02 completes the Continuation strategy evidence calculation by replacing the previous `0.0` placeholder with an ATR-normalized displacement score ($0.0 \to 1.0$).
 
 ---
 
@@ -37,3 +37,4 @@ $$\text{Base\_Score} = 0.30 \cdot \text{structure} + 0.20 \cdot \text{disp} + 0.
 1. **Compilation Verification**: Compiled via `MetaEditor64.exe` into `AMIGO.ex5`. Resulted in **0 errors**, **13 audit warnings**.
 2. **Account Invariance**: Displacement is calculated purely on price distance relative to ATR. Account size has zero influence on setup quality or displacement scoring.
 3. **Safety Controls**: Retains existing risk limits and safety controls (`InpShadowOnly = true`).
+

@@ -1,5 +1,5 @@
-# NEWS AND FOMC RECONCILIATION AUDIT
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# NEWS AND FOMC RECONCILIATION AUDIT
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 
 ---
@@ -27,3 +27,4 @@ The system reconciles Python external economic calendar data with MT5 terminal n
 
 ## 3. FOMC Document Distinction
 FOMC Minutes releases are maintained as distinct document-based events separate from rate decisions or CPI releases. Hawkish/Dovish sentiment scores act as contextual modifiers and never generate automated trades without price/delta confirmation.
+

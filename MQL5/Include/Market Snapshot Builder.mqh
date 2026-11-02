@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //| Snapshot.mqh - canonical market snapshot builder                 |
 //+------------------------------------------------------------------+
 #property strict
@@ -33,7 +33,7 @@ bool BuildMarketSnapshot(string symbol, MarketSnapshot &s)
 
    s.session_state = 0;
    s.data_quality  = DQ_OK;
-   s.schema_version= ALGOMIND_SCHEMA_VERSION;
+   s.schema_version= Amigo_SCHEMA_VERSION;
 
    if(s.bid <= 0 || s.ask <= 0 || s.point <= 0 || s.tick_size <= 0)
    {

@@ -1,7 +1,7 @@
-# AlgoMind / ASAP
+﻿# Amigo / ASAP
 # GAP-01 / GAP-02 Quantitative Specification Proposal
 
-**Project:** AlgoMind / ASAP Retail Order-Flow System  
+**Project:** Amigo / ASAP Retail Order-Flow System  
 **Symbol / Timeframe:** `XAUUSD` / `M5`  
 **Execution Environment:** Windows 10, MetaTrader 5 (PID 7964), Exness Demo (`Exness-MT5Trial`)  
 **Operating Mode:** SHADOW MODE (`InpShadowOnly = true`)  
@@ -15,8 +15,8 @@
 This document presents mathematically explicit candidate proposals for closing the two HIGH-severity strategy scoring gaps identified in `LEVEL4_POST_RECONCILIATION_PRODUCTION_READINESS_AUDIT.md`:
 
 ```text
-GAP-01 — Mean-Reversion Delta Divergence (div_score)
-GAP-02 — Continuation BOS / Displacement (disp)
+GAP-01 â€” Mean-Reversion Delta Divergence (div_score)
+GAP-02 â€” Continuation BOS / Displacement (disp)
 ```
 
 **CRITICAL GOVERNANCE RULE:** This proposal does **NOT** authorize production implementation. No production code is modified. These specifications are developed for inspection, challenge, modification, or decision by the project owner.
@@ -188,7 +188,7 @@ All candidate formulas consume strictly closed bar data ($r[1]$, $r[2]$) availab
 
 ## 19. PROXY-DELTA LIMITATIONS
 
-AlgoMind uses **PROXY DELTA** derived from tick volume and price direction (`delta_a`, `delta_b`). Divergence must be understood as **PROXY DELTA DIVERGENCE**, not exchange-wide L2/L3 order book divergence.
+Amigo uses **PROXY DELTA** derived from tick volume and price direction (`delta_a`, `delta_b`). Divergence must be understood as **PROXY DELTA DIVERGENCE**, not exchange-wide L2/L3 order book divergence.
 
 ---
 
@@ -220,8 +220,8 @@ Both divergence and displacement candidate formulas are 100% account-invariant (
 
 ## 23. IMPLEMENTATION READINESS SUMMARY
 
-- **GAP-01:** `SPECIFICATION PROPOSALS GENERATED — IMPLEMENTATION BLOCKED PENDING OWNER DECISION`
-- **GAP-02:** `SPECIFICATION PROPOSALS GENERATED — IMPLEMENTATION BLOCKED PENDING OWNER DECISION`
+- **GAP-01:** `SPECIFICATION PROPOSALS GENERATED â€” IMPLEMENTATION BLOCKED PENDING OWNER DECISION`
+- **GAP-02:** `SPECIFICATION PROPOSALS GENERATED â€” IMPLEMENTATION BLOCKED PENDING OWNER DECISION`
 
 ---
 
@@ -229,10 +229,10 @@ Both divergence and displacement candidate formulas are 100% account-invariant (
 
 ```text
 GAP-01:
-SPECIFICATION PROPOSALS GENERATED — IMPLEMENTATION BLOCKED PENDING OWNER DECISION
+SPECIFICATION PROPOSALS GENERATED â€” IMPLEMENTATION BLOCKED PENDING OWNER DECISION
 
 GAP-02:
-SPECIFICATION PROPOSALS GENERATED — IMPLEMENTATION BLOCKED PENDING OWNER DECISION
+SPECIFICATION PROPOSALS GENERATED â€” IMPLEMENTATION BLOCKED PENDING OWNER DECISION
 
 PRODUCTION CODE:
 UNCHANGED
@@ -261,3 +261,4 @@ NOT APPROVED
 GIT PUSH:
 NOT APPROVED
 ```
+

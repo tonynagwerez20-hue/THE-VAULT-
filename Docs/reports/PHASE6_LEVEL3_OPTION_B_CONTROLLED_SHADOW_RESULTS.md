@@ -1,6 +1,6 @@
-# ALGOMIND PHASE 6 — OPTION B: CONTROLLED NON-LIVE SHADOW INTERCEPTION VERIFICATION REPORT
+﻿# Amigo PHASE 6 â€” OPTION B: CONTROLLED NON-LIVE SHADOW INTERCEPTION VERIFICATION REPORT
 
-**Project:** AlgoMind / ASAP Retail Order-Flow System  
+**Project:** Amigo / ASAP Retail Order-Flow System  
 **Symbol / Timeframe:** `XAUUSD` / `M5`  
 **Execution Environment:** Windows 10, MetaTrader 5 (PID 7964), Exness Demo (`Exness-MT5Trial`)  
 **Operating Mode:** SHADOW MODE (`InpShadowOnly = true`)  
@@ -40,7 +40,7 @@ The primary objective of this Option B test is to attempt runtime verification o
 | **Minimum Volume** | `0.01` lots |
 | **Volume Step** | `0.01` lots |
 | **Stop-Loss Configuration**| Structural Swing ATR-based (`SelectStop`) |
-| **Current Equity** | `$4,636.90` – `$4,652.06` |
+| **Current Equity** | `$4,636.90` â€“ `$4,652.06` |
 | **Free Margin** | `$4,636.90` |
 
 ---
@@ -72,25 +72,25 @@ The primary objective of this Option B test is to attempt runtime verification o
 
 ### Candidate 1 (17:50:00.146):
 ```text
-2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[AlgoMind][DECISION] id=1790261401095 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4523 reason=OK
-2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[AlgoMind][DIAG] ts=2026.09.24 14:50 sym=XAUUSD tf=5 reg=3 dir=1 fus=-0.020 flip_u=0 flip_d=0 surge=0 swp=1 cntL=0.300 cntS=0.000 mrL=0.000 mrS=0.452 sL=0.300 sS=0.452 best=0.452 mrg=0.152 th=0.42 mrg_th=0.05 act=1 rsn=OK
-2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[AlgoMind][INFO][SIZE_DIAG] eq=4638.34 risk_amt=23.19 stop_dist=34.1450 tick_sz=0.00100 tick_val=0.10 loss_per_lot=3414.50 min_lot_loss=34.15 min_vol=0.01 dist=1.47x
-2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[AlgoMind][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
+2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[Amigo][DECISION] id=1790261401095 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4523 reason=OK
+2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[Amigo][DIAG] ts=2026.09.24 14:50 sym=XAUUSD tf=5 reg=3 dir=1 fus=-0.020 flip_u=0 flip_d=0 surge=0 swp=1 cntL=0.300 cntS=0.000 mrL=0.000 mrS=0.452 sL=0.300 sS=0.452 best=0.452 mrg=0.152 th=0.42 mrg_th=0.05 act=1 rsn=OK
+2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[Amigo][INFO][SIZE_DIAG] eq=4638.34 risk_amt=23.19 stop_dist=34.1450 tick_sz=0.00100 tick_val=0.10 loss_per_lot=3414.50 min_lot_loss=34.15 min_vol=0.01 dist=1.47x
+2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[Amigo][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
 ```
 
 ### Candidate 2 (18:05:02.385):
 ```text
-2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[AlgoMind][DECISION] id=1790262303098 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4301 reason=OK
-2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[AlgoMind][DIAG] ts=2026.09.24 15:05 sym=XAUUSD tf=5 reg=3 dir=1 fus=0.078 flip_u=0 flip_d=0 surge=0 swp=1 cntL=0.300 cntS=0.000 mrL=0.000 mrS=0.430 sL=0.300 sS=0.430 best=0.430 mrg=0.130 th=0.42 mrg_th=0.05 act=1 rsn=OK
-2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[AlgoMind][INFO][SIZE_DIAG] eq=4652.06 risk_amt=23.26 stop_dist=40.9980 tick_sz=0.00100 tick_val=0.10 loss_per_lot=4099.80 min_lot_loss=41.00 min_vol=0.01 dist=1.76x
-2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[AlgoMind][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
+2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[Amigo][DECISION] id=1790262303098 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4301 reason=OK
+2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[Amigo][DIAG] ts=2026.09.24 15:05 sym=XAUUSD tf=5 reg=3 dir=1 fus=0.078 flip_u=0 flip_d=0 surge=0 swp=1 cntL=0.300 cntS=0.000 mrL=0.000 mrS=0.430 sL=0.300 sS=0.430 best=0.430 mrg=0.130 th=0.42 mrg_th=0.05 act=1 rsn=OK
+2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[Amigo][INFO][SIZE_DIAG] eq=4652.06 risk_amt=23.26 stop_dist=40.9980 tick_sz=0.00100 tick_val=0.10 loss_per_lot=4099.80 min_lot_loss=41.00 min_vol=0.01 dist=1.76x
+2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[Amigo][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
 ```
 
 ### Candidate 3 (18:55:00.277):
 ```text
-2026.09.24 18:55:00.277	AMIGO (XAUUSD,M5)	[AlgoMind][DECISION] id=1790265301108 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4251 reason=OK
-2026.09.24 18:55:00.277	AMIGO (XAUUSD,M5)	[AlgoMind][INFO][SIZE_DIAG] eq=4636.90 risk_amt=23.18 stop_dist=33.8130 tick_sz=0.00100 tick_val=0.10 loss_per_lot=3381.30 min_lot_loss=33.81 min_vol=0.01 dist=1.46x
-2026.09.24 18:55:00.277	AMIGO (XAUUSD,M5)	[AlgoMind][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
+2026.09.24 18:55:00.277	AMIGO (XAUUSD,M5)	[Amigo][DECISION] id=1790265301108 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4251 reason=OK
+2026.09.24 18:55:00.277	AMIGO (XAUUSD,M5)	[Amigo][INFO][SIZE_DIAG] eq=4636.90 risk_amt=23.18 stop_dist=33.8130 tick_sz=0.00100 tick_val=0.10 loss_per_lot=3381.30 min_lot_loss=33.81 min_vol=0.01 dist=1.46x
+2026.09.24 18:55:00.277	AMIGO (XAUUSD,M5)	[Amigo][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
 ```
 
 ---
@@ -109,10 +109,10 @@ The primary objective of this Option B test is to attempt runtime verification o
 
 | Stage | Classification | Direct Evidence | Notes |
 | :--- | :--- | :--- | :--- |
-| **Candidate decision** | `VERIFIED RUNTIME — DIRECT` | `[DECISION] act=1` | Logged at 17:50, 18:05, and 18:55. |
-| **RiskAllows** | `VERIFIED RUNTIME — DIRECT` | `RiskAllows() == true` | Passed, allowing execution to reach sizing. |
-| **Risk sizing** | `VERIFIED RUNTIME — DIRECT` | `[SIZE_DIAG] eq=4636.90` | Calculated max risk (\$23.18–\$23.26). |
-| **Minimum-lot validation**| `VERIFIED RUNTIME — DIRECT` | `[WARN][SIZE] MIN_LOT...` | Min lot loss (\$33.81–\$41.00) > max risk. |
+| **Candidate decision** | `VERIFIED RUNTIME â€” DIRECT` | `[DECISION] act=1` | Logged at 17:50, 18:05, and 18:55. |
+| **RiskAllows** | `VERIFIED RUNTIME â€” DIRECT` | `RiskAllows() == true` | Passed, allowing execution to reach sizing. |
+| **Risk sizing** | `VERIFIED RUNTIME â€” DIRECT` | `[SIZE_DIAG] eq=4636.90` | Calculated max risk (\$23.18â€“\$23.26). |
+| **Minimum-lot validation**| `VERIFIED RUNTIME â€” DIRECT` | `[WARN][SIZE] MIN_LOT...` | Min lot loss (\$33.81â€“\$41.00) > max risk. |
 | **ExecuteIntent entry** | `NOT REACHED` | None | Vetoed upstream at line 449. |
 | **Shadow gate entry** | `NOT REACHED` | None | Vetoed upstream at line 449. |
 | **Shadow interception** | `VERIFIED STATIC ONLY` | `Execution Engine.mqh` L137 | Verified in static code; unreached at runtime. |
@@ -139,7 +139,7 @@ A complete static search for `OrderSend` across `AMIGO.mq5` and all included hea
 
 ## 10. RECOMMENDED NEXT GATE
 
-Selected Next Gate: **`E — Proceed to shadow interception verification`** (Requires an environment where account equity/balance or symbol specifications allow candidate lot sizing $\ge 0.01$ lots without violating production risk limits).
+Selected Next Gate: **`E â€” Proceed to shadow interception verification`** (Requires an environment where account equity/balance or symbol specifications allow candidate lot sizing $\ge 0.01$ lots without violating production risk limits).
 
 ---
 
@@ -159,7 +159,7 @@ ORDER SEND:
 NOT REACHED
 
 LIVE ORDERS SUBMITTED:
-0 — VERIFIED SAFE (ALL CANDIDATES BLOCKED UPSTREAM BY RISK ENGINE)
+0 â€” VERIFIED SAFE (ALL CANDIDATES BLOCKED UPSTREAM BY RISK ENGINE)
 
 GLOBAL BROKER-SUBMISSION SAFETY:
 NOT VERIFIED UNLESS ALL RELEVANT EXECUTION PATHS ARE DIRECTLY COVERED
@@ -176,3 +176,4 @@ NOT APPROVED
 GIT PUSH:
 NOT APPROVED
 ```
+

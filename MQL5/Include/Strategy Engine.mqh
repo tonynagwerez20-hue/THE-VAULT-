@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //| StrategyEngine.mqh - continuation vs mean-reversion scoring      |
 //+------------------------------------------------------------------+
 #property strict
@@ -76,7 +76,7 @@ double ContinuationEvidence(const FeatureSnapshot &f, int dir)
 //--- Combine the two hypotheses into long/short scores
 StrategyScores ScoreStrategies(const FeatureSnapshot &f,
                                const ExternalContext &ext,
-                               const AlgoMindConfig &cfg)
+                               const AmigoConfig &cfg)
 {
    StrategyScores s;
    s.long_cont  = ContinuationEvidence(f, +1);
@@ -120,7 +120,7 @@ StrategyScores ScoreStrategies(const FeatureSnapshot &f,
 
 //--- Final deterministic decision gate (Math Spec §26)
 DecisionResult Decide(const StrategyScores &s, const RegimeState &rs,
-                     const ExternalContext &ext, const AlgoMindConfig &cfg,
+                     const ExternalContext &ext, const AmigoConfig &cfg,
                      uint data_quality)
 {
    DecisionResult d;

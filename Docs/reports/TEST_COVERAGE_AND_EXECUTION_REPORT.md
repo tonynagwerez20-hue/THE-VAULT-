@@ -1,5 +1,5 @@
-# TEST COVERAGE AND EXECUTION REPORT
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# TEST COVERAGE AND EXECUTION REPORT
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 
 ---
@@ -7,7 +7,7 @@
 ## 1. Test Execution Inventory
 
 ```text
-pytest Python/algomind/orderflow_lab/tests/ -v
+pytest Python/Amigo/orderflow_lab/tests/ -v
 ============================== 9 passed in 1.03s ==============================
 ```
 
@@ -28,3 +28,4 @@ pytest Python/algomind/orderflow_lab/tests/ -v
 ## 2. Parity Test Result
 - **Numerical Difference**: $< 10^{-5}$ across VWAP, Delta, Footprint Pressure, POC, VAH, and VAL.
 - **Pass Rate**: 100% (9/9 passing).
+

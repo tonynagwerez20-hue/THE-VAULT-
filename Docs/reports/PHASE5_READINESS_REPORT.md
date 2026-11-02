@@ -1,10 +1,10 @@
-# PHASE 5 — FINAL READINESS & INTEGRATION REPORT
+﻿# PHASE 5 â€” FINAL READINESS & INTEGRATION REPORT
 
 **Document Status**: Authoritative Engineering Readiness Audit  
 **Date**: 24 September 2026  
-**System**: AlgoMind / ASAP Retail Order-Flow System  
-**Repository**: `C:\Users\USER\Desktop\ALGOMIND`  
-**Classification**: LEVEL 3 UNVERIFIED — MT5 RUNTIME RE-ATTACHMENT PENDING  
+**System**: Amigo / ASAP Retail Order-Flow System  
+**Repository**: `C:\Users\USER\Desktop\Amigo`  
+**Classification**: LEVEL 3 UNVERIFIED â€” MT5 RUNTIME RE-ATTACHMENT PENDING  
 **Live Execution Status**: LEVEL 4 LIVE TRADING = NOT AUTHORIZED  
 
 ---
@@ -16,7 +16,7 @@ Phase 5 successfully completed the architectural wiring of the native MQL5 order
 However, because the active MetaTrader 5 GUI process (`terminal64.exe` PID 7964) attached to `XAUUSD, M5` was last initialized at `00:05:23.845` on 2026-09-24 and has not yet reloaded the newly compiled binary on the user's desktop, **actual runtime log artifacts containing `[FLOW_DIAG]` have not yet been produced by the running MT5 terminal instance**.
 
 Per Phase 5 Governance Rule 16 (MT5 GUI Control Limit) and Rule 18 (Final Status Rules):
-- **Level 3 Status**: `LEVEL 3 UNVERIFIED — MT5 RUNTIME RE-ATTACHMENT PENDING`
+- **Level 3 Status**: `LEVEL 3 UNVERIFIED â€” MT5 RUNTIME RE-ATTACHMENT PENDING`
 - **Level 4 Status**: `NOT AUTHORIZED`
 
 ---
@@ -35,9 +35,10 @@ To complete Level 3 Runtime Verification and generate the required live trace lo
    - Verify `InpTFExec = M5`.
    - Click **OK**.
 5. **Observe Experts Tab**:
-   - Verify that the Experts tab logs: `[AlgoMind][INFO][INIT] AlgoMind started on XAUUSD tf=5 ML=OFF`.
-   - On the next closed M5 bar (e.g. at 07:35:00 or 07:40:00), verify that `[AlgoMind][INFO][FLOW_DIAG]` entries appear with `vwap`, `poc`, `vah`, `val`, `cd`, and `fp_press`.
+   - Verify that the Experts tab logs: `[Amigo][INFO][INIT] Amigo started on XAUUSD tf=5 ML=OFF`.
+   - On the next closed M5 bar (e.g. at 07:35:00 or 07:40:00), verify that `[Amigo][INFO][FLOW_DIAG]` entries appear with `vwap`, `poc`, `vah`, `val`, `cd`, and `fp_press`.
 6. **Export Log Artifact**:
    - Right-click in the Experts tab $\rightarrow$ *Open*.
    - Copy the log file `AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\MQL5\Logs\20260924.log`.
    - Return log artifacts for automated parity verification.
+

@@ -1,5 +1,5 @@
-# NEWS REACTION ENGINE SPECIFICATION
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# NEWS REACTION ENGINE SPECIFICATION
+**Amigo / ASAP Retail Order-Flow System**
 
 ## 1. Engine State Machine
 The news reaction system operates as a deterministic 12-state machine:
@@ -36,3 +36,4 @@ For every verified event release, measure:
 3. **5-Minute Follow-Through**: $\text{Disp}_{5m} = \frac{|P_{t+5m} - P_{\text{pre}}|}{\text{ATR}_{\text{pre}}}$.
 4. **Spread Expansion**: $\text{SpreadRatio} = \frac{\text{Spread}_{\text{release}}}{\text{Spread}_{\text{pre}}}$.
 5. **Delta Reaction**: Footprint delta accumulation during initial 1m and 5m bars.
+

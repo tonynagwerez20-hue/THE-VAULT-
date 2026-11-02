@@ -1,5 +1,5 @@
-"""
-ALGOMIND MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
+﻿"""
+Amigo MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
 ==================================================================
 CFTC Positioning Engine (v1.0)
 Calculates Managed Money COT bands and extreme states.
@@ -9,7 +9,7 @@ Strictly enforces publication date gating (Friday release).
 from __future__ import annotations
 import numpy as np
 from typing import List, Dict, Any
-from algomind.mgle.schema import DataQualityTag
+from Amigo.mgle.schema import DataQualityTag
 
 class CFTCEngine:
     @staticmethod
@@ -42,3 +42,4 @@ class CFTCEngine:
             "extreme_state": state,
             "quality": DataQualityTag.TRUE
         }
+

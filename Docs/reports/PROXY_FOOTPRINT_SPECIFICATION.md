@@ -1,28 +1,28 @@
-# PROXY FOOTPRINT SPECIFICATION
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# PROXY FOOTPRINT SPECIFICATION
+**Amigo / ASAP Retail Order-Flow System**
 
 ## 1. Architecture Migration
 Migration from standalone proxy-delta dynamics to a **Footprint-First Architecture**:
 
 ```text
 Market Ticks / Quotes
-         │
-         ▼
+         â”‚
+         â–¼
     Price Bins
-         │
-         ▼
+         â”‚
+         â–¼
   Proxy Footprint (Buy/Sell Activity Estimate)
-         │
-         ▼
+         â”‚
+         â–¼
     Proxy Delta
-         │
-         ▼
+         â”‚
+         â–¼
 Cumulative Delta (CD)
-         │
-         ▼
+         â”‚
+         â–¼
 Footprint Pressure / Events (Surge, Flip, Transition)
-         │
-         ▼
+         â”‚
+         â–¼
    Strategy Engine
 ```
 
@@ -39,3 +39,4 @@ Footprint Pressure / Events (Surge, Flip, Transition)
 - **Bin Delta**: $\hat{\Delta}(p) = V_{\text{buy}}(p) - V_{\text{sell}}(p)$
 - **Footprint Pressure**: $P_t = \frac{\sum \hat{\Delta}(p)}{\sum |\hat{\Delta}(p)| + \epsilon} \in [-1.0, +1.0]$
 - **State Classification**: `BULLISH` ($P_t \ge +0.25$), `NEUTRAL` ($-0.25 < P_t < +0.25$), `BEARISH` ($P_t \le -0.25$).
+

@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //| RiskController.mqh                                               |
 //| AMIGO Account-Size-Correlated Risk + Distortion Engine           |
 //| Piecewise-Linear Spline, High-Water Throttle, Hard Safety Caps   |
@@ -162,7 +162,7 @@ AdaptiveRiskResult RiskControllerEvaluate(
    string symbol,
    double entry,
    double stop,
-   const AlgoMindConfig &cfg,
+   const AmigoConfig &cfg,
    bool daily_locked_status = false
 )
 {
@@ -317,3 +317,4 @@ void RiskControllerLogDiagnostic(const AdaptiveRiskResult &r)
                r.minimum_viable_equity, r.required_risk_percent,
                status_str, dec_str, r.reason);
 }
+

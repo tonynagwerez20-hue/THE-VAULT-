@@ -1,10 +1,10 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //|                                              AM_FlowQuality.mqh  |
-//|                                  Copyright 2026, AlgoMind / ASAP |
+//|                                  Copyright 2026, Amigo / ASAP |
 //|                                        Zero-Cost Order-Flow EA   |
 //+------------------------------------------------------------------+
-#property copyright "AlgoMind / ASAP"
-#property link      "https://algomind.local"
+#property copyright "Amigo / ASAP"
+#property link      "https://Amigo.local"
 #property strict
 
 //--- Data Quality Tags (Spec Section 14)
@@ -60,3 +60,4 @@ string PressureStateToString(ENUM_PRESSURE_STATE state)
      }
    return "NEUTRAL";
   }
+

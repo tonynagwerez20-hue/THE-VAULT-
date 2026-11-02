@@ -1,4 +1,4 @@
-"""CFTC Commitments of Traders adapter — AUTONOMOUS.
+﻿"""CFTC Commitments of Traders adapter — AUTONOMOUS.
 
 Downloads official CFTC COT ZIP archives directly from cftc.gov.
 No API key. No manual CSV preparation.
@@ -62,7 +62,7 @@ def _download_year(year: int, report_type: str) -> Optional[pd.DataFrame]:
     fname = tmpl.format(year=year)
     url = f"{CFTC_BASE}/{fname}"
     try:
-        r = requests.get(url, timeout=60, headers={"User-Agent": "AlgoMind/1.0 (research)"})
+        r = requests.get(url, timeout=60, headers={"User-Agent": "Amigo/1.0 (research)"})
         if r.status_code != 200:
             return None
         with zipfile.ZipFile(io.BytesIO(r.content)) as z:
@@ -186,3 +186,4 @@ def compute_context(now: datetime, lookback_years: int = 3,
         "cftc_percentile":      pct,
         "cftc_extreme":         extreme,
     }
+

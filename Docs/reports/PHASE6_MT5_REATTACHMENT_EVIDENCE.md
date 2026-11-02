@@ -1,10 +1,10 @@
-# PHASE 6 — MT5 REATTACHMENT & INITIALIZATION EVIDENCE REPORT
+﻿# PHASE 6 â€” MT5 REATTACHMENT & INITIALIZATION EVIDENCE REPORT
 
 **Document Status**: Authoritative Engineering Audit  
 **Date**: 24 September 2026  
-**System**: AlgoMind / ASAP Retail Order-Flow System  
-**Repository**: `C:\Users\USER\Desktop\ALGOMIND`  
-**Classification**: LEVEL 3 UNVERIFIED — MT5 RUNTIME RE-ATTACHMENT PENDING  
+**System**: Amigo / ASAP Retail Order-Flow System  
+**Repository**: `C:\Users\USER\Desktop\Amigo`  
+**Classification**: LEVEL 3 UNVERIFIED â€” MT5 RUNTIME RE-ATTACHMENT PENDING  
 **Live Execution Authority**: LEVEL 4 LIVE TRADING = NOT AUTHORIZED  
 
 ---
@@ -42,4 +42,5 @@ To complete Level 3 Runtime Verification:
 2. Remove the existing `AMIGO` EA from the `XAUUSD, M5` chart.
 3. Drag the updated `AMIGO` EA from the Navigator panel onto the `XAUUSD, M5` chart.
 4. Confirm `InpShadowOnly = true` in the inputs window and click OK.
-5. Verify that `[AlgoMind][INFO][INIT] AlgoMind started on XAUUSD tf=5 ML=OFF` appears in the Experts log with a timestamp after 07:27:05 UTC.
+5. Verify that `[Amigo][INFO][INIT] Amigo started on XAUUSD tf=5 ML=OFF` appears in the Experts log with a timestamp after 07:27:05 UTC.
+

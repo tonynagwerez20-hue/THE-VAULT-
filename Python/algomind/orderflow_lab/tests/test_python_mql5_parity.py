@@ -1,4 +1,4 @@
-"""Python ↔ MQL5 Parity Test Suite (Spec §46).
+﻿"""Python ↔ MQL5 Parity Test Suite (Spec §46).
 
 Validates numerical parity between Python orderflow_lab engines and native MQL5 algorithms.
 Tests VWAP, Footprint Pressure, POC, VAH, VAL, and State transitions on identical tick inputs.
@@ -14,12 +14,12 @@ Tolerance bounds:
 
 import pytest
 import math
-from algomind.orderflow_lab.schema import OrderFlowTick, DataQualityTag, PressureState
-from algomind.orderflow_lab.engines.price_bin_engine import PriceBinEngine
-from algomind.orderflow_lab.engines.proxy_vwap import ProxyVWAPEngine, VWAPMethod
-from algomind.orderflow_lab.engines.proxy_profile import ProxyProfileEngine
-from algomind.orderflow_lab.engines.proxy_footprint import ProxyFootprintEngine
-from algomind.orderflow_lab.engines.event_engine import EventEngine
+from Amigo.orderflow_lab.schema import OrderFlowTick, DataQualityTag, PressureState
+from Amigo.orderflow_lab.engines.price_bin_engine import PriceBinEngine
+from Amigo.orderflow_lab.engines.proxy_vwap import ProxyVWAPEngine, VWAPMethod
+from Amigo.orderflow_lab.engines.proxy_profile import ProxyProfileEngine
+from Amigo.orderflow_lab.engines.proxy_footprint import ProxyFootprintEngine
+from Amigo.orderflow_lab.engines.event_engine import EventEngine
 
 
 # ----------------------------------------------------------------------
@@ -156,3 +156,4 @@ class TestPythonMQL5Parity:
 
         assert abs(py_vwap - mql_res["vwap"]) < 1e-5
         assert abs(py_pressure - mql_res["pressure"]) < 1e-5
+

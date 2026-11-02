@@ -1,4 +1,4 @@
-"""GLD proxy options adapter — dual source (CBOE primary, yfinance fallback).
+﻿"""GLD proxy options adapter — dual source (CBOE primary, yfinance fallback).
 
 The governing documents (D5 §12, D3 §24) require:
   * Options are CONTEXT ONLY. Never a trigger.
@@ -68,7 +68,7 @@ def fetch_gld_cboe(symbol: str = "GLD", timeout: int = 30) -> list[OptionsRow]:
     url = f"{CBOE_BASE}/{symbol}.json"
     try:
         r = requests.get(url, timeout=timeout, headers={
-            "User-Agent": "AlgoMind/1.0 (research)"
+            "User-Agent": "Amigo/1.0 (research)"
         })
         if r.status_code != 200:
             return []
@@ -239,3 +239,4 @@ def compute_context(spot: float, atr: float,
         "options_gamma_regime":        gamma_regime,
         "options_source":              source,
     }
+

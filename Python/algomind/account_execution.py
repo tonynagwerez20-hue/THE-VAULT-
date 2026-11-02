@@ -1,4 +1,4 @@
-"""AlgoMind Account-Aware Execution Layer (Python Engine & Simulation Core).
+﻿"""Amigo Account-Aware Execution Layer (Python Engine & Simulation Core).
 
 Implements the deterministic Account-Aware Execution Layer matching MQL5 Account Execution Engine:
   - Account Identification & Classification
@@ -517,7 +517,7 @@ def _build_diagnostics(env: AccountExecutionEnvelope, max_allowed_distortion: fl
     cand_dist = abs(env.entry - env.adaptive_sl) if env.adaptive_sl > 0 else 0.0
 
     sl_adapt_log = (
-        f"[AlgoMind][SL_ADAPT] sym={env.symbol_cap.symbol} dir={'BUY' if env.direction == 1 else 'SELL'} "
+        f"[Amigo][SL_ADAPT] sym={env.symbol_cap.symbol} dir={'BUY' if env.direction == 1 else 'SELL'} "
         f"entry={env.entry:.5f} original_sl={env.original_sl:.5f} original_dist={env.original_stop_distance:.5f} "
         f"adaptive_required={1 if env.sl_adapt_status != SLAdaptationStatus.ORIGINAL_SL_EXECUTABLE else 0} "
         f"max_account_stop_dist={env.max_account_stop_dist:.5f} candidate_sl={env.adaptive_sl:.5f} "
@@ -559,3 +559,4 @@ def _build_diagnostics(env: AccountExecutionEnvelope, max_allowed_distortion: fl
 
 
 import math
+

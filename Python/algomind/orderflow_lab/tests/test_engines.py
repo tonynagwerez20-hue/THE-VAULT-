@@ -1,4 +1,4 @@
-"""Comprehensive unit tests for the Order-Flow Lab.
+﻿"""Comprehensive unit tests for the Order-Flow Lab.
 
 Covers spec §45 & Master Prompt test requirements:
   - Tick classification (up/down/equal)
@@ -18,20 +18,20 @@ import math
 import tempfile
 import pytest
 
-from algomind.orderflow_lab.schema import (
+from Amigo.orderflow_lab.schema import (
     OrderFlowTick, FootprintBin, DataQualityTag, PressureState
 )
-from algomind.orderflow_lab.engines.price_bin_engine import PriceBinEngine, _normalise_price
-from algomind.orderflow_lab.engines.proxy_vwap import ProxyVWAPEngine, VWAPMethod
-from algomind.orderflow_lab.engines.proxy_profile import ProxyProfileEngine
-from algomind.orderflow_lab.engines.proxy_footprint import ProxyFootprintEngine, ResetScope
-from algomind.orderflow_lab.engines.event_engine import EventEngine
-from algomind.orderflow_lab.engines.proxy_dom import ProxyDOMEngine
-from algomind.orderflow_lab.engines.news_reconciliation_engine import (
+from Amigo.orderflow_lab.engines.price_bin_engine import PriceBinEngine, _normalise_price
+from Amigo.orderflow_lab.engines.proxy_vwap import ProxyVWAPEngine, VWAPMethod
+from Amigo.orderflow_lab.engines.proxy_profile import ProxyProfileEngine
+from Amigo.orderflow_lab.engines.proxy_footprint import ProxyFootprintEngine, ResetScope
+from Amigo.orderflow_lab.engines.event_engine import EventEngine
+from Amigo.orderflow_lab.engines.proxy_dom import ProxyDOMEngine
+from Amigo.orderflow_lab.engines.news_reconciliation_engine import (
     NewsReconciliationEngine, CalendarEvent, NewsMatchStatus
 )
-from algomind.orderflow_lab.engines.event_reaction_engine import EventReactionEngine
-from algomind.orderflow_lab.data_sources.manual_sample_adapter import (
+from Amigo.orderflow_lab.engines.event_reaction_engine import EventReactionEngine
+from Amigo.orderflow_lab.data_sources.manual_sample_adapter import (
     ManualSampleAdapter, ValidationReport
 )
 
@@ -148,3 +148,4 @@ class TestEventReactionEngine:
         assert abs(res.disp_1m_atr - 1.0) < 1e-6
         assert abs(res.disp_5m_atr - 3.0) < 1e-6
         assert abs(res.spread_expansion_ratio - 2.0) < 1e-6
+

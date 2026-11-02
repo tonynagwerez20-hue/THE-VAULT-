@@ -1,10 +1,10 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //|                                           AM_ActivityProfile.mqh |
-//|                                  Copyright 2026, AlgoMind / ASAP |
+//|                                  Copyright 2026, Amigo / ASAP |
 //|                                        Zero-Cost Order-Flow EA   |
 //+------------------------------------------------------------------+
-#property copyright "AlgoMind / ASAP"
-#property link      "https://algomind.local"
+#property copyright "Amigo / ASAP"
+#property link      "https://Amigo.local"
 #property strict
 
 #include "AM_FlowQuality.mqh"
@@ -140,3 +140,4 @@ public:
    double GetConcentration(void) const { return m_concentration; }
    ENUM_DATA_QUALITY_TAG GetQuality(void) const { return m_quality; }
   };
+

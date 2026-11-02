@@ -1,5 +1,5 @@
-# PROXY FOOTPRINT VALIDATION REPORT
-**AlgoMind / ASAP Retail Order-Flow Project**
+﻿# PROXY FOOTPRINT VALIDATION REPORT
+**Amigo / ASAP Retail Order-Flow Project**
 
 ## 1. Footprint Pressure Definition
 Footprint Pressure evaluates estimated directional dominance at the bar level:
@@ -14,3 +14,4 @@ State Boundaries:
 ## 2. Validation Metrics
 - **Sign Agreement**: Directional sign of retail Footprint Pressure vs. Portara COMEX Gold reference delta achieves $74.2\%$ sign alignment during active market hours.
 - **Classification Efficiency**: Tick Rule classification accurately isolates buying vs. selling pressure when tick arrival rate is $> 5$ ticks/sec.
+

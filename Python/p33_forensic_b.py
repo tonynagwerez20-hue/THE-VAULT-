@@ -1,4 +1,4 @@
-"""
+﻿"""
 P3.3 PART B — Log re-parse (UTF-16-LE) + final report consolidation.
 All decisions parsed from MQL5/Logs/20260916.log (2.3MB, UTF-16-LE).
 """
@@ -16,9 +16,9 @@ from scipy import stats
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-BASE_DIR  = Path(r"C:\Users\USER\Desktop\ALGOMIND\Python")
+BASE_DIR  = Path(r"C:\Users\USER\Desktop\Amigo\Python")
 LOG_PATH  = Path(r"C:\Users\USER\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\MQL5\Logs\20260916.log")
-CSV_PATH  = BASE_DIR / "algomind_trade_level_dataset.csv"
+CSV_PATH  = BASE_DIR / "Amigo_trade_level_dataset.csv"
 REPORT    = BASE_DIR / "p33_forensic_report.md"
 
 # ── 1. Parse log (UTF-16-LE) ──────────────────────────────────────────────────
@@ -29,12 +29,12 @@ print(f"  Lines: {len(lines):,}")
 
 # Key patterns
 decision_re = re.compile(
-    r"(\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}:\d{2})\s+\[AlgoMind\]\[DECISION\]\s+"
+    r"(\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}:\d{2})\s+\[Amigo\]\[DECISION\]\s+"
     r"id=(\S+)\s+sym=\S+\s+act=(\d+)\s+reg=(\d+)\s+hyp=(\d+)"
 )
 score_re = re.compile(r"score=([\d.]+)\s+reason=(\w+)")
 action_re = re.compile(
-    r"(\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}:\d{2})\s+\[AlgoMind\]\[ACTION_TRADE\]\s+"
+    r"(\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}:\d{2})\s+\[Amigo\]\[ACTION_TRADE\]\s+"
     r"id=(\S+).*?dir=(\w+).*?entry=([\d.]+).*?sl=([\d.]+)"
 )
 minlot_re = re.compile(
@@ -319,7 +319,7 @@ fig.savefig(p_regime, dpi=120); plt.close(fig)
 # ── 8. Write final report ─────────────────────────────────────────────────────
 print("\n[REPORT] Writing final report...")
 with open(REPORT, "w", encoding="utf-8") as md:
-    md.write("# AlgoMind AMIGO — P3.3 Forensic Reconciliation Report\n\n")
+    md.write("# Amigo AMIGO — P3.3 Forensic Reconciliation Report\n\n")
     md.write("**READ-ONLY ANALYSIS. No strategy parameters, risk settings, or code were modified.**\n\n")
     md.write(f"Source: {n_rows}-row CSV | {len(lines):,}-line tester log (UTF-16-LE) | XAUUSDm M5 | 2025-10-01 → 2026-08-28\n\n")
     md.write("---\n\n")
@@ -545,3 +545,4 @@ with open(REPORT, "w", encoding="utf-8") as md:
 
 print(f"\nReport: {REPORT}")
 print("Done.")
+

@@ -1,10 +1,10 @@
-# AlgoMind AMIGO - P3.2 Analysis Walkthrough
+﻿# Amigo AMIGO - P3.2 Analysis Walkthrough
 
 Dataset: 1260 executed trades | XAUUSDm M5 | 2025-10-01 to 2026-08-28
 
 ---
 
-## Task 8 — Sequence Dependence Analysis
+## Task 8 â€” Sequence Dependence Analysis
 
 Monte Carlo test: 10,000 shuffles of the R-multiple sequence.
 p-value = fraction of shuffled populations >= actual (one-sided).
@@ -27,21 +27,21 @@ p-value = fraction of shuffled populations >= actual (one-sided).
 
 ### Interpretation
 
-- Max Drawdown: **SIGNIFICANT (p < 0.05)** — actual drawdown is worse than random order.
-- Losing Streak: **SIGNIFICANT (p < 0.05)** — actual losing streaks are longer than random order.
-- Winning Streak: **SIGNIFICANT (p < 0.05)** — actual winning streaks are longer than random order.
+- Max Drawdown: **SIGNIFICANT (p < 0.05)** â€” actual drawdown is worse than random order.
+- Losing Streak: **SIGNIFICANT (p < 0.05)** â€” actual losing streaks are longer than random order.
+- Winning Streak: **SIGNIFICANT (p < 0.05)** â€” actual winning streaks are longer than random order.
 
 ### Histogram Plots
 
-![](file:///C:/Users/USER/Desktop/ALGOMIND/Python/hist_max_drawdown.png)
+![](file:///C:/Users/USER/Desktop/Amigo/Python/hist_max_drawdown.png)
 
-![](file:///C:/Users/USER/Desktop/ALGOMIND/Python/hist_longest_loss.png)
+![](file:///C:/Users/USER/Desktop/Amigo/Python/hist_longest_loss.png)
 
-![](file:///C:/Users/USER/Desktop/ALGOMIND/Python/hist_longest_win.png)
+![](file:///C:/Users/USER/Desktop/Amigo/Python/hist_longest_win.png)
 
 ---
 
-## Task 9 — Signal Quality Diagnostics
+## Task 9 â€” Signal Quality Diagnostics
 
 ### Numeric Feature Correlations with Realized R
 
@@ -83,16 +83,17 @@ p-value = fraction of shuffled populations >= actual (one-sided).
 
 ### Scatter Plot: Stop Distance vs Realized R
 
-![](file:///C:/Users/USER/Desktop/ALGOMIND/Python/scatter_stop_distance.png)
+![](file:///C:/Users/USER/Desktop/Amigo/Python/scatter_stop_distance.png)
 
 ### Box Plots: Realized R by Direction and Exit Type
 
-![](file:///C:/Users/USER/Desktop/ALGOMIND/Python/box_realizedR.png)
+![](file:///C:/Users/USER/Desktop/Amigo/Python/box_realizedR.png)
 
 ### Monthly Realized R Bar Chart
 
-![](file:///C:/Users/USER/Desktop/ALGOMIND/Python/monthly_realizedR.png)
+![](file:///C:/Users/USER/Desktop/Amigo/Python/monthly_realizedR.png)
 
 ---
 
 *All analyses are read-only. No strategy parameters, risk settings, or code were modified.*
+

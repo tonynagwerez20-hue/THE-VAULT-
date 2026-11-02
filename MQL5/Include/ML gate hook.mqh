@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //| MLGate.mqh - ML gate hook (disabled by default)                  |
 //|                                                                  |
 //| Per D4 REQ-040 / D3 §21: ML is Phase 8, gate/ranker ONLY.        |
@@ -28,7 +28,7 @@ struct MLGateResult
 //---   * fail closed on any error.
 MLGateResult MLGateEvaluate(const FeatureSnapshot &f,
                             const StrategyScores &s,
-                            const AlgoMindConfig &cfg)
+                            const AmigoConfig &cfg)
 {
    MLGateResult r;
    r.available = false;

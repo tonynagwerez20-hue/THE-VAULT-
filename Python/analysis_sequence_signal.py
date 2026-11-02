@@ -1,6 +1,6 @@
-# analysis_sequence_signal.py
+﻿# analysis_sequence_signal.py
 """
-AlgoMind AMIGO P3.2 Analysis Script
+Amigo AMIGO P3.2 Analysis Script
 Task 8: Sequence dependence analysis (max drawdown, streaks) vs 10,000 shuffled baselines
 Task 9: Signal quality diagnostics (correlations of available features with realized R)
 
@@ -17,7 +17,7 @@ import seaborn as sns
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
-CSV_PATH = BASE_DIR / "algomind_trade_level_dataset.csv"
+CSV_PATH = BASE_DIR / "Amigo_trade_level_dataset.csv"
 WALKTHROUGH_PATH = BASE_DIR / "walkthrough.md"
 
 # ── Load dataset ──────────────────────────────────────────────────────────────
@@ -182,7 +182,7 @@ plt.close(fig)
 # ── Walkthrough markdown ──────────────────────────────────────────────────────
 print("Writing walkthrough.md ...")
 with open(WALKTHROUGH_PATH, "w", encoding="utf-8") as md:
-    md.write("# AlgoMind AMIGO - P3.2 Analysis Walkthrough\n\n")
+    md.write("# Amigo AMIGO - P3.2 Analysis Walkthrough\n\n")
     md.write(f"Dataset: {n_trades} executed trades | XAUUSDm M5 | 2025-10-01 to 2026-08-28\n\n")
 
     # ── Task 8 ────────────────────────────────────────────────────────────────
@@ -271,3 +271,4 @@ print(f"  hist_longest_win.png -> {plot_win}")
 print(f"  scatter_stop_distance-> {plot_scatter_sd}")
 print(f"  box_realizedR.png    -> {plot_box}")
 print(f"  monthly_realizedR.png-> {plot_monthly}")
+

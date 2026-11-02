@@ -1,4 +1,4 @@
-"""AlgoMind Position Manager - 50% Break-Even & Dynamic 25% Trailing Stop Module.
+﻿"""Amigo Position Manager - 50% Break-Even & Dynamic 25% Trailing Stop Module.
 
 Implements the post-entry position management layer per Master Prompt requirements:
   - Sequence: ENTRY -> INITIAL SL/TP -> 50% TP PROGRESS -> BREAK-EVEN -> DYNAMIC 25% TRAILING -> PROTECTED EXIT
@@ -284,3 +284,4 @@ class PositionManager:
                     logs.append(log_msg)
 
         return pos, logs
+

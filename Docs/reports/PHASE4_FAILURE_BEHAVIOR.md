@@ -1,5 +1,5 @@
-# PHASE 4 FAILURE BEHAVIOR AUDIT
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# PHASE 4 FAILURE BEHAVIOR AUDIT
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 
 ---
@@ -20,3 +20,4 @@
 
 ## 2. Safety Audit Statement
 Zero permissive failure leaks identified. Every failure mode enforces fail-closed behavior.
+

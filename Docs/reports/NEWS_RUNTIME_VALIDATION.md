@@ -1,5 +1,5 @@
-# NEWS RUNTIME VALIDATION REPORT
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# NEWS RUNTIME VALIDATION REPORT
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 
 ---
@@ -22,3 +22,4 @@ Tested Scenarios:
 
 ## 3. Status
 `IMPLEMENTED AND VERIFIED` in Level 1 & Level 2 integration; running in **Shadow Mode**.
+

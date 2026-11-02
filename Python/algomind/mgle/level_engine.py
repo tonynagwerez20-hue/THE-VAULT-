@@ -1,5 +1,5 @@
-"""
-ALGOMIND MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
+﻿"""
+Amigo MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
 ==================================================================
 Serious Macro Level Engine & Multi-Timeframe Decomposition (v1.0)
 Generates ATR-normalized levels, computes evidence strength & confidence,
@@ -10,7 +10,7 @@ from __future__ import annotations
 import math
 import numpy as np
 from typing import List, Dict, Any, Optional
-from algomind.mgle.schema import MacroLevel, DataQualityTag
+from Amigo.mgle.schema import MacroLevel, DataQualityTag
 
 class MacroLevelEngine:
     @staticmethod
@@ -127,3 +127,4 @@ class MacroLevelEngine:
             ))
             
         return children
+

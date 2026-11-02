@@ -1,12 +1,12 @@
-# ALGOMIND PHASE 6 — GATE B DIAGNOSTIC INSTRUMENTATION PLAN
+﻿# Amigo PHASE 6 â€” GATE B DIAGNOSTIC INSTRUMENTATION PLAN
 
-**Project:** AlgoMind / ASAP Retail Order-Flow System  
+**Project:** Amigo / ASAP Retail Order-Flow System  
 **Symbol / Timeframe:** `XAUUSD` / `M5`  
 **Target File:** `MQL5/Experts/AMIGO.mq5`  
 **Execution Environment:** Windows 10, MetaTrader 5 (PID 7964), Exness Demo (`Exness-MT5Trial`)  
 **Operating Mode:** SHADOW ONLY (`InpShadowOnly = true`)  
 **Document Status:** `READY FOR REVIEW` (Code changes NOT yet applied)  
-**Authoritative Level 3 Status:** `LEVEL 3 — PARTIALLY VERIFIED`  
+**Authoritative Level 3 Status:** `LEVEL 3 â€” PARTIALLY VERIFIED`  
 **Level 4 Live Trading:** `NOT AUTHORIZED`  
 **Git Commit / Push:** `NOT APPROVED`
 
@@ -18,23 +18,23 @@ The purpose of this plan is to define the exact, minimal diagnostic instrumentat
 
 ```text
 MT5 Tick Arrival
-       ↓
+       â†“
 [DIAG][TICK_HEARTBEAT]
-       ↓
+       â†“
 OnTick()
-       ↓
+       â†“
 [DIAG][NEW_BAR_DETECTED]
-       ↓
+       â†“
 OnClosedBar()
-       ↓
+       â†“
 [DIAG][ONCLOSEDBAR_ENTRY]
-       ↓
+       â†“
 [DIAG][SNAPSHOT_RESULT] (BuildMarketSnapshot)
-       ↓
+       â†“
 [DIAG][FEATURE_RESULT]  (BuildFeatureVector)
-       ↓
+       â†“
 FLOW_DIAG Engine Telemetry
-       ↓
+       â†“
 DECISION Pipeline Output
 ```
 
@@ -89,7 +89,7 @@ This plan is **diagnostic-only**. It does not alter strategy calculations, signa
 ### Point 2: New-Bar Detection Diagnostic
 - **Target File:** `MQL5/Experts/AMIGO.mq5`
 - **Target Function:** `OnTick()`
-- **Approximate Line:** L263–L265
+- **Approximate Line:** L263â€“L265
 - **Location:** Immediately before the `if(bar_time == g_last_bar_time) return;` return gate.
 - **Proposed MQL5 Code Snippet:**
   ```mql5
@@ -152,7 +152,7 @@ This plan is **diagnostic-only**. It does not alter strategy calculations, signa
 ### Point 4: Market Snapshot Result Diagnostic
 - **Target File:** `MQL5/Experts/AMIGO.mq5`
 - **Target Function:** `OnClosedBar()`
-- **Approximate Line:** L282–L286
+- **Approximate Line:** L282â€“L286
 - **Location:** Immediately following `BuildMarketSnapshot(g_symbol, g_snap)` call.
 - **Proposed MQL5 Code Snippet:**
   ```mql5
@@ -176,7 +176,7 @@ This plan is **diagnostic-only**. It does not alter strategy calculations, signa
 ### Point 5: Feature Vector Result Diagnostic
 - **Target File:** `MQL5/Experts/AMIGO.mq5`
 - **Target Function:** `OnClosedBar()`
-- **Approximate Line:** L289–L293
+- **Approximate Line:** L289â€“L293
 - **Location:** Immediately following `BuildFeatureVector(g_symbol, g_cfg, g_feat)` call.
 - **Proposed MQL5 Code Snippet:**
   ```mql5
@@ -201,7 +201,7 @@ This plan is **diagnostic-only**. It does not alter strategy calculations, signa
 
 ## 4. POSSIBLE SIDE EFFECTS AND SAFETY ASSESSMENT
 
-1. **CPU / Memory Impact:** Negligible. Throttled heartbeat executes 1 check per tick and logs once per 60 seconds. Points 2–5 execute at most once per 5-minute bar closure.
+1. **CPU / Memory Impact:** Negligible. Throttled heartbeat executes 1 check per tick and logs once per 60 seconds. Points 2â€“5 execute at most once per 5-minute bar closure.
 2. **Log Volume:** Adds ~1 log line per minute for heartbeat and ~4 log lines per M5 candle closure (~49 lines per hour).
 3. **Execution Safety:** No loops, sleeps, blocking file operations, or external network/IPC calls. All calls use standard native `PrintFormat()`.
 4. **Strategy Impact:** Zero logic modification. Variable assignments and logic gates remain identical to the uninstrumented source.
@@ -229,3 +229,4 @@ MT5 Restarted: NO
 Commit: NOT APPROVED
 Push: NOT APPROVED
 ```
+

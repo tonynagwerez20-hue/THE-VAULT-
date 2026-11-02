@@ -1,7 +1,7 @@
-#property strict
+﻿#property strict
 
 //--- Inputs are declared in main EA. This struct holds the resolved config.
-struct AlgoMindConfig
+struct AmigoConfig
 {
    //--- Symbol
    string   symbol;
@@ -80,4 +80,4 @@ struct AlgoMindConfig
    long     expected_login;        // Identity validation (0 = unconstrained/audit-only)
 };
 
-AlgoMindConfig g_cfg;
+AmigoConfig g_cfg;

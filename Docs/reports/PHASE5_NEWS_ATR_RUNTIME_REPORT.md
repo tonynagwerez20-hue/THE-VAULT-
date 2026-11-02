@@ -1,8 +1,8 @@
-# PHASE 5 — NEWS, FOMC & ATR REACTION RUNTIME REPORT
+﻿# PHASE 5 â€” NEWS, FOMC & ATR REACTION RUNTIME REPORT
 
 **Document Status**: Authoritative Engineering Audit  
 **Date**: 24 September 2026  
-**System**: AlgoMind / ASAP Retail Order-Flow System  
+**System**: Amigo / ASAP Retail Order-Flow System  
 
 ---
 
@@ -19,9 +19,9 @@ Phase 1 through 3 introduced three external event components in Python:
 
 | Module | Python Implementation | MQL5 Bridge Field | MQL5 Decision Path Connection | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **News Matcher** | `NewsReconciliationEngine` | In `algomind_ext_in.txt` | Read in `ExternalContext`, not wired to `Decide()` | `IMPLEMENTED BUT NOT CONNECTED` |
-| **FOMC Reaction** | Python Spec | In `algomind_ext_in.txt` | Read in `ExternalContext`, not wired to `Decide()` | `IMPLEMENTED BUT NOT CONNECTED` |
-| **ATR Reaction Engine** | `EventReactionEngine` | In `algomind_ext_in.txt` | Read in `ExternalContext`, not wired to `Decide()` | `IMPLEMENTED BUT NOT CONNECTED` |
+| **News Matcher** | `NewsReconciliationEngine` | In `Amigo_ext_in.txt` | Read in `ExternalContext`, not wired to `Decide()` | `IMPLEMENTED BUT NOT CONNECTED` |
+| **FOMC Reaction** | Python Spec | In `Amigo_ext_in.txt` | Read in `ExternalContext`, not wired to `Decide()` | `IMPLEMENTED BUT NOT CONNECTED` |
+| **ATR Reaction Engine** | `EventReactionEngine` | In `Amigo_ext_in.txt` | Read in `ExternalContext`, not wired to `Decide()` | `IMPLEMENTED BUT NOT CONNECTED` |
 
 ---
 
@@ -30,3 +30,4 @@ Phase 1 through 3 introduced three external event components in Python:
 Per Phase 5 Section 10 & Section 22:
 - **Do NOT connect News Reconciliation, FOMC Minutes, or ATR Reaction to authoritative MQL5 strategy scoring** during Phase 5.
 - Keep them **SHADOW ONLY** until empirical live event datasets are collected and explicit owner authorization is granted.
+

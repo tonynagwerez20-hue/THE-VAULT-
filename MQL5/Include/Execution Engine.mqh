@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //| ExecutionEngine.mqh - OrderCheck, order send, fill verification  |
 //+------------------------------------------------------------------+
 #property strict
@@ -24,7 +24,7 @@ struct ExecutionResult
 };
 
 //--- Spread gate per Math Spec §25
-bool SpreadOK(string symbol, double atr, const AlgoMindConfig &cfg, string &reason)
+bool SpreadOK(string symbol, double atr, const AmigoConfig &cfg, string &reason)
 {
    reason = "";
    double ask    = SymbolInfoDouble(symbol, SYMBOL_ASK);
@@ -49,7 +49,7 @@ bool SpreadOK(string symbol, double atr, const AlgoMindConfig &cfg, string &reas
 }
 
 //--- Intent validation per Math Spec §17
-bool ValidateIntent(const TradeIntent &ti, const AlgoMindConfig &cfg, string &reason)
+bool ValidateIntent(const TradeIntent &ti, const AmigoConfig &cfg, string &reason)
 {
    reason = "";
 
@@ -85,7 +85,7 @@ bool ValidateIntent(const TradeIntent &ti, const AlgoMindConfig &cfg, string &re
 
 //--- OrderCheck then OrderSend (per D4 REQ-014 / D3 §17)
 ExecutionResult ExecuteIntent(const TradeIntent &ti, double lots,
-                              const AlgoMindConfig &cfg)
+                              const AmigoConfig &cfg)
 {
    ExecutionResult r;
    r.accepted     = false;
@@ -113,7 +113,7 @@ ExecutionResult ExecuteIntent(const TradeIntent &ti, double lots,
    req.tp           = ti.target;
    req.deviation    = 20;
    req.magic        = (cfg.magic_number > 0) ? cfg.magic_number : 20260908;
-   req.comment      = "AlgoMind";
+   req.comment      = "Amigo";
    //--- Set appropriate order filling mode based on symbol capabilities (per MQL5 reference)
    uint filling = (uint)SymbolInfoInteger(ti.symbol, SYMBOL_FILLING_MODE);
    if((filling & SYMBOL_FILLING_FOK) != 0)

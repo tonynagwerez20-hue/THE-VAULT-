@@ -1,0 +1,262 @@
+﻿"""
+Amigo / AMIGO — Extended Quantitative Stress Test Suite
+Account: 296222644 | Exness-Real27 | $16.15 USD | 1:2000 Leverage | XAUUSDm
+
+Tests:
+  1. Adaptive vs Non-Adaptive Mode Comparison
+  2. Max Consecutive Loss Streaks
+  3. Balance Sweep ($5 → $500)
+  4. Regime Stress (Bull Cluster, Bear Cluster, Chop)
+  5. Walk-Forward Anchored OOS (3 rolling windows)
+  6. Risk-of-Ruin at various DD thresholds
+"""
+import pandas as pd
+import numpy as np
+import json
+
+df = pd.read_csv("c:/Users/USER/Desktop/Amigo/Python/Amigo_trade_level_dataset.csv")
+
+TICK_SIZE = 0.01
+TICK_VALUE = 1.00
+MIN_LOT = 0.01
+TARGET_RISK_PCT = 0.5
+
+def simulate(r_multiples, stops, initial_balance, adaptive, max_distortion=5.0):
+    equity = initial_balance
+    peak = initial_balance
+    max_dd_pct = 0.0
+    max_dd_dollars = 0.0
+    pnls = []
+    consec_loss = 0
+    max_consec_loss = 0
+    ruined = False
+    equity_curve = [initial_balance]
+
+    for i in range(len(r_multiples)):
+        if equity <= 0:
+            ruined = True
+            break
+
+        stop_dist = stops[i]
+        target_risk_amt = equity * (TARGET_RISK_PCT / 100.0)
+        max_dist = (target_risk_amt * max_distortion) / (MIN_LOT * (TICK_VALUE / TICK_SIZE))
+
+        if adaptive:
+            sel_dist = min(0.30, max_dist) if stop_dist > max_dist else stop_dist
+        else:
+            sel_dist = stop_dist
+
+        risk_per_lot = (sel_dist / TICK_SIZE) * TICK_VALUE
+        trade_risk = MIN_LOT * risk_per_lot
+
+        r = r_multiples[i]
+        pnl = trade_risk * r if r > 0 else -trade_risk
+
+        equity += pnl
+        pnls.append(pnl)
+        equity_curve.append(equity)
+
+        if pnl < 0:
+            consec_loss += 1
+            if consec_loss > max_consec_loss:
+                max_consec_loss = consec_loss
+        else:
+            consec_loss = 0
+
+        if equity > peak:
+            peak = equity
+        dd = peak - equity
+        dd_pct = (dd / peak * 100.0) if peak > 0 else 0.0
+        if dd > max_dd_dollars:
+            max_dd_dollars = dd
+        if dd_pct > max_dd_pct:
+            max_dd_pct = dd_pct
+
+        if equity <= initial_balance * 0.50:
+            ruined = True
+
+    pnls = np.array(pnls)
+    wins = pnls[pnls > 0]
+    losses = pnls[pnls < 0]
+    win_rate = (len(wins) / len(pnls) * 100.0) if len(pnls) > 0 else 0.0
+    pf = (np.sum(wins) / abs(np.sum(losses))) if len(losses) > 0 and abs(np.sum(losses)) > 0 else 0.0
+    exp = np.mean(pnls) if len(pnls) > 0 else 0.0
+    std = np.std(pnls) if len(pnls) > 1 else 1.0
+    dstd = np.std(losses) if len(losses) > 1 else 1.0
+
+    return {
+        "final_equity": round(equity, 4),
+        "return_pct": round((equity - initial_balance) / initial_balance * 100, 2),
+        "total_trades": len(pnls),
+        "win_rate": round(win_rate, 2),
+        "profit_factor": round(pf, 4),
+        "expectancy": round(exp, 6),
+        "max_dd_pct": round(max_dd_pct, 2),
+        "max_dd_dollars": round(max_dd_dollars, 4),
+        "max_consec_losses": max_consec_loss,
+        "sharpe": round(exp / std * np.sqrt(252), 4) if std > 0 else 0.0,
+        "sortino": round(exp / dstd * np.sqrt(252), 4) if dstd > 0 else 0.0,
+        "ruined": ruined,
+        "equity_curve": equity_curve,
+    }
+
+r_all = df['r_multiple'].values
+s_all = np.abs(df['entry_price'].values - df['sl'].values)
+
+out = []
+
+# ===== TEST 1: ADAPTIVE VS NON-ADAPTIVE =====
+out.append("=" * 70)
+out.append("TEST 1: ADAPTIVE SL MODE vs NON-ADAPTIVE MODE ($16.15 Account)")
+out.append("=" * 70)
+res_a = simulate(r_all, s_all, 16.15, adaptive=True)
+res_n = simulate(r_all, s_all, 16.15, adaptive=False)
+for label, r in [("ADAPTIVE", res_a), ("NON-ADAPTIVE", res_n)]:
+    out.append(f"\n  [{label}]")
+    for k, v in r.items():
+        if k == "equity_curve":
+            continue
+        out.append(f"    {k:22s}: {v}")
+
+# ===== TEST 2: MAX CONSECUTIVE LOSS ANALYSIS =====
+out.append("\n" + "=" * 70)
+out.append("TEST 2: CONSECUTIVE LOSS STREAK ANALYSIS")
+out.append("=" * 70)
+# Compute on raw r_multiples
+streaks = []
+cur = 0
+for r in r_all:
+    if r < 0:
+        cur += 1
+    else:
+        if cur > 0:
+            streaks.append(cur)
+        cur = 0
+if cur > 0:
+    streaks.append(cur)
+streaks = np.array(streaks) if len(streaks) > 0 else np.array([0])
+out.append(f"  Total Loss Streaks: {len(streaks)}")
+out.append(f"  Max Consecutive Losses: {np.max(streaks)}")
+out.append(f"  Mean Streak Length: {np.mean(streaks):.2f}")
+out.append(f"  Median Streak Length: {np.median(streaks):.1f}")
+out.append(f"  Streaks >= 5: {np.sum(streaks >= 5)}")
+out.append(f"  Streaks >= 10: {np.sum(streaks >= 10)}")
+out.append(f"  Streaks >= 15: {np.sum(streaks >= 15)}")
+
+# ===== TEST 3: BALANCE SWEEP =====
+out.append("\n" + "=" * 70)
+out.append("TEST 3: BALANCE SWEEP (Adaptive Mode, 1:2000 Leverage)")
+out.append("=" * 70)
+balances = [5.0, 10.0, 16.15, 25.0, 50.0, 100.0, 250.0, 500.0]
+out.append(f"  {'Balance':>8s} | {'Final$':>10s} | {'Return%':>8s} | {'MaxDD%':>7s} | {'PF':>6s} | {'WinR%':>6s} | {'Ruined':>6s}")
+out.append("  " + "-" * 70)
+for b in balances:
+    r = simulate(r_all, s_all, b, adaptive=True)
+    out.append(f"  ${b:7.2f} | ${r['final_equity']:9.2f} | {r['return_pct']:7.1f}% | {r['max_dd_pct']:6.1f}% | {r['profit_factor']:5.2f} | {r['win_rate']:5.1f}% | {'YES' if r['ruined'] else 'NO':>6s}")
+
+# ===== TEST 4: REGIME STRESS (SEQUENTIAL CLUSTERS) =====
+out.append("\n" + "=" * 70)
+out.append("TEST 4: REGIME STRESS (SEQUENTIAL TRADE CLUSTERS)")
+out.append("=" * 70)
+# Identify worst 100-trade window and best 100-trade window
+window = 100
+worst_start = 0
+best_start = 0
+worst_sum = np.inf
+best_sum = -np.inf
+for i in range(len(r_all) - window):
+    s = np.sum(r_all[i:i+window])
+    if s < worst_sum:
+        worst_sum = s
+        worst_start = i
+    if s > best_sum:
+        best_sum = s
+        best_start = i
+
+out.append(f"  Worst 100-trade window: trades {worst_start}-{worst_start+window} (sum R = {worst_sum:.2f})")
+r_worst = simulate(r_all[worst_start:worst_start+window], s_all[worst_start:worst_start+window], 16.15, adaptive=True)
+out.append(f"    Final Equity: ${r_worst['final_equity']:.2f}, Return: {r_worst['return_pct']:.1f}%, MaxDD: {r_worst['max_dd_pct']:.1f}%, Ruined: {r_worst['ruined']}")
+
+out.append(f"  Best 100-trade window: trades {best_start}-{best_start+window} (sum R = {best_sum:.2f})")
+r_best = simulate(r_all[best_start:best_start+window], s_all[best_start:best_start+window], 16.15, adaptive=True)
+out.append(f"    Final Equity: ${r_best['final_equity']:.2f}, Return: {r_best['return_pct']:.1f}%, MaxDD: {r_best['max_dd_pct']:.1f}%, Ruined: {r_best['ruined']}")
+
+# ===== TEST 5: WALK-FORWARD ANCHORED OOS (3 WINDOWS) =====
+out.append("\n" + "=" * 70)
+out.append("TEST 5: WALK-FORWARD ANCHORED OOS (3 Rolling Windows)")
+out.append("=" * 70)
+n = len(r_all)
+windows = [
+    ("Window 1 (0-60% IS / 60-80% OOS)", 0, int(n*0.60), int(n*0.60), int(n*0.80)),
+    ("Window 2 (0-70% IS / 70-90% OOS)", 0, int(n*0.70), int(n*0.70), int(n*0.90)),
+    ("Window 3 (0-80% IS / 80-100% OOS)", 0, int(n*0.80), int(n*0.80), n),
+]
+for label, is_s, is_e, oos_s, oos_e in windows:
+    r_is = simulate(r_all[is_s:is_e], s_all[is_s:is_e], 16.15, adaptive=True)
+    r_oos = simulate(r_all[oos_s:oos_e], s_all[oos_s:oos_e], 16.15, adaptive=True)
+    out.append(f"  {label}")
+    out.append(f"    IS:  Trades={r_is['total_trades']}, Return={r_is['return_pct']:.1f}%, MaxDD={r_is['max_dd_pct']:.1f}%, PF={r_is['profit_factor']:.2f}, Ruined={r_is['ruined']}")
+    out.append(f"    OOS: Trades={r_oos['total_trades']}, Return={r_oos['return_pct']:.1f}%, MaxDD={r_oos['max_dd_pct']:.1f}%, PF={r_oos['profit_factor']:.2f}, Ruined={r_oos['ruined']}")
+
+# ===== TEST 6: MONTE CARLO RISK-OF-RUIN AT VARIOUS DD THRESHOLDS =====
+out.append("\n" + "=" * 70)
+out.append("TEST 6: MONTE CARLO RISK-OF-RUIN (1,000 runs, various DD thresholds)")
+out.append("=" * 70)
+N_MC = 1000
+np.random.seed(42)
+dd_thresholds = [25, 30, 40, 50, 75]
+ruin_counts = {t: 0 for t in dd_thresholds}
+mc_finals = []
+mc_dds = []
+
+for _ in range(N_MC):
+    idx = np.random.choice(len(r_all), size=len(r_all), replace=True)
+    res = simulate(r_all[idx], s_all[idx], 16.15, adaptive=True)
+    mc_finals.append(res['final_equity'])
+    mc_dds.append(res['max_dd_pct'])
+    for t in dd_thresholds:
+        if res['max_dd_pct'] >= t:
+            ruin_counts[t] += 1
+
+mc_finals = np.array(mc_finals)
+mc_dds = np.array(mc_dds)
+
+out.append(f"  {'DD Threshold':>14s} | {'Probability':>12s}")
+out.append("  " + "-" * 30)
+for t in dd_thresholds:
+    out.append(f"  {t:>12d}% | {ruin_counts[t]/N_MC*100:>10.2f}%")
+
+out.append(f"\n  Monte Carlo Distribution (1,000 runs):")
+out.append(f"    Median Final Equity: ${np.median(mc_finals):.2f}")
+out.append(f"    Mean Final Equity: ${np.mean(mc_finals):.2f}")
+out.append(f"    Std Dev Final Equity: ${np.std(mc_finals):.2f}")
+out.append(f"    1st Percentile: ${np.percentile(mc_finals, 1):.2f}")
+out.append(f"    5th Percentile: ${np.percentile(mc_finals, 5):.2f}")
+out.append(f"    25th Percentile: ${np.percentile(mc_finals, 25):.2f}")
+out.append(f"    75th Percentile: ${np.percentile(mc_finals, 75):.2f}")
+out.append(f"    95th Percentile: ${np.percentile(mc_finals, 95):.2f}")
+out.append(f"    99th Percentile: ${np.percentile(mc_finals, 99):.2f}")
+
+out.append("\n" + "=" * 70)
+out.append("QUANT STRESS TEST SUITE — COMPLETE")
+out.append("=" * 70)
+
+report = "\n".join(out)
+with open("c:/Users/USER/Desktop/Amigo/scratch/quant_extended_report.txt", "w") as f:
+    f.write(report)
+
+# Also dump MC summary as JSON for artifact
+mc_summary = {
+    "n_simulations": N_MC,
+    "ruin_probabilities": {str(k): round(v/N_MC*100, 2) for k, v in ruin_counts.items()},
+    "median_final_equity": round(float(np.median(mc_finals)), 2),
+    "p5_final_equity": round(float(np.percentile(mc_finals, 5)), 2),
+    "p95_final_equity": round(float(np.percentile(mc_finals, 95)), 2),
+    "median_max_dd_pct": round(float(np.median(mc_dds)), 2),
+    "p95_max_dd_pct": round(float(np.percentile(mc_dds, 95)), 2),
+}
+with open("c:/Users/USER/Desktop/Amigo/scratch/mc_summary.json", "w") as f:
+    json.dump(mc_summary, f, indent=2)
+
+print(report)
+

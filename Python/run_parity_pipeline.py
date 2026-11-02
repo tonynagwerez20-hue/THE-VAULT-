@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sys
 import json
 import math
@@ -11,7 +11,7 @@ os.makedirs('docs/reports', exist_ok=True)
 os.makedirs('reports', exist_ok=True)
 
 print("=======================================================================")
-print("ALGOMIND OOS-TO-LIVE PARITY & SMALL ACCOUNT ($5-$100) VALIDATION ENGINE")
+print("Amigo OOS-TO-LIVE PARITY & SMALL ACCOUNT ($5-$100) VALIDATION ENGINE")
 print("=======================================================================")
 
 # 1. LOAD CANONICAL DATASET
@@ -391,12 +391,12 @@ parity_df.to_csv('reports/oos_live_parity_results.csv', index=False)
 
 print("\nGenerating audit markdown reports...")
 
-# Report 1: algomind_small_account_parity_report.md
-with open('docs/reports/algomind_small_account_parity_report.md', 'w', encoding='utf-8') as f:
-    f.write(f"""# ALGOMIND SMALL ACCOUNT PARITY REPORT ($5 TO $100)
+# Report 1: Amigo_small_account_parity_report.md
+with open('docs/reports/Amigo_small_account_parity_report.md', 'w', encoding='utf-8') as f:
+    f.write(f"""# Amigo SMALL ACCOUNT PARITY REPORT ($5 TO $100)
 
 ## 1. Executive Summary
-This report evaluates the validated **AlgoMind AMIGO** trading strategy across small account balances ($5, $10, $25, $50, $100) using the canonical 759-position ground-truth dataset. 
+This report evaluates the validated **Amigo AMIGO** trading strategy across small account balances ($5, $10, $25, $50, $100) using the canonical 759-position ground-truth dataset. 
 
 > [!IMPORTANT]
 > The validated AMIGO strategy logic, signal thresholds (0.35), entry conditions, ATR stop loss, and exit logic were **100% FROZEN**. No strategy parameters were modified or overfitted to small accounts.
@@ -440,12 +440,12 @@ This report evaluates the validated **AlgoMind AMIGO** trading strategy across s
 {mc_small_df[['Balance', 'MedianEndingEquity', 'P5EndingEquity', 'P95EndingEquity', 'P95MaxDDPct', 'ProbRuinPct', 'ProbHalvingPct']].to_markdown(index=False)}
 """)
 
-# Report 2: algomind_propfirm_5k_50k_parity_report.md
-with open('docs/reports/algomind_propfirm_5k_50k_parity_report.md', 'w', encoding='utf-8') as f:
-    f.write(f"""# ALGOMIND PROP-FIRM 5K VS 50K PARITY REPORT
+# Report 2: Amigo_propfirm_5k_50k_parity_report.md
+with open('docs/reports/Amigo_propfirm_5k_50k_parity_report.md', 'w', encoding='utf-8') as f:
+    f.write(f"""# Amigo PROP-FIRM 5K VS 50K PARITY REPORT
 
 ## 1. Executive Summary
-This report re-runs and compares the validated AlgoMind strategy on **$5,000** and **$50,000** prop-firm challenge accounts across risk configurations (0.10% to 0.50%) under official FundedNext and FundingPips 2-Step rules.
+This report re-runs and compares the validated Amigo strategy on **$5,000** and **$50,000** prop-firm challenge accounts across risk configurations (0.10% to 0.50%) under official FundedNext and FundingPips 2-Step rules.
 
 ## 2. Prop-Firm 5K vs 50K Comparison Matrix
 
@@ -457,9 +457,9 @@ This report re-runs and compares the validated AlgoMind strategy on **$5,000** a
 3. **Scaling Parity**: Strategy logic scales 100% agnostically across account sizes; differences in optimal risk percentages are caused purely by minimum lot step rounding and relative daily loss ceilings.
 """)
 
-# Report 3: algomind_oos_live_parity_report.md
-with open('docs/reports/algomind_oos_live_parity_report.md', 'w', encoding='utf-8') as f:
-    f.write(f"""# ALGOMIND OOS-TO-LIVE PARITY REPORT
+# Report 3: Amigo_oos_live_parity_report.md
+with open('docs/reports/Amigo_oos_live_parity_report.md', 'w', encoding='utf-8') as f:
+    f.write(f"""# Amigo OOS-TO-LIVE PARITY REPORT
 
 ## 1. Strategy Immutability & Configuration Parity Matrix
 
@@ -498,3 +498,4 @@ with open('docs/reports/algomind_oos_live_parity_report.md', 'w', encoding='utf-
 """)
 
 print("Master Parity Pipeline Execution Complete!")
+

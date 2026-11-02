@@ -1,6 +1,6 @@
-import pandas as pd
+﻿import pandas as pd
 
-df = pd.read_csv("algomind_trade_level_dataset.csv")
+df = pd.read_csv("Amigo_trade_level_dataset.csv")
 df["entry_time"] = pd.to_datetime(df["entry_time"], format="%Y.%m.%d %H:%M:%S")
 
 print("=== DUPLICATE trade_id ANALYSIS ===")
@@ -48,3 +48,4 @@ for t in df["entry_time"].tail(5):
 # After dedup — would it fix chronological?
 df_sorted = df.sort_values("entry_time").drop_duplicates("trade_id", keep="first")
 print(f"\nAfter sort + dedup: {len(df_sorted)} rows, monotonic={df_sorted['entry_time'].is_monotonic_increasing}")
+

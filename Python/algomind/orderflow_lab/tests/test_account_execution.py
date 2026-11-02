@@ -1,4 +1,4 @@
-"""Comprehensive Unit Tests & Small-Account Simulation for Account-Aware Execution Layer.
+﻿"""Comprehensive Unit Tests & Small-Account Simulation for Account-Aware Execution Layer.
 
 Covers Prompt Sections 16, 17, 18:
   - Contract Specification Validation
@@ -10,7 +10,7 @@ Covers Prompt Sections 16, 17, 18:
 """
 
 import pytest
-from algomind.account_execution import (
+from Amigo.account_execution import (
     AccountIdentification, SymbolCapabilityProfile, AccountExecutionEnvelope,
     AccountClass, MinLotStatus, FeasibilityStatus, Action,
     validate_symbol_capability, classify_account, evaluate_account_execution
@@ -470,7 +470,7 @@ class TestExnessCentAccount2000Leverage:
 # ======================================================================
 # Section 23 & 24: Account-Aware Adaptive Stop-Loss Test Matrix
 # ======================================================================
-from algomind.account_execution import (
+from Amigo.account_execution import (
     SLAdaptationStatus, AdaptiveSLResult, evaluate_adaptive_stop
 )
 
@@ -690,15 +690,15 @@ class TestAccountAwareAdaptiveStopLoss:
         assert abs(env.target_risk_amount - 0.08075) < 1e-4
         assert env.final_action == Action.TRADE
         
-        # Verify diagnostic logs contain [AlgoMind][SL_ADAPT]
-        sl_adapt_logs = [d for d in env.diagnostics if "[AlgoMind][SL_ADAPT]" in d]
+        # Verify diagnostic logs contain [Amigo][SL_ADAPT]
+        sl_adapt_logs = [d for d in env.diagnostics if "[Amigo][SL_ADAPT]" in d]
         assert len(sl_adapt_logs) == 1
         assert "sym=XAUUSDm" in sl_adapt_logs[0]
         assert "status=ACCEPTED" in sl_adapt_logs[0]
         assert "reason=VALID_STRATEGY_STRUCTURE" in sl_adapt_logs[0]
 
 
-from algomind.account_execution import SignalExecutionClassification, SymbolTradeMode
+from Amigo.account_execution import SignalExecutionClassification, SymbolTradeMode
 
 
 class TestCasesABCDFourStateFeasibility:
@@ -842,5 +842,6 @@ class TestCasesABCDFourStateFeasibility:
         assert env.executable_volume == 0.0
         assert env.selected_sl == 2605.00 # SL remained un-shrunk
         assert env.risk_distortion > 500.0 # ~557x distortion
+
 
 

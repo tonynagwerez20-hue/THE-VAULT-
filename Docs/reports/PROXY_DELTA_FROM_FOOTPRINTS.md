@@ -1,5 +1,5 @@
-# PROXY DELTA & CUMULATIVE DELTA SPECIFICATION
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# PROXY DELTA & CUMULATIVE DELTA SPECIFICATION
+**Amigo / ASAP Retail Order-Flow System**
 
 ## 1. Derived Delta Formulation
 Delta is derived directly from price-level footprint bins:
@@ -26,3 +26,4 @@ $$\text{CD}_t = \text{CD}_{t-1} + \hat{\Delta}_t$$
 
 ## 4. Migration Governance
 Legacy delta (`delta_A`, `delta_B`, `fusion`) runs in parallel with footprint-derived delta (`footprint_delta`, `cumulative_delta`) in **Shadow Mode**. Legacy delta will only be retired after explicit owner authorization.
+

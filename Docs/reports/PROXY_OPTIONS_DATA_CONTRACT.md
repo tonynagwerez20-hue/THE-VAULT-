@@ -1,5 +1,5 @@
-# PROXY OPTIONS DATA CONTRACT SPECIFICATION
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# PROXY OPTIONS DATA CONTRACT SPECIFICATION
+**Amigo / ASAP Retail Order-Flow System**
 
 ## 1. Scope & Proxy Labeling
 Options context is derived from GLD ETF proxy options or CBOE Gold volatility indexes.
@@ -22,3 +22,4 @@ options_source_quality    : String ("PROXY")
 Options metrics act purely as a regime and risk modifier:
 - `gamma_regime > 0`: Favors `HYP_MEAN_REVERSION` (pinning around key strikes).
 - `gamma_regime < 0`: Favors `HYP_CONTINUATION` / Expansion (volatility expansion expected).
+

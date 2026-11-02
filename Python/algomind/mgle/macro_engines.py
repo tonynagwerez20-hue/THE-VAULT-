@@ -1,5 +1,5 @@
-"""
-ALGOMIND MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
+﻿"""
+Amigo MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
 ==================================================================
 Macro & Geopolitical Component Processing Engines (v1.0)
 Calculates Real-Yields, USD Index, Economic Surprises, and Geopolitical Intensity.
@@ -9,8 +9,8 @@ from __future__ import annotations
 import numpy as np
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-from algomind.mgle.schema import DataQualityTag, GeoEvent
-from algomind.mgle.normalization import compute_robust_zscore, compute_surprise_zscore
+from Amigo.mgle.schema import DataQualityTag, GeoEvent
+from Amigo.mgle.normalization import compute_robust_zscore, compute_surprise_zscore
 
 class MacroEngines:
     @staticmethod
@@ -82,3 +82,4 @@ class GeoEngine:
             "active_conflict_state": conflict_state,
             "quality": DataQualityTag.TRUE
         }
+

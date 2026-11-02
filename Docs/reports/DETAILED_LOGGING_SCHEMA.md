@@ -1,13 +1,13 @@
-# DETAILED LOGGING SCHEMA SPECIFICATION
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# DETAILED LOGGING SCHEMA SPECIFICATION
+**Amigo / ASAP Retail Order-Flow System**
 
 ## 1. Governance & Structured Format
 Every EA decision, trade intent, shadow evaluation, and rejection MUST produce a structured log entry.
 
-## 2. Canonical Log Schema (`[ALGOMIND_DECISION]`)
+## 2. Canonical Log Schema (`[Amigo_DECISION]`)
 
 ```text
-[ALGOMIND_DECISION]
+[Amigo_DECISION]
 decision_id                 = <UUID / Hash>
 timestamp_utc               = YYYY-MM-DDTHH:MM:SS.sssZ
 symbol                      = XAUUSD
@@ -81,3 +81,4 @@ rejection_reason            = OK / SCORE_GATE / REGIME_HYP_MISMATCH / DQ_FATAL
 - `INVALID_STOP_DISTANCE`
 - `REGIME_INCOMPATIBLE`
 - `HARD_RISK_VETO`
+

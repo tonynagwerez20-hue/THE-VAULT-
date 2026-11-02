@@ -1,6 +1,6 @@
-# ALGOMIND / ASAP — LEVEL 4 ACCOUNT-SIZE & SETUP-GRADING AUDIT REPORT
+﻿# Amigo / ASAP â€” LEVEL 4 ACCOUNT-SIZE & SETUP-GRADING AUDIT REPORT
 
-**Project:** AlgoMind / ASAP Retail Order-Flow System  
+**Project:** Amigo / ASAP Retail Order-Flow System  
 **Symbol / Timeframe:** `XAUUSD` / `M5`  
 **Execution Environment:** Windows 10, MetaTrader 5 (PID 7964), Exness Demo (`Exness-MT5Trial`)  
 **Operating Mode:** SHADOW MODE (`InpShadowOnly = true`)  
@@ -14,9 +14,9 @@
 
 ## 1. EXECUTIVE SUMMARY
 
-This report presents a comprehensive, evidence-gated audit of the **AlgoMind / AMIGO production EA** across account capital levels ranging from `$5` to `$100,000`.
+This report presents a comprehensive, evidence-gated audit of the **Amigo / AMIGO production EA** across account capital levels ranging from `$5` to `$100,000`.
 
-The audit establishes that the AlgoMind system maintains a **strict architectural separation** between **Market Setup Quality Assessment** (`Strategy Engine.mqh`) and **Account Capital Sizing & Risk Affordability** (`Risk Engine.mqh`):
+The audit establishes that the Amigo system maintains a **strict architectural separation** between **Market Setup Quality Assessment** (`Strategy Engine.mqh`) and **Account Capital Sizing & Risk Affordability** (`Risk Engine.mqh`):
 
 1. **Market Setup Quality is 100% Independent of Account Capital:** Account balance/equity is never passed to `ScoreStrategies()` or `Decide()`. A setup evaluated as `ACTION_TRADE` (`score=0.4523`) receives the exact same score and decision regardless of whether the account is `$5` or `$100,000`.
 2. **Strict Minimum-Lot Safety Veto:** On accounts below the mathematical minimum lot compatibility threshold (`~$7,000` for XAUUSD at 0.5% risk and 35-point stop), `ComputeLotSize()` calculates `lots < 0.01` and executes a hard `MIN_LOT_EXCEEDS_RISK` veto, safely blocking trade submission without over-risking small accounts.
@@ -32,14 +32,14 @@ The following production files and symbols were comprehensively inspected:
 - `MQL5/Include/Risk Engine.mqh`: Capital retrieval (`AccountInfoDouble(ACCOUNT_EQUITY)`), `RiskInit()`, `RiskTick()`, `RiskAllows()`, `ComputeLotSize()`, `SelectStop()`.
 - `MQL5/Include/Strategy Engine.mqh`: `MR_Evidence()`, `ContinuationEvidence()`, `ScoreStrategies()`, `Decide()`.
 - `MQL5/Include/Execution Engine.mqh`: `ExecuteIntent()`, `ValidateIntent()`, `OrderCheck()`, `g_cfg.shadow_only` safety intercept gate [L137-L145].
-- `MQL5/Include/Configuration.mqh`: `AlgoMindConfig` struct, `risk_per_trade_pct = 0.5`, `allow_min_lot_override = false`.
+- `MQL5/Include/Configuration.mqh`: `AmigoConfig` struct, `risk_per_trade_pct = 0.5`, `allow_min_lot_override = false`.
 - `MQL5/Include/Contracts header.mqh`: `MarketSnapshot`, `FeatureSnapshot`, `TradeIntent` data contracts.
 
 ---
 
 ## 3. ACCOUNT-SIZE & RISK ALLOCATION MODEL
 
-The production risk engine implements the following exact mathematical model (`Risk Engine.mqh` L90–L148):
+The production risk engine implements the following exact mathematical model (`Risk Engine.mqh` L90â€“L148):
 
 1. **Capital Base:** `double equity = AccountInfoDouble(ACCOUNT_EQUITY);`  
    *(Source: Account Equity, incorporating floating P/L. Balance is NOT used).*
@@ -102,7 +102,7 @@ In `Strategy Engine.mqh`, setup scoring is derived strictly from market dynamics
 
 ---
 
-## 6. SETUP-GRADE × ACCOUNT-SIZE MATRIX
+## 6. SETUP-GRADE Ã— ACCOUNT-SIZE MATRIX
 
 Evaluating how the bot behaves when the **EXACT SAME MARKET SETUP** is applied across account sizes:
 
@@ -133,12 +133,12 @@ Evaluating how the bot behaves when the **EXACT SAME MARKET SETUP** is applied a
 Live MT5 log entries (`20260924.log`) directly confirm this architectural behavior at runtime:
 
 ```text
-2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[AlgoMind][DECISION] id=1790261401095 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4523 reason=OK
-2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[AlgoMind][INFO][SIZE_DIAG] eq=4638.34 risk_amt=23.19 stop_dist=34.1450 tick_sz=0.00100 tick_val=0.10 loss_per_lot=3414.50 min_lot_loss=34.15 min_vol=0.01 dist=1.47x
-2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[AlgoMind][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
-2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[AlgoMind][DECISION] id=1790262303098 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4301 reason=OK
-2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[AlgoMind][INFO][SIZE_DIAG] eq=4652.06 risk_amt=23.26 stop_dist=40.9980 tick_sz=0.00100 tick_val=0.10 loss_per_lot=4099.80 min_lot_loss=41.00 min_vol=0.01 dist=1.76x
-2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[AlgoMind][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
+2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[Amigo][DECISION] id=1790261401095 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4523 reason=OK
+2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[Amigo][INFO][SIZE_DIAG] eq=4638.34 risk_amt=23.19 stop_dist=34.1450 tick_sz=0.00100 tick_val=0.10 loss_per_lot=3414.50 min_lot_loss=34.15 min_vol=0.01 dist=1.47x
+2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[Amigo][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
+2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[Amigo][DECISION] id=1790262303098 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4301 reason=OK
+2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[Amigo][INFO][SIZE_DIAG] eq=4652.06 risk_amt=23.26 stop_dist=40.9980 tick_sz=0.00100 tick_val=0.10 loss_per_lot=4099.80 min_lot_loss=41.00 min_vol=0.01 dist=1.76x
+2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[Amigo][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
 ```
 
 ---
@@ -190,7 +190,7 @@ Isolated test harness (`Test_ShadowHarness.mq5`) verified that when valid intent
 
 ```text
 ==================================================
-ALGOMIND — ACCOUNT SIZE / SETUP GRADING AUDIT
+Amigo â€” ACCOUNT SIZE / SETUP GRADING AUDIT
 ==================================================
 
 ACCOUNT-SIZE HANDLING: VERIFIED STATIC & RUNTIME
@@ -201,7 +201,7 @@ MINIMUM-LOT HANDLING: VERIFIED STATIC & RUNTIME
 
 SETUP-GRADING MODEL: VERIFIED STATIC & RUNTIME
 
-ACCOUNT SIZE ↔ SETUP GRADE COUPLING: DECOUPLED (VERIFIED STATIC & RUNTIME)
+ACCOUNT SIZE â†” SETUP GRADE COUPLING: DECOUPLED (VERIFIED STATIC & RUNTIME)
 
 SAME-SETUP CROSS-ACCOUNT TEST: VERIFIED STATIC
 
@@ -226,3 +226,4 @@ GIT COMMIT: NOT APPROVED
 GIT PUSH: NOT APPROVED
 ==================================================
 ```
+

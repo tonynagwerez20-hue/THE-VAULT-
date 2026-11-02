@@ -1,6 +1,6 @@
-# ALGOMIND / ASAP — LEVEL 4 ACCOUNT-SIZE / SETUP-GRADING / TRADING-PARITY AUDIT REPORT
+﻿# Amigo / ASAP â€” LEVEL 4 ACCOUNT-SIZE / SETUP-GRADING / TRADING-PARITY AUDIT REPORT
 
-**Project:** AlgoMind / ASAP Retail Order-Flow System  
+**Project:** Amigo / ASAP Retail Order-Flow System  
 **Symbol / Timeframe:** `XAUUSD` / `M5`  
 **Execution Environment:** Windows 10, MetaTrader 5 (PID 7964), Exness Demo (`Exness-MT5Trial`)  
 **Operating Mode:** SHADOW MODE (`InpShadowOnly = true`)  
@@ -11,7 +11,7 @@
 
 ## 1. EXECUTIVE SUMMARY
 
-This audit evaluates how the **AlgoMind / AMIGO production EA** processes account capital across account sizes ranging from `$5` to `$100,000` and verifies whether account size interacts with setup grading, setup eligibility, risk sizing, minimum-lot constraints, and actual trading behavior.
+This audit evaluates how the **Amigo / AMIGO production EA** processes account capital across account sizes ranging from `$5` to `$100,000` and verifies whether account size interacts with setup grading, setup eligibility, risk sizing, minimum-lot constraints, and actual trading behavior.
 
 ### Key Audit Findings:
 1. **Market Setup Parity is 100% Invariant:** Market setup scoring (`ScoreStrategies()`), hypothesis selection, and setup decision (`Decide()`) are completely decoupled from account capital. An identical market snapshot receives the exact same decision (`act=1`, `score=0.4523`) on a `$5` account as on a `$100,000` account.
@@ -44,22 +44,22 @@ This audit evaluates how the **AlgoMind / AMIGO production EA** processes accoun
 
 ```text
 Account Capital Retrieval (AccountInfoDouble(ACCOUNT_EQUITY))
-         ↓
-Intended Risk Budget ($) = Equity × (risk_per_trade_pct / 100.0)
-         ↓
+         â†“
+Intended Risk Budget ($) = Equity Ã— (risk_per_trade_pct / 100.0)
+         â†“
 Stop Loss Distance = |entry - stop|
-         ↓
-Loss Per Lot ($) = (stop_distance / TICK_SZ) × TICK_VAL
-         ↓
+         â†“
+Loss Per Lot ($) = (stop_distance / TICK_SZ) Ã— TICK_VAL
+         â†“
 Raw Lots = Intended Risk Budget / Loss Per Lot
-         ↓
-Normalized Lots = MathFloor(Raw Lots / VOL_STEP) × VOL_STEP
-         ↓
+         â†“
+Normalized Lots = MathFloor(Raw Lots / VOL_STEP) Ã— VOL_STEP
+         â†“
 Check (Normalized Lots < MIN_VOL):
-  ├── If allow_min_lot_override == false AND min_lot_loss > risk_amount:
-  │     └── VETO: err = "MIN_LOT_EXCEEDS_RISK", return 0.0 lots
-  └── Else:
-        └── Approve Normalized Lots
+  â”œâ”€â”€ If allow_min_lot_override == false AND min_lot_loss > risk_amount:
+  â”‚     â””â”€â”€ VETO: err = "MIN_LOT_EXCEEDS_RISK", return 0.0 lots
+  â””â”€â”€ Else:
+        â””â”€â”€ Approve Normalized Lots
 ```
 
 ---
@@ -94,7 +94,7 @@ Evaluating XAUUSD for a benchmark 35.0-point stop loss ($3.50 gold move, $\text{
 1. **TECHNICAL FLOOR:** Smallest balance where 0.01 lot margin is sufficient at 1:500 leverage = **`$5.30`**.
 2. **RISK-COMPLIANT FLOOR:** Smallest balance where 0.01 lot risk ($\$35.00$) $\le 0.5\%$ risk budget = **`$7,000.00`**.
 3. **LOW-DISTORTION FLOOR:** Smallest balance where volume step truncation error is $\le 5\%$ = **`$14,000.00`**.
-4. **HIGH-EXECUTABILITY FLOOR:** Smallest balance achieving $\ge 95\%$ executability across variable ATR stops (25–50 points) = **`$10,000.00`**.
+4. **HIGH-EXECUTABILITY FLOOR:** Smallest balance achieving $\ge 95\%$ executability across variable ATR stops (25â€“50 points) = **`$10,000.00`**.
 
 ---
 
@@ -163,7 +163,7 @@ Evaluating XAUUSD for a benchmark 35.0-point stop loss ($3.50 gold move, $\text{
 
 ---
 
-## 11. SETUP-GRADE × ACCOUNT-SIZE MATRIX
+## 11. SETUP-GRADE Ã— ACCOUNT-SIZE MATRIX
 
 Evaluating how the bot behaves when the **EXACT SAME MARKET SETUP** is applied across account sizes:
 
@@ -180,15 +180,15 @@ Evaluating how the bot behaves when the **EXACT SAME MARKET SETUP** is applied a
 Live MT5 log entries (`20260924.log`) directly confirm this architectural behavior at runtime:
 
 ```text
-2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[AlgoMind][DECISION] id=1790261401095 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4523 reason=OK
-2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[AlgoMind][INFO][SIZE_DIAG] eq=4638.34 risk_amt=23.19 stop_dist=34.1450 tick_sz=0.00100 tick_val=0.10 loss_per_lot=3414.50 min_lot_loss=34.15 min_vol=0.01 dist=1.47x
-2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[AlgoMind][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
-2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[AlgoMind][DECISION] id=1790262303098 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4301 reason=OK
-2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[AlgoMind][INFO][SIZE_DIAG] eq=4652.06 risk_amt=23.26 stop_dist=40.9980 tick_sz=0.00100 tick_val=0.10 loss_per_lot=4099.80 min_lot_loss=41.00 min_vol=0.01 dist=1.76x
-2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[AlgoMind][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
-2026.09.24 18:55:00.277	AMIGO (XAUUSD,M5)	[AlgoMind][DECISION] id=1790265301108 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4251 reason=OK
-2026.09.24 18:55:00.277	AMIGO (XAUUSD,M5)	[AlgoMind][INFO][SIZE_DIAG] eq=4636.90 risk_amt=23.18 stop_dist=33.8130 tick_sz=0.00100 tick_val=0.10 loss_per_lot=3381.30 min_lot_loss=33.81 min_vol=0.01 dist=1.46x
-2026.09.24 18:55:00.277	AMIGO (XAUUSD,M5)	[AlgoMind][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
+2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[Amigo][DECISION] id=1790261401095 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4523 reason=OK
+2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[Amigo][INFO][SIZE_DIAG] eq=4638.34 risk_amt=23.19 stop_dist=34.1450 tick_sz=0.00100 tick_val=0.10 loss_per_lot=3414.50 min_lot_loss=34.15 min_vol=0.01 dist=1.47x
+2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[Amigo][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
+2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[Amigo][DECISION] id=1790262303098 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4301 reason=OK
+2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[Amigo][INFO][SIZE_DIAG] eq=4652.06 risk_amt=23.26 stop_dist=40.9980 tick_sz=0.00100 tick_val=0.10 loss_per_lot=4099.80 min_lot_loss=41.00 min_vol=0.01 dist=1.76x
+2026.09.24 18:05:02.385	AMIGO (XAUUSD,M5)	[Amigo][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
+2026.09.24 18:55:00.277	AMIGO (XAUUSD,M5)	[Amigo][DECISION] id=1790265301108 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4251 reason=OK
+2026.09.24 18:55:00.277	AMIGO (XAUUSD,M5)	[Amigo][INFO][SIZE_DIAG] eq=4636.90 risk_amt=23.18 stop_dist=33.8130 tick_sz=0.00100 tick_val=0.10 loss_per_lot=3381.30 min_lot_loss=33.81 min_vol=0.01 dist=1.46x
+2026.09.24 18:55:00.277	AMIGO (XAUUSD,M5)	[Amigo][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
 ```
 
 ---
@@ -210,14 +210,14 @@ Live MT5 log entries (`20260924.log`) directly confirm this architectural behavi
 ## 14. UNRESOLVED ENGINEERING GAPS & REQUIRED OWNER DECISIONS
 
 1. **Undocumented Min-Lot Risk Distortion Override:** `g_cfg.allow_min_lot_override` exists in `Configuration.mqh` and `Risk Engine.mqh`, but is unassigned in `AMIGO.mq5` `OnInit()` (defaulting to `false`).  
-   *Requires Owner Decision:* Whether to add input parameters for `InpAllowMinLotOverride` and `InpMaxAllowedDistortion` for small accounts ($1.5k–$3k).
+   *Requires Owner Decision:* Whether to add input parameters for `InpAllowMinLotOverride` and `InpMaxAllowedDistortion` for small accounts ($1.5kâ€“$3k).
 
 ---
 
 ## 15. FINAL CONCLUSION BLOCK
 
 ```text
-ALGO MIND — ACCOUNT SIZE / SETUP PARITY AUDIT
+ALGO MIND â€” ACCOUNT SIZE / SETUP PARITY AUDIT
 
 MARKET SETUP PARITY: VERIFIED RUNTIME
 SETUP GRADING PARITY: VERIFIED STATIC ONLY
@@ -248,7 +248,7 @@ LEVEL 4 ACCOUNT-HANDLING READINESS:
 PARTIALLY VERIFIED
 
 LIVE-TRADING AUTHORIZATION:
-SEPARATE DECISION — DO NOT INFER FROM THIS AUDIT
+SEPARATE DECISION â€” DO NOT INFER FROM THIS AUDIT
 
 GIT COMMIT:
 NOT APPROVED
@@ -256,3 +256,4 @@ NOT APPROVED
 GIT PUSH:
 NOT APPROVED
 ```
+

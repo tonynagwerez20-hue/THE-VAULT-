@@ -1,0 +1,81 @@
+﻿import sys
+sys.path.insert(0, "Python")
+
+from Amigo.risk_controller import RiskController, DEFAULT_RISK_CURVE
+
+def run():
+    print("=========================================================================================")
+    print("PHASE D RUNTIME SHADOW SIMULATION AUDIT: CONTRACT A -> B -> C COMPOSITION")
+    print("=========================================================================================")
+
+    test_equities = [3.0, 5.0, 10.0, 24.30, 24.35, 25.0, 50.0, 100.0]
+
+    print("\n--- TEST SCENARIO 1: Standard Broker Gold Stop (2.50 pts => $2.50 Min-Lot Loss) ---")
+    for eq in test_equities:
+        rc = RiskController(initial_equity=eq)
+        res = rc.evaluate(
+            equity=eq,
+            balance=eq,
+            stop_distance=2.50,
+            tick_size=0.01,
+            tick_value=1.00,
+            volume_min=0.01,
+            daily_locked=False,
+        )
+        dec = "TRADE" if res.trade_allowed else "NO_TRADE"
+        print(
+            f"EQ: ${eq:6.2f} | BaseRisk%: {res.base_risk_percent:5.2f}% | "
+            f"EffRisk%: {res.effective_risk_percent:5.2f}% | "
+            f"RiskBudget: ${res.risk_budget:7.4f} | "
+            f"MinLotLoss: ${res.minimum_lot_loss:5.2f} | "
+            f"ActDist: {res.distortion:7.4f}x | "
+            f"MaxDist: {res.max_allowed_distortion:7.4f}x | "
+            f"Decision: {dec:8s} | Reason: {res.reason}"
+        )
+
+    print("\n--- TEST SCENARIO 2: Micro / Cent / Feasible Stop (0.10 pts => $0.10 Min-Lot Loss) ---")
+    for eq in test_equities:
+        rc = RiskController(initial_equity=eq)
+        res = rc.evaluate(
+            equity=eq,
+            balance=eq,
+            stop_distance=0.10,
+            tick_size=0.01,
+            tick_value=1.00,
+            volume_min=0.01,
+            daily_locked=False,
+        )
+        dec = "TRADE" if res.trade_allowed else "NO_TRADE"
+        print(
+            f"EQ: ${eq:6.2f} | BaseRisk%: {res.base_risk_percent:5.2f}% | "
+            f"EffRisk%: {res.effective_risk_percent:5.2f}% | "
+            f"RiskBudget: ${res.risk_budget:7.4f} | "
+            f"MinLotLoss: ${res.minimum_lot_loss:5.2f} | "
+            f"ActDist: {res.distortion:7.4f}x | "
+            f"MaxDist: {res.max_allowed_distortion:7.4f}x | "
+            f"Decision: {dec:8s} | Reason: {res.reason}"
+        )
+
+    print("\n--- TEST SCENARIO 3: Active Daily Drawdown Lock (daily_locked = True) ---")
+    for eq in [25.0, 50.0, 100.0]:
+        rc = RiskController(initial_equity=eq)
+        res = rc.evaluate(
+            equity=eq,
+            balance=eq,
+            stop_distance=2.50,
+            tick_size=0.01,
+            tick_value=1.00,
+            volume_min=0.01,
+            daily_locked=True,
+        )
+        dec = "TRADE" if res.trade_allowed else "NO_TRADE"
+        print(
+            f"EQ: ${eq:6.2f} | BaseRisk%: {res.base_risk_percent:5.2f}% | "
+            f"EffRisk%: {res.effective_risk_percent:5.2f}% | "
+            f"RiskBudget: ${res.risk_budget:7.4f} | "
+            f"Decision: {dec:8s} | Reason: {res.reason}"
+        )
+
+if __name__ == "__main__":
+    run()
+

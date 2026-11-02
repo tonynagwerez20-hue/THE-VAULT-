@@ -1,5 +1,5 @@
-# ATR EVENT-REACTION ENGINE VALIDATION
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# ATR EVENT-REACTION ENGINE VALIDATION
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 
 ---
@@ -19,3 +19,4 @@
 ## 2. Validation Findings
 - **No Lookahead Enforcement**: Pre-event ATR calculation uses strictly closed bars prior to event release timestamp.
 - **Spread Gate**: If $\text{SpreadRatio} > 3.0$ or spread exceeds $10\%$ of stop distance, trade execution is blocked by the MQL5 risk engine.
+

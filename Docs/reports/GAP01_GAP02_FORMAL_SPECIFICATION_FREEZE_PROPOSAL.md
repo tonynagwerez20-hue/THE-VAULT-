@@ -1,7 +1,7 @@
-# AlgoMind / ASAP
+﻿# Amigo / ASAP
 # GAP-01 / GAP-02 Formal Specification Freeze Proposal
 
-**Project:** AlgoMind / ASAP Retail Order-Flow System  
+**Project:** Amigo / ASAP Retail Order-Flow System  
 **Symbol / Timeframe:** `XAUUSD` / `M5`  
 **Execution Environment:** Windows 10, MetaTrader 5 (PID 7964), Exness Demo (`Exness-MT5Trial`)  
 **Operating Mode:** SHADOW MODE (`InpShadowOnly = true`)  
@@ -15,8 +15,8 @@
 This document converts the candidate evaluation results from `GAP01_GAP02_CANDIDATE_EVALUATION_SELECTION_AUDIT.md` into an explicit, mathematically complete specification freeze proposal for owner approval:
 
 ```text
-GAP-01 Specification Basis: Candidate C — Value Extension vs Order-Flow Fusion Confirmation
-GAP-02 Specification Basis: Candidate A — ATR-Normalized Structural Break Distance
+GAP-01 Specification Basis: Candidate C â€” Value Extension vs Order-Flow Fusion Confirmation
+GAP-02 Specification Basis: Candidate A â€” ATR-Normalized Structural Break Distance
 ```
 
 **CRITICAL GOVERNANCE RULE:** This document is a **SPECIFICATION FREEZE PROPOSAL ONLY**. It does NOT authorize production implementation, weight calibration, or live trading. Zero production code is modified (`PRODUCTION CODE: UNCHANGED`, `GIT COMMIT: NOT APPROVED`, `GIT PUSH: NOT APPROVED`).
@@ -36,7 +36,7 @@ GAP-02 Specification Basis: Candidate A — ATR-Normalized Structural Break Dist
 
 1. **Existing Conventions Preserved:** Mapped strictly to existing project infrastructure: `Clip01()` normalization, `FeatureSnapshot` contracts, `dev_vwap_atr`, `fusion`, `structure_dir`, `atr14`.
 2. **Account Decoupling Maintained:** All formulas are 100% market-derived and account-invariant ($5 to $100,000+ accounts yield identical outputs).
-3. **No Speculative Extensions:** Unspecified parameters are marked `NOT SPECIFIED — REQUIRES OWNER DECISION`.
+3. **No Speculative Extensions:** Unspecified parameters are marked `NOT SPECIFIED â€” REQUIRES OWNER DECISION`.
 
 ---
 
@@ -109,7 +109,7 @@ GAP-02 Specification Basis: Candidate A — ATR-Normalized Structural Break Dist
 
 ## 6. SCORE WEIGHT & CALIBRATION POLICY
 
-- **Initial Implementation Weight:** `PROVISIONAL — REQUIRES CALIBRATION`
+- **Initial Implementation Weight:** `PROVISIONAL â€” REQUIRES CALIBRATION`
 - The `0.20` weight in `MR_Evidence()` and `ContinuationEvidence()` is preserved as a provisional source placeholder. Empirical tuning on historical/OOS datasets is required post-implementation (`WEIGHTS: NOT FROZEN`).
 
 ---
@@ -147,7 +147,7 @@ $$\text{disp}(\text{Snapshot}, \text{Equity}_1) \equiv \text{disp}(\text{Snapsho
 | **DEC-GAP-02A** | GAP-02 Mathematical Definition | Candidate A (ATR-Normalized Break Distance) | `SPECIFICATION READY FOR OWNER REVIEW` |
 | **DEC-GAP-02B** | BOS Confirmation Definition | $k=2$ Swing High/Low Break from `Structure Engine` | `SPECIFICATION READY FOR OWNER REVIEW` |
 | **DEC-GAP-02C** | GAP-02 Normalization Convention | `Clip01(disp_ratio / 1.5)` | `SPECIFICATION READY FOR OWNER REVIEW` |
-| **DEC-GAP-02D** | Weight / Calibration Policy | Provisional 0.20; Empirical OOS calibration required | `PROVISIONAL — REQUIRES CALIBRATION` |
+| **DEC-GAP-02D** | Weight / Calibration Policy | Provisional 0.20; Empirical OOS calibration required | `PROVISIONAL â€” REQUIRES CALIBRATION` |
 
 ---
 
@@ -159,7 +159,7 @@ $$\text{disp}(\text{Snapshot}, \text{Equity}_1) \equiv \text{disp}(\text{Snapsho
 - **GAP-02 Mathematical Formula:** `SPECIFICATION READY FOR OWNER REVIEW`
 - **GAP-02 BOS Definition:** `SPECIFICATION READY FOR OWNER REVIEW`
 - **GAP-02 Normalization:** `SPECIFICATION READY FOR OWNER REVIEW`
-- **Score Weights:** `PROVISIONAL — REQUIRES CALIBRATION`
+- **Score Weights:** `PROVISIONAL â€” REQUIRES CALIBRATION`
 
 ---
 
@@ -250,3 +250,4 @@ NOT APPROVED
 GIT PUSH:
 NOT APPROVED
 ```
+

@@ -1,4 +1,4 @@
-"""Event Engine (spec §22-28).
+﻿"""Event Engine (spec §22-28).
 
 Consumes a sequence of ProxyFootprintSnapshot objects and emits
 higher-level flow events:
@@ -16,7 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from algomind.orderflow_lab.schema import (
+from Amigo.orderflow_lab.schema import (
     ProxyFootprintSnapshot, PressureState, DataQualityTag
 )
 
@@ -245,3 +245,4 @@ class EventEngine:
             if pr:
                 disps.append(abs(pr[1] - pr[0]))
         return sum(disps) / len(disps) if disps else 1.0
+

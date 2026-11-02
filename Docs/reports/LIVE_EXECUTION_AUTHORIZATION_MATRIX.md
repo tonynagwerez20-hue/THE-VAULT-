@@ -1,5 +1,5 @@
-# LIVE EXECUTION AUTHORIZATION MATRIX
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# LIVE EXECUTION AUTHORIZATION MATRIX
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 
 ## Authorization Status Matrix
@@ -23,3 +23,4 @@
 
 ## Non-Negotiable Boundary
 Python intelligence modules transmit context and state. **MQL5 remains the final, sole execution authority.**
+

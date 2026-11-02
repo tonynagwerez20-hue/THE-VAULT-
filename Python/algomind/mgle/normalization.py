@@ -1,5 +1,5 @@
-"""
-ALGOMIND MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
+﻿"""
+Amigo MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
 ==================================================================
 Robust Normalization Engine (v1.0)
 Computes point-in-time Median Absolute Deviation (MAD) scaled robust Z-scores.
@@ -54,3 +54,4 @@ def compute_surprise_zscore(actual: float, consensus: Optional[float], historica
             
     z = raw_surprise / scale
     return float(np.clip(z, -3.0, 3.0))
+

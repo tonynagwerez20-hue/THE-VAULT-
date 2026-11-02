@@ -1,5 +1,5 @@
-"""
-AlgoMind AMIGO — P3.4 Canonical Dataset Validation and August Forensics
+﻿"""
+Amigo AMIGO — P3.4 Canonical Dataset Validation and August Forensics
 READ-ONLY. No strategy logic changes.
 
 Tasks:
@@ -29,12 +29,12 @@ from scipy import stats
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-BASE_DIR    = Path(r"C:\Users\USER\Desktop\ALGOMIND\Python")
-CSV_PATH    = BASE_DIR / "algomind_trade_level_dataset.csv"
+BASE_DIR    = Path(r"C:\Users\USER\Desktop\Amigo\Python")
+CSV_PATH    = BASE_DIR / "Amigo_trade_level_dataset.csv"
 REPORT_PATH = BASE_DIR / "p34_report.md"
 
 print("=" * 70)
-print("AlgoMind AMIGO — P3.4 Canonical Dataset Validation")
+print("Amigo AMIGO — P3.4 Canonical Dataset Validation")
 print("=" * 70)
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -538,7 +538,7 @@ print("="*60)
 # Based on source inspection:
 # - TransactionRecon.mqh logs DEAL_ADD/UPDATE events but does NOT write the CSV
 # - AMIGO.mq5 does NOT contain any CSV write calls
-# - algomind_monte_carlo.py uses synthetic trades, not the CSV
+# - Amigo_monte_carlo.py uses synthetic trades, not the CSV
 # - No Python file contains to_csv() or open(*.csv, 'a') for trade_level_dataset
 # - The CSV appears to have been generated externally (manual export from MT5 or a separate script)
 
@@ -550,9 +550,9 @@ print("""
   2. TransactionRecon.mqh— Logs DEAL_ADD/UPDATE to EA journal via LogMsg().
                            No FileWrite call.
   3. Position Manager.mqh— Not yet inspected (may contain CSV logic).
-  4. Python scripts      — algomind_monte_carlo.py: synthetic trades, no CSV.
+  4. Python scripts      — Amigo_monte_carlo.py: synthetic trades, no CSV.
                            No Python script contains to_csv() for trade_level.
-  5. algomind_trade_level_dataset.csv — Appears to be a MANUAL export from
+  5. Amigo_trade_level_dataset.csv — Appears to be a MANUAL export from
                            the MT5 Strategy Tester "Trade" tab (right-click
                            → Save As CSV), performed multiple times without
                            clearing the previous file.
@@ -587,7 +587,7 @@ print("""
   PROPOSED MINIMUM ENGINEERING FIX (DO NOT IMPLEMENT WITHOUT APPROVAL):
   -----------------------------------------------------------------------
   1. Before each MT5 Strategy Tester export:
-     - Delete or rename the existing algomind_trade_level_dataset.csv
+     - Delete or rename the existing Amigo_trade_level_dataset.csv
      - This prevents row accumulation across runs.
 
   2. OR: Add a run_id column to the export (either manually or via a wrapper
@@ -601,7 +601,7 @@ print("""
      - For EXACT_DUPLICATEs: keeps one copy
      - For SAME_ID_DIFFERENT_DATA: writes a conflict report and keeps
        the row with the latest entry_time (or flags for manual resolution)
-     - Writes the clean CSV to algomind_trade_level_dataset_canonical.csv
+     - Writes the clean CSV to Amigo_trade_level_dataset_canonical.csv
 
   Priority: Option 1 (delete before each export) is the immediate fix.
   Option 3 is the auditable fix.
@@ -616,7 +616,7 @@ print("Writing p34_report.md...")
 print("="*60)
 
 with open(REPORT_PATH, "w", encoding="utf-8") as md:
-    md.write("# AlgoMind AMIGO — P3.4 Canonical Dataset Validation and August Forensics\n\n")
+    md.write("# Amigo AMIGO — P3.4 Canonical Dataset Validation and August Forensics\n\n")
     md.write("**READ-ONLY ANALYSIS. No strategy parameters, risk settings, or MQL5 code were modified.**\n\n")
     md.write(f"Canonical dataset: 793 trades | XAUUSDm M5 | 2025-10-01 → 2026-08-28\n\n---\n\n")
 
@@ -799,3 +799,4 @@ with open(REPORT_PATH, "w", encoding="utf-8") as md:
 
 print(f"\nReport: {REPORT_PATH}")
 print("Done.")
+

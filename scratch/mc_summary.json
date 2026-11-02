@@ -1,0 +1,15 @@
+{
+  "n_simulations": 1000,
+  "ruin_probabilities": {
+    "25": 31.4,
+    "30": 15.8,
+    "40": 5.1,
+    "50": 1.4,
+    "75": 0.2
+  },
+  "median_final_equity": 85.56,
+  "p5_final_equity": 53.69,
+  "p95_final_equity": 124.59,
+  "median_max_dd_pct": 20.62,
+  "p95_max_dd_pct": 40.04
+}

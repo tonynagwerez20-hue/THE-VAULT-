@@ -1,10 +1,10 @@
-# PHASE 6 — FINAL READINESS & INTEGRATION REPORT
+﻿# PHASE 6 â€” FINAL READINESS & INTEGRATION REPORT
 
 **Document Status**: Authoritative Engineering Readiness Audit  
 **Date**: 24 September 2026  
-**System**: AlgoMind / ASAP Retail Order-Flow System  
-**Repository**: `C:\Users\USER\Desktop\ALGOMIND`  
-**Classification**: LEVEL 3 UNVERIFIED — MT5 RUNTIME RE-ATTACHMENT PENDING  
+**System**: Amigo / ASAP Retail Order-Flow System  
+**Repository**: `C:\Users\USER\Desktop\Amigo`  
+**Classification**: LEVEL 3 UNVERIFIED â€” MT5 RUNTIME RE-ATTACHMENT PENDING  
 **Live Execution Authority**: LEVEL 4 LIVE TRADING = NOT AUTHORIZED  
 
 ---
@@ -25,7 +25,7 @@ Phase 6 established that:
 ===================================================================
                        PHASE 6 READINESS STATUS
 ===================================================================
-LEVEL 3 STATUS: LEVEL 3 UNVERIFIED — MT5 RUNTIME RE-ATTACHMENT PENDING
+LEVEL 3 STATUS: LEVEL 3 UNVERIFIED â€” MT5 RUNTIME RE-ATTACHMENT PENDING
 LEVEL 4 STATUS: NOT AUTHORIZED
 ===================================================================
 ```
@@ -41,3 +41,4 @@ To obtain the required live MT5 runtime log trace and move Level 3 to verified:
 4. Drag `AMIGO` from the Navigator panel onto the `XAUUSD, M5` chart.
 5. Confirm `InpShadowOnly = true` and click **OK**.
 6. Export `20260924.log` from `AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\MQL5\Logs\`.
+

@@ -1,6 +1,6 @@
-# ALGOMIND / ASAP — LEVEL 4 ACCOUNT CAPABILITY × TWO-STRATEGY SETUP GRADING & TRADING AUDIT REPORT
+﻿# Amigo / ASAP â€” LEVEL 4 ACCOUNT CAPABILITY Ã— TWO-STRATEGY SETUP GRADING & TRADING AUDIT REPORT
 
-**Project:** AlgoMind / ASAP Retail Order-Flow System  
+**Project:** Amigo / ASAP Retail Order-Flow System  
 **Symbol / Timeframe:** `XAUUSD` / `M5`  
 **Execution Environment:** Windows 10, MetaTrader 5 (PID 7964), Exness Demo (`Exness-MT5Trial`)  
 **Operating Mode:** SHADOW MODE (`InpShadowOnly = true`)  
@@ -11,7 +11,7 @@
 
 ## 1. EXECUTIVE SUMMARY
 
-This audit establishes whether the **AlgoMind / AMIGO production EA** correctly separates:
+This audit establishes whether the **Amigo / AMIGO production EA** correctly separates:
 1. **What the market is doing;**
 2. **Which of the two strategy hypotheses (`MEAN_REVERSION` vs `CONTINUATION`) is supported;**
 3. **How strong that strategy setup is;**
@@ -28,7 +28,7 @@ This audit establishes whether the **AlgoMind / AMIGO production EA** correctly 
 ## 2. AUTHORITATIVE DOCUMENTS USED
 
 - **MQL5 Source Code:** `AMIGO.mq5`, `Include/Contracts header.mqh`, `Include/Configuration.mqh`, `Include/Logger.mqh`, `Include/Strategy Engine.mqh`, `Include/Regime Engine.mqh`, `Include/Risk Engine.mqh`, `Include/Execution Engine.mqh`.
-- **Mathematical Specification:** AlgoMind System Architecture & Math Spec §15, §17, §18, §24, §26.
+- **Mathematical Specification:** Amigo System Architecture & Math Spec Â§15, Â§17, Â§18, Â§24, Â§26.
 - **MT5 Live Telemetry:** `20260924.log` runtime evidence.
 
 ---
@@ -37,41 +37,41 @@ This audit establishes whether the **AlgoMind / AMIGO production EA** correctly 
 
 ```text
                      MARKET DATA
-                          │
-                          ▼
+                          â”‚
+                          â–¼
                      RAW METRICS (BuildMarketSnapshot)
-                          │
-                          ▼
+                          â”‚
+                          â–¼
               NORMALIZED METRICS (BuildFeatureVector)
-                          │
-                          ▼
+                          â”‚
+                          â–¼
             MANDATORY CONDITIONS (DQ Gates / Regime)
-                          │
-             ┌────────────┴────────────┐
-             ▼                         ▼
+                          â”‚
+             â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+             â–¼                         â–¼
        MEAN REVERSION            CONTINUATION
    (MR_Evidence - 4 Metrics) (ContinuationEvidence - 5 Metrics)
-             │                         │
-             └────────────┬────────────┘
-                          ▼
+             â”‚                         â”‚
+             â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                          â–¼
                    STRATEGY SCORE (ScoreStrategies)
-                          ▼
+                          â–¼
                     DECISION GATE (Decide - Threshold 0.65, Margin 0.15)
-                          ▼
+                          â–¼
                  STRATEGY ELIGIBILITY (ACTION_TRADE / ACTION_WAIT / ACTION_NO_TRADE)
-                          │
-                          ▼
+                          â”‚
+                          â–¼
                   ACCOUNT CAPABILITY (ComputeLotSize - Equity x 0.5%)
-                          │
-          ┌───────────────┼───────────────┐
-          ▼               ▼               ▼
+                          â”‚
+          â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+          â–¼               â–¼               â–¼
         RISK            MARGIN         LOT SIZE
     (0.5% Cap)      (Free Margin)    (0.01 Step)
-          │               │               │
-          └───────────────┼───────────────┘
-                          ▼
+          â”‚               â”‚               â”‚
+          â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                          â–¼
                  EXECUTION FEASIBILITY (lots >= 0.01)
-                          ▼
+                          â–¼
          FINAL ACTION (TRADE / RISK_VETO / WAIT / NO_TRADE)
 ```
 
@@ -142,7 +142,7 @@ Testing identical market snapshot conditions across account sizes for XAUUSD (35
 1. **TECHNICAL FLOOR (Margin capability at 1:500 leverage):** **`$5.30`**.
 2. **RISK-COMPLIANT FLOOR (0.01 lot loss $\le 0.5\%$ risk):** **`$7,000.00`**.
 3. **LOW-DISTORTION FLOOR ($\le 5\%$ volume step truncation error):** **`$14,000.00`**.
-4. **HIGH-EXECUTABILITY FLOOR ($\ge 95\%$ executability across 25–50 point stops):** **`$10,000.00`**.
+4. **HIGH-EXECUTABILITY FLOOR ($\ge 95\%$ executability across 25â€“50 point stops):** **`$10,000.00`**.
 
 ---
 
@@ -151,9 +151,9 @@ Testing identical market snapshot conditions across account sizes for XAUUSD (35
 Live MT5 log entries (`20260924.log`) confirm this strict separation at runtime:
 
 ```text
-2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[AlgoMind][DECISION] id=1790261401095 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4523 reason=OK
-2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[AlgoMind][INFO][SIZE_DIAG] eq=4638.34 risk_amt=23.19 stop_dist=34.1450 tick_sz=0.00100 tick_val=0.10 loss_per_lot=3414.50 min_lot_loss=34.15 min_vol=0.01 dist=1.47x
-2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[AlgoMind][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
+2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[Amigo][DECISION] id=1790261401095 sym=XAUUSD act=1 reg=3 hyp=2 score=0.4523 reason=OK
+2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[Amigo][INFO][SIZE_DIAG] eq=4638.34 risk_amt=23.19 stop_dist=34.1450 tick_sz=0.00100 tick_val=0.10 loss_per_lot=3414.50 min_lot_loss=34.15 min_vol=0.01 dist=1.47x
+2026.09.24 17:50:00.146	AMIGO (XAUUSD,M5)	[Amigo][WARN][SIZE] MIN_LOT_EXCEEDS_RISK
 ```
 
 ---
@@ -168,7 +168,7 @@ Live MT5 log entries (`20260924.log`) confirm this strict separation at runtime:
 ## 11. FINAL MANDATORY STATUS BLOCK
 
 ```text
-ALGOMIND — LEVEL 4 ACCOUNT CAPABILITY / TWO-STRATEGY AUDIT
+Amigo â€” LEVEL 4 ACCOUNT CAPABILITY / TWO-STRATEGY AUDIT
 
 TWO-STRATEGY ARCHITECTURE: VERIFIED RUNTIME
 
@@ -176,7 +176,7 @@ MEAN REVERSION PIPELINE: IMPLEMENTED + VERIFIED RUNTIME
 
 CONTINUATION PIPELINE: IMPLEMENTED + VERIFIED RUNTIME
 
-RAW → NORMALIZED METRICS: IMPLEMENTED + VERIFIED RUNTIME
+RAW â†’ NORMALIZED METRICS: IMPLEMENTED + VERIFIED RUNTIME
 
 MANDATORY CONDITIONS: IMPLEMENTED + VERIFIED RUNTIME
 
@@ -240,7 +240,7 @@ LEVEL 4 ACCOUNT-CAPABILITY READINESS:
 PARTIALLY VERIFIED
 
 LIVE-TRADING AUTHORIZATION:
-SEPARATE DECISION — DO NOT INFER FROM THIS AUDIT
+SEPARATE DECISION â€” DO NOT INFER FROM THIS AUDIT
 
 GIT COMMIT:
 NOT APPROVED
@@ -248,3 +248,4 @@ NOT APPROVED
 GIT PUSH:
 NOT APPROVED
 ```
+

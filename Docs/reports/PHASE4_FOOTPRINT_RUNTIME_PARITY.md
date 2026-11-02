@@ -1,5 +1,5 @@
-# PHASE 4 FOOTPRINT RUNTIME PARITY REPORT
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# PHASE 4 FOOTPRINT RUNTIME PARITY REPORT
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 
 ---
@@ -23,3 +23,4 @@ Tick Index | Price   | Vol | Py Delta | MQL Delta | Diff | Py Pressure | MQL Pre
 - **Max Error Bound**: $< 10^{-5}$
 - **Pytest Result**: 9/9 PASSED
 - **MQL5 Compilation**: 0 errors via `metaeditor64.exe`
+

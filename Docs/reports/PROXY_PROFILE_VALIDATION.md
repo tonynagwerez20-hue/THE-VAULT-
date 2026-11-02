@@ -1,5 +1,5 @@
-# PROXY PROFILE VALIDATION REPORT
-**AlgoMind / ASAP Retail Order-Flow Project**
+﻿# PROXY PROFILE VALIDATION REPORT
+**Amigo / ASAP Retail Order-Flow Project**
 
 ## 1. Value Area Derivation
 The Proxy Activity Profile allocates observed tick volume to price bins (normalised by tick size $0.01$).
@@ -11,3 +11,4 @@ The Proxy Activity Profile allocates observed tick volume to price bins (normali
 ## 2. Empirical Performance
 - **POC Stability**: MT5 Proxy POC matches CME COMEX Futures POC within $\pm 0.30$ points on M5 bars during high-volume sessions (London/NY overlap).
 - **Activity Concentration**: Measure of volume density within VAH-VAL. High concentration ($> 80\%$) signals balanced consolidation; low concentration ($< 50\%$) signals rotational expansion.
+

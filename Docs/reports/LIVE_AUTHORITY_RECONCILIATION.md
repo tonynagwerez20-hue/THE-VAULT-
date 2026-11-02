@@ -1,5 +1,5 @@
-# LIVE AUTHORITY RECONCILIATION REPORT
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# LIVE AUTHORITY RECONCILIATION REPORT
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 
 ---
@@ -23,3 +23,4 @@ Audit of `MQL5/Experts/AMIGO.mq5` and `MQL5/Include/Execution Engine.mqh` confir
 | **Minimum Stop Level** | Broker `SYMBOL_TRADE_STOPS_LEVEL` | `Risk Engine.mqh:ValidateStopLoss` | `IMPLEMENTED AND VERIFIED` |
 | **Spread Gate** | $\le 10\%$ Stop Distance | `Strategy Engine.mqh:Decide` | `IMPLEMENTED AND VERIFIED` |
 | **Zero Martingale Policy**| Round-down if lot $< 0.01$; NO trade | `Risk Engine.mqh:CalculateLotSize` | `IMPLEMENTED AND VERIFIED` |
+

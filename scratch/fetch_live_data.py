@@ -1,0 +1,46 @@
+﻿import MetaTrader5 as mt5
+import pandas as pd
+import numpy as np
+
+if not mt5.initialize():
+    print("MT5 initialize failed")
+    exit(1)
+
+acc = mt5.account_info()
+print("=== LIVE ACCOUNT INFO ===")
+print("Login:", acc.login)
+print("Server:", acc.server)
+print("Balance:", acc.balance)
+print("Equity:", acc.equity)
+print("Margin Free:", acc.margin_free)
+print("Leverage:", acc.leverage)
+print("Currency:", acc.currency)
+
+symbol = "XAUUSD"
+if not mt5.symbol_select(symbol, True):
+    symbol = "XAUUSDm"
+    mt5.symbol_select(symbol, True)
+
+s = mt5.symbol_info(symbol)
+print(f"\n=== LIVE SYMBOL INFO ({symbol}) ===")
+print("Digits:", s.digits)
+print("Point:", s.point)
+print("Tick Size:", s.trade_tick_size)
+print("Tick Value:", s.trade_tick_value)
+print("Contract Size:", s.trade_contract_size)
+print("Volume Min:", s.volume_min)
+print("Volume Step:", s.volume_step)
+print("Volume Max:", s.volume_max)
+print("Stops Level:", s.trade_stops_level)
+
+rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M5, 0, 10000)
+df = pd.DataFrame(rates)
+df['time'] = pd.to_datetime(df['time'], unit='s')
+print(f"\nFetched {len(df)} M5 bars from {df['time'].iloc[0]} to {df['time'].iloc[-1]}")
+print("Latest 5 bars:\n", df.tail())
+
+df.to_csv("c:/Users/USER/Desktop/Amigo/scratch/live_xauusd_m5.csv", index=False)
+print("Saved real market data to scratch/live_xauusd_m5.csv")
+
+mt5.shutdown()
+

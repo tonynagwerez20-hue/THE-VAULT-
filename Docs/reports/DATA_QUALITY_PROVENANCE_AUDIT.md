@@ -1,5 +1,5 @@
-# DATA QUALITY AND PROVENANCE AUDIT
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# DATA QUALITY AND PROVENANCE AUDIT
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 
 ---
@@ -20,3 +20,4 @@
 
 ## 2. Prohibition Audit
 No retail proxy feature is permitted to upgrade its quality tag to `TRUE` without genuine exchange trade-side data.
+

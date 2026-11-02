@@ -1,7 +1,7 @@
-# AlgoMind / ASAP
+﻿# Amigo / ASAP
 # GAP-01 / GAP-02 Strategy Evidence Specification Gate
 
-**Project:** AlgoMind / ASAP Retail Order-Flow System  
+**Project:** Amigo / ASAP Retail Order-Flow System  
 **Symbol / Timeframe:** `XAUUSD` / `M5`  
 **Execution Environment:** Windows 10, MetaTrader 5 (PID 7964), Exness Demo (`Exness-MT5Trial`)  
 **Operating Mode:** SHADOW MODE (`InpShadowOnly = true`)  
@@ -15,8 +15,8 @@
 The objective of this gate is to conduct a strict specification audit for the two HIGH-severity strategy scoring gaps identified in the Level 4 Post-Reconciliation Production Readiness Audit (`LEVEL4_POST_RECONCILIATION_PRODUCTION_READINESS_AUDIT.md`):
 
 ```text
-GAP-01 — Mean Reversion Divergence (div_score = 0.0 placeholder)
-GAP-02 — Continuation Displacement (disp = 0.0 placeholder)
+GAP-01 â€” Mean Reversion Divergence (div_score = 0.0 placeholder)
+GAP-02 â€” Continuation Displacement (disp = 0.0 placeholder)
 ```
 
 Per governance rules, this gate determines whether authoritative specifications exist to implement these components correctly, or whether implementation is blocked pending owner decisions. **No production code is written or modified during this task.**
@@ -26,7 +26,7 @@ Per governance rules, this gate determines whether authoritative specifications 
 ## 2. AUTHORITATIVE SOURCES
 
 - **MQL5 Source Code:** `MQL5/Experts/AMIGO.mq5`, `Include/Contracts header.mqh`, `Include/FeatureVector.mqh`, `Include/Strategy Engine.mqh`, `Include/Risk Engine.mqh`, `Include/Execution Engine.mqh`.
-- **System Documentation:** Math Spec §15, §17, §18, §26; `CURRENT_PROJECT_STATE_RECONCILIATION.md`, `FOOTPRINT_DELTA_INTEGRATION_AUDIT.md`.
+- **System Documentation:** Math Spec Â§15, Â§17, Â§18, Â§26; `CURRENT_PROJECT_STATE_RECONCILIATION.md`, `FOOTPRINT_DELTA_INTEGRATION_AUDIT.md`.
 - **Audit Baseline:** `LEVEL4_POST_RECONCILIATION_PRODUCTION_READINESS_AUDIT.md`.
 
 ---
@@ -51,19 +51,19 @@ Because `div_score` is hardcoded to `0.0`, the 20% divergence contribution is un
 
 | Requirement | Specified? | Source | Exact Definition | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **Divergence input** | `NO` | None | Unspecified (Cumulative Delta vs Price) | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
-| **Price reference** | `NO` | None | Unspecified (Swing High/Low vs Close) | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
-| **Delta reference** | `NO` | None | Unspecified (Cumulative Delta vs Fusion) | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
-| **Lookback** | `NO` | None | Unspecified (e.g. 5, 10, 20 bars) | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
-| **Swing definition** | `NO` | None | Unspecified (Fractal vs K-swing) | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
-| **Direction** | `NO` | None | Unspecified (Bullish vs Bearish) | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
-| **Normalization** | `NO` | None | Unspecified (Clip01 vs Z-score) | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
-| **Range** | `NO` | None | Unspecified (Expected 0.0 to 1.0) | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
-| **Missing-data behavior** | `NO` | None | Unspecified (Fail closed vs 0.0) | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
+| **Divergence input** | `NO` | None | Unspecified (Cumulative Delta vs Price) | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
+| **Price reference** | `NO` | None | Unspecified (Swing High/Low vs Close) | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
+| **Delta reference** | `NO` | None | Unspecified (Cumulative Delta vs Fusion) | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
+| **Lookback** | `NO` | None | Unspecified (e.g. 5, 10, 20 bars) | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
+| **Swing definition** | `NO` | None | Unspecified (Fractal vs K-swing) | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
+| **Direction** | `NO` | None | Unspecified (Bullish vs Bearish) | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
+| **Normalization** | `NO` | None | Unspecified (Clip01 vs Z-score) | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
+| **Range** | `NO` | None | Unspecified (Expected 0.0 to 1.0) | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
+| **Missing-data behavior** | `NO` | None | Unspecified (Fail closed vs 0.0) | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
 | **Weight** | `YES` | `Strategy Engine.mqh` L47 | `0.20` weight in `MR_Evidence` | `IMPLEMENTED STATIC ONLY` |
 | **Score contribution** | `YES` | `Strategy Engine.mqh` L47 | $0.20 \times \text{div\_score}$ | `IMPLEMENTED STATIC ONLY` |
 | **Eligibility interaction** | `YES` | `Strategy Engine.mqh` L158 | Feeds `s_long` / `s_short` $\ge 0.65$ | `IMPLEMENTED STATIC ONLY` |
-| **Validation method** | `NO` | None | Unspecified (Deterministic test fixture) | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
+| **Validation method** | `NO` | None | Unspecified (Deterministic test fixture) | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
 
 ### 3.4 Evidence Chain
 $$\text{Tick / Bar Data} \longrightarrow \text{delta\_a / delta\_b} \longrightarrow \mathbf{\text{[MISSING: delta\_divergence]}} \longrightarrow \mathbf{\text{[MISSING: fs.delta\_divergence]}} \longrightarrow \text{div\_score = 0.0} \longrightarrow \text{MR\_Evidence}$$
@@ -75,7 +75,7 @@ $$\text{Tick / Bar Data} \longrightarrow \text{delta\_a / delta\_b} \longrightar
 4. Data quality fallback behavior when tick delta history is incomplete.
 
 ### 3.6 Implementation Readiness
-**Classification:** `BLOCKED — SPECIFICATION GAP`
+**Classification:** `BLOCKED â€” SPECIFICATION GAP`
 
 ---
 
@@ -101,17 +101,17 @@ Because `disp` is hardcoded to `0.0`, the 20% displacement contribution is unear
 | :--- | :--- | :--- | :--- | :--- |
 | **BOS definition** | `PARTIAL` | `Structure Engine.mqh` | Break of swing high/low | `IMPLEMENTED STATIC ONLY` |
 | **Structure definition** | `YES` | `Structure Engine.mqh` | `swing_k = 2` swing points | `IMPLEMENTED STATIC ONLY` |
-| **Displacement definition**| `NO` | None | Unspecified (Candle body / ATR ratio) | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
-| **Lookback** | `NO` | None | Unspecified (BOS candle lookback) | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
+| **Displacement definition**| `NO` | None | Unspecified (Candle body / ATR ratio) | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
+| **Lookback** | `NO` | None | Unspecified (BOS candle lookback) | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
 | **Timeframe** | `YES` | `Configuration.mqh` | `tf_exec = PERIOD_M5` | `IMPLEMENTED STATIC ONLY` |
-| **Normalization** | `NO` | None | Unspecified (Clip01 vs linear scaling) | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
-| **Range** | `NO` | None | Unspecified (Expected 0.0 to 1.0) | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
+| **Normalization** | `NO` | None | Unspecified (Clip01 vs linear scaling) | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
+| **Range** | `NO` | None | Unspecified (Expected 0.0 to 1.0) | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
 | **Direction** | `YES` | `Strategy Engine.mqh` L51 | Directional alignment with `dir` | `IMPLEMENTED STATIC ONLY` |
-| **Missing-data behavior** | `NO` | None | Unspecified (Fail closed vs 0.0) | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
+| **Missing-data behavior** | `NO` | None | Unspecified (Fail closed vs 0.0) | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
 | **Weight** | `YES` | `Strategy Engine.mqh` L72 | `0.20` weight in base Continuation | `IMPLEMENTED STATIC ONLY` |
 | **Score contribution** | `YES` | `Strategy Engine.mqh` L72 | $0.20 \times \text{disp}$ | `IMPLEMENTED STATIC ONLY` |
 | **Eligibility interaction** | `YES` | `Strategy Engine.mqh` L158 | Feeds `s_long` / `s_short` $\ge 0.65$ | `IMPLEMENTED STATIC ONLY` |
-| **Validation method** | `NO` | None | Unspecified (Deterministic test fixture) | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
+| **Validation method** | `NO` | None | Unspecified (Deterministic test fixture) | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
 
 ### 4.4 Evidence Chain
 $$\text{Price Bars} \longrightarrow \text{Structure Engine (BOS)} \longrightarrow \mathbf{\text{[MISSING: displacement]}} \longrightarrow \mathbf{\text{[MISSING: fs.displacement]}} \longrightarrow \text{disp = 0.0} \longrightarrow \text{ContinuationEvidence}$$
@@ -122,7 +122,7 @@ $$\text{Price Bars} \longrightarrow \text{Structure Engine (BOS)} \longrightarro
 3. Lookback window for evaluating displacement following a BOS event.
 
 ### 4.6 Implementation Readiness
-**Classification:** `BLOCKED — SPECIFICATION GAP`
+**Classification:** `BLOCKED â€” SPECIFICATION GAP`
 
 ---
 
@@ -140,7 +140,7 @@ The system uses `DQ_FATAL`, `DQ_MISSING_TICKS`, and `DQ_BROKER_INVALID` flags.
 - Policy for missing divergence/displacement data must be specified:
   - Defaulting to `0.0` acts as a neutral contribution without triggering a hard data-quality veto.
   - Setting a `DQ_` error flag would trigger a hard `ACTION_NO_TRADE` decision.
-- **Status:** `NOT SPECIFIED — REQUIRES OWNER DECISION` (Recommending neutral `0.0` fallback without hard DQ veto).
+- **Status:** `NOT SPECIFIED â€” REQUIRES OWNER DECISION` (Recommending neutral `0.0` fallback without hard DQ veto).
 
 ---
 
@@ -173,17 +173,17 @@ The following items require empirical calibration using the project's historical
 
 | Decision ID | Decision Item | Why It Matters | Status / Action |
 | :--- | :--- | :--- | :--- |
-| **DEC-GAP-01** | Delta Divergence Mathematical Formula | Required to code `BuildFeatureVector()` divergence calculation | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
-| **DEC-GAP-02** | BOS Displacement Ratio Mathematical Formula | Required to code `BuildFeatureVector()` displacement calculation | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
-| **DEC-GAP-03** | Missing Data Fallback Policy | Determines if missing divergence/displacement causes neutral 0.0 or DQ veto | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
-| **DEC-GAP-04** | Small Account Min-Lot Override Input Parameter | Exposes `InpAllowMinLotOverride` in `AMIGO.mq5` inputs for small accounts | `NOT SPECIFIED — REQUIRES OWNER DECISION` |
+| **DEC-GAP-01** | Delta Divergence Mathematical Formula | Required to code `BuildFeatureVector()` divergence calculation | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
+| **DEC-GAP-02** | BOS Displacement Ratio Mathematical Formula | Required to code `BuildFeatureVector()` displacement calculation | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
+| **DEC-GAP-03** | Missing Data Fallback Policy | Determines if missing divergence/displacement causes neutral 0.0 or DQ veto | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
+| **DEC-GAP-04** | Small Account Min-Lot Override Input Parameter | Exposes `InpAllowMinLotOverride` in `AMIGO.mq5` inputs for small accounts | `NOT SPECIFIED â€” REQUIRES OWNER DECISION` |
 
 ---
 
 ## 11. IMPLEMENTATION READINESS SUMMARY
 
-- **GAP-01 (Mean Reversion Divergence):** `BLOCKED — SPECIFICATION GAP`
-- **GAP-02 (Continuation Displacement):** `BLOCKED — SPECIFICATION GAP`
+- **GAP-01 (Mean Reversion Divergence):** `BLOCKED â€” SPECIFICATION GAP`
+- **GAP-02 (Continuation Displacement):** `BLOCKED â€” SPECIFICATION GAP`
 - **Proposed Closures:** `NOT YET AUTHORITATIVE` (Implementation cannot proceed until owner decisions DEC-GAP-01 and DEC-GAP-02 are specified).
 
 ---
@@ -213,25 +213,25 @@ EXECUTION LOGIC CHANGED: NO
 
 ```text
 GAP-01 DIVERGENCE:
-BLOCKED — SPECIFICATION GAP
+BLOCKED â€” SPECIFICATION GAP
 
 GAP-02 DISPLACEMENT:
-BLOCKED — SPECIFICATION GAP
+BLOCKED â€” SPECIFICATION GAP
 
 DIVERGENCE FORMULA:
-NOT SPECIFIED — REQUIRES OWNER DECISION
+NOT SPECIFIED â€” REQUIRES OWNER DECISION
 
 DISPLACEMENT FORMULA:
-NOT SPECIFIED — REQUIRES OWNER DECISION
+NOT SPECIFIED â€” REQUIRES OWNER DECISION
 
 NORMALIZATION:
 Clip01 CONVENTION AVAILABLE (STATIC ONLY)
 
 DATA QUALITY HANDLING:
-NOT SPECIFIED — REQUIRES OWNER DECISION
+NOT SPECIFIED â€” REQUIRES OWNER DECISION
 
 SCORE WEIGHTS:
-0.20 IN SOURCE (STATIC ONLY — REQUIRES CALIBRATION)
+0.20 IN SOURCE (STATIC ONLY â€” REQUIRES CALIBRATION)
 
 GRADE BOUNDARIES:
 INVARIANT CONTINUOUS SCORE (VERIFIED STATIC ONLY)
@@ -263,3 +263,4 @@ NOT APPROVED
 GIT PUSH:
 NOT APPROVED
 ```
+

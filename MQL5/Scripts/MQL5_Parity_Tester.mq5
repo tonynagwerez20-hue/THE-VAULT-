@@ -1,10 +1,10 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //|                                         MQL5_Parity_Tester.mq5   |
-//|                                  Copyright 2026, AlgoMind / ASAP |
+//|                                  Copyright 2026, Amigo / ASAP |
 //|                                        Zero-Cost Order-Flow EA   |
 //+------------------------------------------------------------------+
-#property copyright "AlgoMind / ASAP"
-#property link      "https://algomind.local"
+#property copyright "Amigo / ASAP"
+#property link      "https://Amigo.local"
 #property version   "1.00"
 #property script_show_inputs
 
@@ -19,7 +19,7 @@
 //+------------------------------------------------------------------+
 void OnStart()
   {
-   Print("=== ALGOMIND MQL5 ORDER-FLOW PARITY TESTER ===");
+   Print("=== Amigo MQL5 ORDER-FLOW PARITY TESTER ===");
 
    CAM_ProxyVWAP      vwap_engine;
    CAM_Footprint      footprint(0.01);
@@ -51,3 +51,4 @@ void OnStart()
                vwap_val, press_val, PressureStateToString(state),
                profile.GetPOC(), profile.GetVAH(), profile.GetVAL());
   }
+

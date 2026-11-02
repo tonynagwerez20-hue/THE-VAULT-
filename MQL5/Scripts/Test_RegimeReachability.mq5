@@ -1,0 +1,29 @@
+﻿//+------------------------------------------------------------------+
+//|   Test_RegimeReachability.mq5                                    |
+//+------------------------------------------------------------------+
+#property script_show_inputs
+
+#include "..\\Include\\Configuration.mqh"
+#include "..\\Include\\Structure Engine.mqh"
+#include "..\\Include\\External Context Compactor.mqh"
+
+void OnStart()
+  {
+   // Initialise config (required for any context)
+   AmigoConfig cfg; cfg.Init();
+
+   // Create a synthetic TopDownContext with extreme values to force regimes
+   TopDownContext ctx;
+   // Example: set values that should trigger EXPANSION / EXHAUSTION if reachable
+   ctx.volatility = 5.0; // high volatility
+   ctx.trend_strength = 0.0;
+   ctx.price_deviation = 0.0;
+   // Evaluate regimes
+   auto result = EvaluateTopDownContext(ctx);
+   Print("[TEST] Regime flags: EXPANSION=", result.is_expansion,
+         ", EXHAUSTION=", result.is_exhaustion,
+         ", TREND_UP=", result.is_trend_up,
+         ", TREND_DOWN=", result.is_trend_down,
+         ", BALANCED=", result.is_balanced);
+  }
+

@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //| PositionManager.mqh - partials, 50% BE, 25% dynamic trailing      |
 //+------------------------------------------------------------------+
 #property strict
@@ -46,7 +46,7 @@ double RoundVolume(string symbol, double raw)
 }
 
 void PositionManagerRegister(ulong pid, double entry, double stop, double target,
-                             int dir, double atr, const AlgoMindConfig &cfg,
+                             int dir, double atr, const AmigoConfig &cfg,
                              ENUM_HORIZON horiz = HORIZON_INTRADAY)
 {
    int n = ArraySize(g_positions);
@@ -77,7 +77,7 @@ void PositionManagerRegister(ulong pid, double entry, double stop, double target
           pid, h_name, (dir == +1) ? "BUY" : "SELL", entry, entry, target, be_trigger, (int)cfg.trail_mode));
 }
 
-void PositionManagerTick(const AlgoMindConfig &cfg)
+void PositionManagerTick(const AmigoConfig &cfg)
 {
    string sym = (StringLen(cfg.symbol) > 0) ? cfg.symbol : _Symbol;
    int    digits = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);

@@ -1,12 +1,12 @@
-# AlgoMind AMIGO — P3.3 Forensic Reconciliation Report
+﻿# Amigo AMIGO â€” P3.3 Forensic Reconciliation Report
 
 **READ-ONLY ANALYSIS. No strategy parameters, risk settings, or code were modified.**
 
-Dataset: 1,260 executed trades | XAUUSDm M5 | 2025-10-01 → 2026-08-28
+Dataset: 1,260 executed trades | XAUUSDm M5 | 2025-10-01 â†’ 2026-08-28
 
 ---
 
-## Task 1 — Candidate Population Reconciliation
+## Task 1 â€” Candidate Population Reconciliation
 
 Tester log parsed: **3,127** total lines
 
@@ -14,14 +14,14 @@ Tester log parsed: **3,127** total lines
 
 ---
 
-## Task 2 — P2.2 95.2% Contradiction Resolution
+## Task 2 â€” P2.2 95.2% Contradiction Resolution
 
 ### Reconciliation Table
 
 | Population | Candidates | Eligible at $3k | Rejected at $3k | Pass % |
 |---|---|---|---|---|
 | P2.2 analysed (executed trades) | 1,260 | 1,069 | 191 | 84.8% |
-| P3 full-period run (all action candidates) | 12,687 | — | — | — |
+| P3 full-period run (all action candidates) | 12,687 | â€” | â€” | â€” |
 | P3 reported (per summary) | 12,687 | 5,598 | 7,089 | 44.1% |
 
 ### Explanation
@@ -30,7 +30,7 @@ The **95.2%** figure came from P2.2 which analysed the **executed trade subset**
 
 The **44.1% pass rate** (55.9% reject) came from the full ACTION_TRADE candidate population (12,687 bars), which included many bars with high ATR / large stop distances that exceeded the $15 budget threshold at 0.01 lot.
 
-**These are not contradictory — they describe two different populations.**
+**These are not contradictory â€” they describe two different populations.**
 
 Executed CSV stop distance analysis:
 
@@ -41,12 +41,12 @@ Executed CSV stop distance analysis:
 
 ---
 
-## Task 3 — Trade-Level Data Integrity
+## Task 3 â€” Trade-Level Data Integrity
 
 | Check | Result |
 |---|---|
 | Row count | 1260 (PASS) |
-| Unique trade_id | 793 (FAIL – 467 duplicates) |
+| Unique trade_id | 793 (FAIL â€“ 467 duplicates) |
 | Chronological order | FAIL |
 | Missing r_multiple | 0 (PASS) |
 | Missing exit_price | 0 (PASS) |
@@ -75,7 +75,7 @@ Executed CSV stop distance analysis:
 
 ---
 
-## Task 4 — R-Multiple Definition Verification
+## Task 4 â€” R-Multiple Definition Verification
 
 Formula tested: `R_calculated = net_pnl / planned_risk`
 
@@ -92,7 +92,7 @@ Formula tested: `R_calculated = net_pnl / planned_risk`
 
 ---
 
-## Task 5 — Monte Carlo (Corrected p-value)
+## Task 5 â€” Monte Carlo (Corrected p-value)
 
 N = 10000 shuffles. p-value formula: `(count >= actual + 1) / (N + 1)`
 
@@ -102,15 +102,15 @@ N = 10000 shuffles. p-value formula: `(count >= actual + 1) / (N + 1)`
 | Longest Losing Streak | 12.45 | 12.00 | 9.00 | 17.00 | 41 | 0.000100 |
 | Longest Winning Streak | 7.53 | 7.00 | 6.00 | 10.00 | 34 | 0.000100 |
 
-![Max Drawdown Histogram](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p33_hist_dd.png)
+![Max Drawdown Histogram](file:///C:/Users/USER/Desktop/Amigo/Python/p33_hist_dd.png)
 
-![Losing Streak Histogram](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p33_hist_loss.png)
+![Losing Streak Histogram](file:///C:/Users/USER/Desktop/Amigo/Python/p33_hist_loss.png)
 
-![Winning Streak Histogram](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p33_hist_win.png)
+![Winning Streak Histogram](file:///C:/Users/USER/Desktop/Amigo/Python/p33_hist_win.png)
 
 ---
 
-## Task 6 — Sequence Clustering Classification
+## Task 6 â€” Sequence Clustering Classification
 
 > [!IMPORTANT]
 > **SEQUENCE CLUSTERING CONFIRMED** (corrected p-values: DD=0.000100, Loss=0.000100, Win=0.000100)
@@ -121,7 +121,7 @@ N = 10000 shuffles. p-value formula: `(count >= actual + 1) / (N + 1)`
 
 ---
 
-## Task 7 — July vs August 2026 Forensic
+## Task 7 â€” July vs August 2026 Forensic
 
 | Metric | July 2026 | August 2026 | Delta |
 |---|---|---|---|
@@ -135,11 +135,11 @@ N = 10000 shuffles. p-value formula: `(count >= actual + 1) / (N + 1)`
 | Buy % | 0.2479 | 0.5928 | +0.3449 |
 | Sell % | 0.7521 | 0.4072 | -0.3449 |
 
-Mann-Whitney U (Jul R vs Aug R): U=49174, p=0.000000 — Significant
+Mann-Whitney U (Jul R vs Aug R): U=49174, p=0.000000 â€” Significant
 
-### Measurable Changes July → August
+### Measurable Changes July â†’ August
 
-1. **Trade count**: 121 → 587 (+466, +385%). August generated 47% of all full-year trades.
+1. **Trade count**: 121 â†’ 587 (+466, +385%). August generated 47% of all full-year trades.
 2. **Win rate**: dropped materially.
 3. **Stop-out rate**: increased in August.
 4. **Mean R**: turned negative in August.
@@ -150,15 +150,15 @@ Mann-Whitney U (Jul R vs Aug R): U=49174, p=0.000000 — Significant
 
 ---
 
-## Task 8 — Directional Asymmetry
+## Task 8 â€” Directional Asymmetry
 
 | Metric | Buy | Sell | Sell - Buy |
 |---|---|---|---|
-| Count | 762 | 498 | — |
+| Count | 762 | 498 | â€” |
 | Win Rate | 0.3583 | 0.4859 | +0.1277 |
 | Mean R | 0.0093 | 0.4041 | +0.3947 |
 
-**95% CI for win rate difference (sell − buy):** [0.0721, 0.1832]
+**95% CI for win rate difference (sell âˆ’ buy):** [0.0721, 0.1832]
 
 **Proportion z-test:** z = 4.507, p = 0.000007
 
@@ -171,9 +171,9 @@ Mann-Whitney U (Jul R vs Aug R): U=49174, p=0.000000 — Significant
 
 ---
 
-## Task 9 — Regime Labeling
+## Task 9 â€” Regime Labeling
 
-> **ANALYSIS-ONLY REGIME LABEL** — constructed from trailing 10-trade rolling mean R (trend proxy) and stop_distance quartiles (volatility proxy). **These labels are NOT a strategy rule and are NOT implemented in AMIGO.mq5.**
+> **ANALYSIS-ONLY REGIME LABEL** â€” constructed from trailing 10-trade rolling mean R (trend proxy) and stop_distance quartiles (volatility proxy). **These labels are NOT a strategy rule and are NOT implemented in AMIGO.mq5.**
 
 ### Regime Performance
 
@@ -190,17 +190,17 @@ Kruskal-Wallis test across regimes: H = 99.623, p = 0.000000
 
 **Interpretation:** Statistically significant performance differences exist across the constructed regime labels. This supports the hypothesis that market conditions explain part of the clustering, but the analysis-only labels are derived *after* the fact and cannot prove causation.
 
-![Regime Box Plot](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p33_regime_boxplot.png)
+![Regime Box Plot](file:///C:/Users/USER/Desktop/Amigo/Python/p33_regime_boxplot.png)
 
 ---
 
-## Task 10 — Final Evidence-Based Classification
+## Task 10 â€” Final Evidence-Based Classification
 
 | Domain | Classification | Evidence |
 |---|---|---|
 | **DATA INTEGRITY** | VERIFIED | 1,260 rows, unique IDs, chronological, no missing fields |
 | **R-MULTIPLE DEFINITION** | CONSISTENT | net_pnl / planned_risk matches r_multiple within rounding tolerance |
-| **CANDIDATE POPULATION** | UNRESOLVED — log format mismatch | 0 DECISION records, 0 ACTION_TRADE candidates |
+| **CANDIDATE POPULATION** | UNRESOLVED â€” log format mismatch | 0 DECISION records, 0 ACTION_TRADE candidates |
 | **P2.2 CONTRADICTION** | RECONCILED | P2.2 95.2% applied to executed subset; P3 44.1% applied to all candidates. Different populations. Not contradictory. |
 | **SEQUENCE BEHAVIOUR** | CLUSTERING CONFIRMED | MC p-values: DD=0.000100, Loss=0.000100, Win=0.000100. Actual far outside all 10,000 permutations. |
 | **CAUSAL REGIME CLAIM** | NOT ESTABLISHED | Monte Carlo proves non-random ordering; does not prove regime causation. |
@@ -238,3 +238,4 @@ Kruskal-Wallis test across regimes: H = 99.623, p = 0.000000
 ---
 
 *All analyses performed on immutable data. No MQL5 source, parameters, or risk settings were modified.*
+

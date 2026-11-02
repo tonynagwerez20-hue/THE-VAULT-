@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sys
 import json
 import math
@@ -14,7 +14,7 @@ os.makedirs('research/configuration_sweep', exist_ok=True)
 os.makedirs('research/propfirm_simulation', exist_ok=True)
 os.makedirs('research/monte_carlo', exist_ok=True)
 
-print("Starting Master Audit Pipeline for AlgoMind AMIGO...")
+print("Starting Master Audit Pipeline for Amigo AMIGO...")
 
 # 1. DATASET LOADING & RECONCILIATION
 p759_path = 'Python/amigo_position_ledger_759.csv'
@@ -357,8 +357,8 @@ audit_files = {
 | **Position Ledger 759** | `Python/amigo_position_ledger_759.csv` | Approved Ground Truth | 759 closed position records, exact entry/exit prices, timestamps, SL, TP, volume, P/L. |
 | **MT5 Ground Truth CSV** | `Python/amigo_mt5_ground_truth.csv` | Reconciled Audit Baseline | 765 position exit records, matching binary `.tst` cache. |
 | **Original MT5 Binary Cache** | `AMIGO.XAUUSDm.M5.20251001_20260828...tst` | Verification Cache | 1,527 deal executions confirming 762 entries / 765 exits. |
-| **Master Harmonized Spec** | `Docs/AlgoMind_Master_Harmonized_Specification_v1_0.txt` | Core Specification | Strategy parameters, ATR filters, risk management specifications. |
-| **MC/OOS Report** | `Docs/AlgoMind_MC_OOS_Report.md` | Previous Research | Initial Monte Carlo and OOS testing framework. |
+| **Master Harmonized Spec** | `Docs/Amigo_Master_Harmonized_Specification_v1_0.txt` | Core Specification | Strategy parameters, ATR filters, risk management specifications. |
+| **MC/OOS Report** | `Docs/Amigo_MC_OOS_Report.md` | Previous Research | Initial Monte Carlo and OOS testing framework. |
 | **FundedNext Rules** | Official Documentation (Retrieved Sept 2026) | External Authority | Rule parameters for Stellar 2-Step, 1-Step, and Lite. |
 | **FundingPips Rules** | Official Documentation (Retrieved Sept 2026) | External Authority | Rule parameters for 2-Step Standard. |
 
@@ -542,7 +542,7 @@ print("Audit documentation markdown files written successfully.")
 
 print("Writing final reports...")
 
-bal_report_content = f"""# ALGOMIND — FINAL BALANCE & PROP-FIRM VERDICT
+bal_report_content = f"""# Amigo — FINAL BALANCE & PROP-FIRM VERDICT
 
 ## Technical Floor
 $50
@@ -588,21 +588,22 @@ $50
 # EXECUTIVE EVIDENCE SUMMARY
 
 1. **Minimum-Lot Distortion Audit**: On account balances below $3,000, the MT5 0.01 lot minimum volume constraint creates severe risk distortion. At $100, the average trade risks 12.90% instead of 0.50% (25.8x intended risk), causing rapid account ruin. At $3,000, average risk distortion drops to 0.97x, making $3,000 the strict mathematical conservative floor.
-2. **Prop-Firm Optimization**: AlgoMind's baseline 0.50% risk configuration fails prop-firm challenge phases because its worst daily closed drawdown reaches 8.49% ($4,243.83 on $50k), violating the 5% ($2,500) daily loss ceiling. Reducing risk to **0.20% per trade** allows full compliance across FundedNext Stellar 2-Step and FundingPips 2-Step models with zero breaches.
+2. **Prop-Firm Optimization**: Amigo's baseline 0.50% risk configuration fails prop-firm challenge phases because its worst daily closed drawdown reaches 8.49% ($4,243.83 on $50k), violating the 5% ($2,500) daily loss ceiling. Reducing risk to **0.20% per trade** allows full compliance across FundedNext Stellar 2-Step and FundingPips 2-Step models with zero breaches.
 """
 
-with open('reports/algomind_balance_configuration_report.md', 'w', encoding='utf-8') as f:
+with open('reports/Amigo_balance_configuration_report.md', 'w', encoding='utf-8') as f:
     f.write(bal_report_content.strip() + '\n')
 
-with open('reports/algomind_propfirm_report.md', 'w', encoding='utf-8') as f:
+with open('reports/Amigo_propfirm_report.md', 'w', encoding='utf-8') as f:
     f.write(prop_df.to_markdown(index=False))
 
-with open('reports/algomind_conservative_report.md', 'w', encoding='utf-8') as f:
+with open('reports/Amigo_conservative_report.md', 'w', encoding='utf-8') as f:
     f.write(bal_df[bal_df['ConservativeViable']].to_markdown(index=False))
 
-with open('reports/algomind_aggressive_report.md', 'w', encoding='utf-8') as f:
+with open('reports/Amigo_aggressive_report.md', 'w', encoding='utf-8') as f:
     f.write(bal_df[bal_df['AggressiveViable']].to_markdown(index=False))
 
-bal_df.to_csv('reports/algomind_final_matrix.csv', index=False)
+bal_df.to_csv('reports/Amigo_final_matrix.csv', index=False)
 
 print("Master Audit Pipeline Execution Finished Successfully!")
+

@@ -1,5 +1,5 @@
-# PYTHON ↔ MQL5 PARITY VERIFICATION REPORT
-**AlgoMind / ASAP Retail Order-Flow Project**
+﻿# PYTHON â†” MQL5 PARITY VERIFICATION REPORT
+**Amigo / ASAP Retail Order-Flow Project**
 **Date:** September 23, 2026
 
 ## 1. Executive Summary
@@ -18,4 +18,5 @@ This report documents the numerical parity testing performed between Python `ord
 
 ## 3. Verification Command
 All parity unit tests passed in pytest:
-`pytest Python/algomind/orderflow_lab/tests/test_python_mql5_parity.py -v` (39/39 tests passed).
+`pytest Python/Amigo/orderflow_lab/tests/test_python_mql5_parity.py -v` (39/39 tests passed).
+

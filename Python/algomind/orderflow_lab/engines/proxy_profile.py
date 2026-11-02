@@ -1,4 +1,4 @@
-"""Proxy Activity Profile Engine (spec §17).
+﻿"""Proxy Activity Profile Engine (spec §17).
 
 Builds a price-binned activity histogram and derives:
   - Proxy POC  (Point of Control – price with highest observed activity)
@@ -16,7 +16,7 @@ Value-area algorithm:
 from __future__ import annotations
 from typing import Dict, List
 
-from algomind.orderflow_lab.schema import (
+from Amigo.orderflow_lab.schema import (
     FootprintBin, ProxyProfileSnapshot, DataQualityTag
 )
 
@@ -115,3 +115,4 @@ class ProxyProfileEngine:
             low_activity_nodes=sorted(lvn),
             quality_tag=DataQualityTag.PROXY,
         )
+

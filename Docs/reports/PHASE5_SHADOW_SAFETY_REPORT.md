@@ -1,8 +1,8 @@
-# PHASE 5 — SHADOW SAFETY AUDIT REPORT
+﻿# PHASE 5 â€” SHADOW SAFETY AUDIT REPORT
 
 **Document Status**: Authoritative Engineering Audit  
 **Date**: 24 September 2026  
-**System**: AlgoMind / ASAP Retail Order-Flow System  
+**System**: Amigo / ASAP Retail Order-Flow System  
 
 ---
 
@@ -48,3 +48,4 @@ if(g_cfg.shadow_only)
 2. **Hard Intercept**: `OrderSend` is unreachable while `InpShadowOnly = true`.
 3. **Demo Account Constraint**: Active server is `Exness-MT5Trial` (Demo).
 4. **Safety Status**: **VERIFIED SAFE FOR SHADOW RUNTIME**.
+

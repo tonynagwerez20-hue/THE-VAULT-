@@ -1,4 +1,4 @@
-"""EV Trading Labs Spot FX / Gold Adapter.
+﻿"""EV Trading Labs Spot FX / Gold Adapter.
 
 Ingests free historical XAUUSD retail tick / bar data samples.
 Appends strict provenance metadata: DataQualityTag = LIMITED.
@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 import pandas as pd
 from typing import List
-from algomind.orderflow_lab.schema import (
+from Amigo.orderflow_lab.schema import (
     OrderFlowTick, SourceMetadata, DataQualityTag
 )
 
@@ -70,3 +70,4 @@ class EVLabsAdapter:
                 quality_tag=DataQualityTag.LIMITED
             ))
         return ticks
+

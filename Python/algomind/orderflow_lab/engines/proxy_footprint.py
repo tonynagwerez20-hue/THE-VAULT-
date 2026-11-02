@@ -1,4 +1,4 @@
-"""Proxy Footprint Engine (spec §18, §20, §21 & Master Prompt).
+﻿"""Proxy Footprint Engine (spec §18, §20, §21 & Master Prompt).
 
 Consumes FootprintBin data from PriceBinEngine and produces:
   - ProxyFootprintSnapshot (per-bar aggregate)
@@ -16,7 +16,7 @@ from __future__ import annotations
 from typing import Dict, Optional, Literal
 from enum import Enum
 
-from algomind.orderflow_lab.schema import (
+from Amigo.orderflow_lab.schema import (
     FootprintBin, ProxyFootprintSnapshot, PressureState, DataQualityTag
 )
 
@@ -218,3 +218,4 @@ class ProxyFootprintEngine:
     @property
     def activity_baseline(self) -> float:
         return self._activity_baseline
+

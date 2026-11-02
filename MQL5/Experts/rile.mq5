@@ -1,9 +1,9 @@
-//+------------------------------------------------------------------+
-//|                                                     AlgoMind.mq5 |
+﻿//+------------------------------------------------------------------+
+//|                                                     Amigo.mq5 |
 //|                    Deterministic MQL5-first trading core         |
 //|                    (ML gate present but disabled by default)     |
 //+------------------------------------------------------------------+
-#property copyright "AlgoMind"
+#property copyright "Amigo"
 #property version   "1.00"
 #property strict
 
@@ -60,8 +60,8 @@ input double InpCFTCMaxInfluence  = 0.05;
 input double InpOptionsMaxInfl    = 0.10;
 
 input group "=== Bridge ==="
-input string InpBridgeInbox       = "algomind_ext_in.txt";
-input string InpBridgeOutbox      = "algomind_mkt_out.txt";
+input string InpBridgeInbox       = "Amigo_ext_in.txt";
+input string InpBridgeOutbox      = "Amigo_mkt_out.txt";
 input int    InpStaleThresholdSec = 120;
 
 input group "=== ML (Phase 8 - disabled by default) ==="
@@ -129,7 +129,7 @@ int OnInit()
    //--- Without this OnTimer never fires and partials/trailing never run.
    EventSetTimer(5);
 
-   LogMsg(LOG_INFO, "INIT", StringFormat("AlgoMind started on %s tf=%d ML=%s",
+   LogMsg(LOG_INFO, "INIT", StringFormat("Amigo started on %s tf=%d ML=%s",
           g_symbol, (int)InpTFExec, InpMLEnabled?"ON":"OFF"));
    return INIT_SUCCEEDED;
 }
@@ -278,7 +278,7 @@ void OnClosedBar()
    TradeIntent ti;
    ZeroMemory(ti);
    ti.intent_id        = decision_id;
-   ti.schema_version   = ALGOMIND_SCHEMA_VERSION;
+   ti.schema_version   = Amigo_SCHEMA_VERSION;
    ti.strategy_version = 1;
    ti.feature_version  = g_feat.feature_version;
    ti.model_version    = ml.available ? 1 : 0;

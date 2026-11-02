@@ -1,4 +1,4 @@
-# futures_ohlcv_adapter.py
+﻿# futures_ohlcv_adapter.py
 """Futures OHLCV Adapter.
 
 Ingests GC/MGC OHLCV files from a free public source (axb0306 repository) or a local fallback directory.
@@ -13,7 +13,7 @@ import glob
 import pandas as pd
 from typing import List
 
-from algomind.orderflow_lab.schema import SourceMetadata, DataQualityTag
+from Amigo.orderflow_lab.schema import SourceMetadata, DataQualityTag
 
 
 class FuturesOHLCVAdapter:
@@ -25,7 +25,7 @@ class FuturesOHLCVAdapter:
     All timestamps are normalised to ISO‑8601 UTC.
     """
 
-    DEFAULT_DATA_DIR = "C:/Users/USER/Desktop/ALGOMIND/Data/futures"
+    DEFAULT_DATA_DIR = "C:/Users/USER/Desktop/Amigo/Data/futures"
 
     def __init__(self, data_path: str | None = None):
         """Initialize the adapter.
@@ -112,3 +112,4 @@ class FuturesOHLCVAdapter:
             full_df.sort_values("timestamp", inplace=True)
             full_df.reset_index(drop=True, inplace=True)
             return full_df
+

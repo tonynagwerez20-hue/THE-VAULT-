@@ -1,18 +1,18 @@
-# PHASE 5 — RUNTIME EVIDENCE REPORT
+﻿# PHASE 5 â€” RUNTIME EVIDENCE REPORT
 
 **Document Status**: Authoritative Engineering Audit  
 **Date**: 24 September 2026  
-**System**: AlgoMind / ASAP Retail Order-Flow System  
+**System**: Amigo / ASAP Retail Order-Flow System  
 **Environment**: Windows 10, MetaTrader 5 (Terminal PID 7964), MQL5, Python 3.11  
-**Operating Mode**: SHADOW ONLY — NO LIVE TRADING  
-**Level 3 Status**: LEVEL 3 UNVERIFIED — MT5 RUNTIME RE-ATTACHMENT PENDING  
+**Operating Mode**: SHADOW ONLY â€” NO LIVE TRADING  
+**Level 3 Status**: LEVEL 3 UNVERIFIED â€” MT5 RUNTIME RE-ATTACHMENT PENDING  
 **Level 4 Status**: NOT AUTHORIZED  
 
 ---
 
 ## 1. Executive Summary
 
-This report documents the empirical runtime verification state of the AlgoMind / ASAP Retail Order-Flow System for Phase 5.
+This report documents the empirical runtime verification state of the Amigo / ASAP Retail Order-Flow System for Phase 5.
 
 While the new MQL5 order-flow modules (`AM_*.mqh`) and `InpShadowOnly = true` safety gate were successfully wired into `AMIGO.mq5` and compiled cleanly (0 errors, `AMIGO.ex5` 86,210 bytes deployed), the active MetaTrader 5 GUI process (`terminal64.exe` PID 7964) attached to `XAUUSD, M5` was last initialized at `00:05:23.845` on 2026-09-24 and has not yet reloaded the updated binary.
 
@@ -24,7 +24,7 @@ Per Phase 5 Governance Rule 2.1 (No Invention) and Rule 16 (MT5 GUI Control Limi
 
 | Property | Value / Hash |
 | :--- | :--- |
-| **Repository Path** | `C:\Users\USER\Desktop\ALGOMIND` |
+| **Repository Path** | `C:\Users\USER\Desktop\Amigo` |
 | **Git Branch** | `main` |
 | **Git Commit** | `19806e4d3dad747d5c428ee05cf707a6e1f42bf2` |
 | **MetaEditor Path** | `C:\Program Files\MetaTrader 5\metaeditor64.exe` |
@@ -67,3 +67,4 @@ SHA256    4E86ED91142BB6E2A4B07A8E1C3C4D7A57535437E30EA53A22A90617070564ED  AM_F
 | **Flow Events (`CAM_FlowEvents`)** | `AMIGO.mq5` L103, L312 | 0 Errors | Pending EA Reload | `IMPLEMENTED BUT UNVERIFIED AT RUNTIME` |
 | **External Bridge Transport** | `External Context Compactor.mqh` | 0 Errors | Active (`ReadExternalContext`) | `IMPLEMENTED AND VERIFIED` |
 | **Legacy Strategy Scoring** | `Strategy Engine.mqh` | 0 Errors | Active (`[DECISION]`, `[DIAG]`) | `IMPLEMENTED AND VERIFIED` |
+

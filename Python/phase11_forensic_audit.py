@@ -1,6 +1,6 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
-ALGOMIND PHASE 11 — FORENSIC VALIDATION AUDIT
+Amigo PHASE 11 — FORENSIC VALIDATION AUDIT
 ==============================================
 This script independently re-derives every major conclusion from raw CSV data.
 It does NOT modify strategy logic. Read-only audit.
@@ -439,7 +439,7 @@ print("=" * 80)
 
 # Audit existing MC methodology
 print("EXISTING MONTE CARLO METHODOLOGY AUDIT:")
-print("  algomind_monte_carlo.py:")
+print("  Amigo_monte_carlo.py:")
 print("    - Uses SYNTHETIC outcomes (not historical trades)")
 print("    - Perfect fractional compounding (no lot rounding)")
 print("    - No margin check, no spread, no slippage, no commission")
@@ -920,7 +920,7 @@ print("GENERATING REPORTS...")
 print("=" * 80)
 
 # --- REPORT 1: Minimum Viable Balance Audit ---
-mvb_report = """# ALGOMIND MINIMUM VIABLE BALANCE FORENSIC AUDIT
+mvb_report = """# Amigo MINIMUM VIABLE BALANCE FORENSIC AUDIT
 
 ## Section 1: Broker Specification
 
@@ -1074,13 +1074,13 @@ mvb_report += f"""
 | $50 margin = $38.70 | Fixed | Dynamic: $38.56-$53.31 | **DISCREPANCY** |
 """
 
-with open('Docs/reports/algomind_minimum_viable_balance_audit.md', 'w', encoding='utf-8') as f:
+with open('Docs/reports/Amigo_minimum_viable_balance_audit.md', 'w', encoding='utf-8') as f:
     f.write(mvb_report.strip() + '\n')
 
-print("  Written: Docs/reports/algomind_minimum_viable_balance_audit.md")
+print("  Written: Docs/reports/Amigo_minimum_viable_balance_audit.md")
 
 # --- REPORT 2: Prop-Firm Forensic Audit ---
-prop_report = f"""# ALGOMIND PROP-FIRM FORENSIC AUDIT
+prop_report = f"""# Amigo PROP-FIRM FORENSIC AUDIT
 
 ## $5,000 Account
 
@@ -1162,13 +1162,13 @@ prop_report += f"""
 | Floating P&L in daily loss calc | Some firms include floating | **NOT MODELED — only closed P&L tracked** |
 """
 
-with open('Docs/reports/algomind_propfirm_forensic_audit.md', 'w', encoding='utf-8') as f:
+with open('Docs/reports/Amigo_propfirm_forensic_audit.md', 'w', encoding='utf-8') as f:
     f.write(prop_report.strip() + '\n')
 
-print("  Written: Docs/reports/algomind_propfirm_forensic_audit.md")
+print("  Written: Docs/reports/Amigo_propfirm_forensic_audit.md")
 
 # --- REPORT 3: OOS-Live Forensic Audit ---
-oos_report = f"""# ALGOMIND OOS-LIVE FORENSIC AUDIT
+oos_report = f"""# Amigo OOS-LIVE FORENSIC AUDIT
 
 ## What "100% Parity" Actually Means
 
@@ -1200,7 +1200,7 @@ regardless of account size.
 2. `MQL5/Include/Regime Engine.mqh` — Regime detection: **NO account dependency**
 3. `MQL5/Include/Risk Engine.mqh` — Position sizing: **Uses equity for sizing only**
 4. `Python/run_parity_pipeline.py` — Parity engine: **Balance used only for sizing/margin**
-5. `Python/algomind_monte_carlo.py` — MC engine: **Equity scales risk, not signals**
+5. `Python/Amigo_monte_carlo.py` — MC engine: **Equity scales risk, not signals**
 
 ### Finding
 No hidden account-dependent logic was found in strategy signal generation, regime detection,
@@ -1221,7 +1221,7 @@ or trade scoring. Account size affects **only**: lot sizing, margin availability
 
 ## Monte Carlo Methodology Comparison
 
-| Property | algomind_monte_carlo.py | run_parity_pipeline.py MC | Phase 11 Audit MC |
+| Property | Amigo_monte_carlo.py | run_parity_pipeline.py MC | Phase 11 Audit MC |
 |:---------|:------------------------|:--------------------------|:------------------|
 | Data source | Synthetic (assumed win rates) | Historical PnLs (759 trades) | Historical PnLs (759 trades) |
 | Sampling | Binomial win/loss | Bootstrap w/ replacement | Bootstrap w/ replacement |
@@ -1235,15 +1235,15 @@ or trade scoring. Account size affects **only**: lot sizing, margin availability
 
 > [!IMPORTANT]
 > The previous Monte Carlo implementations do **NOT** model small-account execution constraints.
-> `algomind_monte_carlo.py` uses synthetic outcomes with no lot constraints.
+> `Amigo_monte_carlo.py` uses synthetic outcomes with no lot constraints.
 > `run_parity_pipeline.py` uses static lot sizing computed once from the initial balance.
 > Only the Phase 11 audit MC correctly models dynamic equity-based lot sizing with per-trade margin checks.
 """
 
-with open('Docs/reports/algomind_oos_live_forensic_audit.md', 'w', encoding='utf-8') as f:
+with open('Docs/reports/Amigo_oos_live_forensic_audit.md', 'w', encoding='utf-8') as f:
     f.write(oos_report.strip() + '\n')
 
-print("  Written: Docs/reports/algomind_oos_live_forensic_audit.md")
+print("  Written: Docs/reports/Amigo_oos_live_forensic_audit.md")
 
 # =============================================================================
 # SECTION 18: FINAL DECISION MATRIX
@@ -1358,3 +1358,4 @@ READY FOR PRODUCTION:   NO — REQUIRES REVIEW OF DISCREPANCIES
 print("=" * 80)
 print("Phase 11 Forensic Audit Complete.")
 print("=" * 80)
+

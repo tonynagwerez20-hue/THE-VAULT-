@@ -1,9 +1,9 @@
-//+------------------------------------------------------------------+
-//|                                                     AlgoMind.mq5 |
+﻿//+------------------------------------------------------------------+
+//|                                                     Amigo.mq5 |
 //|                    Deterministic MQL5-first trading core         |
 //|                    (ML gate present but disabled by default)     |
 //+------------------------------------------------------------------+
-#property copyright "AlgoMind"
+#property copyright "Amigo"
 #property version   "1.00"
 #property strict
 
@@ -29,7 +29,7 @@
 #include <External Context Compactor.mqh>
 #include <ML gate hook.mqh>
 
-//--- Order-Flow ASAP / AlgoMind Native Engines
+//--- Order-Flow ASAP / Amigo Native Engines
 #include <AM_FlowQuality.mqh>
 #include <AM_ProxyVWAP.mqh>
 #include <AM_ActivityProfile.mqh>
@@ -82,8 +82,8 @@ input double InpScoreThreshold     = 0.35;    // Min score required to trade
 input double InpScoreMargin        = 0.05;    // Min score difference between long & short
 
 input group "=== Bridge ==="
-input string InpBridgeInbox       = "algomind_ext_in.txt";
-input string InpBridgeOutbox      = "algomind_mkt_out.txt";
+input string InpBridgeInbox       = "Amigo_ext_in.txt";
+input string InpBridgeOutbox      = "Amigo_mkt_out.txt";
 input int    InpStaleThresholdSec = 120;
 
 input group "=== ML (Phase 8 - disabled by default) ==="
@@ -177,7 +177,7 @@ int OnInit()
    //--- Without this, OnTimer never fires and partials/trailing never run.
    EventSetTimer(5);
 
-   LogMsg(LOG_INFO, "INIT", StringFormat("AlgoMind started on %s tf=%d ML=%s",
+   LogMsg(LOG_INFO, "INIT", StringFormat("Amigo started on %s tf=%d ML=%s",
           g_symbol, (int)InpTFExec, InpMLEnabled?"ON":"OFF"));
 
    //--- Task 1 & 2: Complete Empirical Runtime Symbol & OrderCalcProfit Audit
@@ -557,7 +557,7 @@ void OnClosedBar()
    TradeIntent ti;
    ZeroMemory(ti);
    ti.intent_id        = decision_id;
-   ti.schema_version   = ALGOMIND_SCHEMA_VERSION;
+   ti.schema_version   = Amigo_SCHEMA_VERSION;
    ti.strategy_version = 1;
    ti.feature_version  = g_feat.feature_version;
    ti.model_version    = ml.available ? 1 : 0;
@@ -627,3 +627,4 @@ void OnTimer()
    PositionManagerTick(g_cfg);
 }
 //+------------------------------------------------------------------+ // force timestamp change
+

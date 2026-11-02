@@ -1,5 +1,5 @@
-# PYTHON ↔ MQL5 NUMERICAL PARITY VERIFICATION
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# PYTHON â†” MQL5 NUMERICAL PARITY VERIFICATION
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 
 ---
@@ -8,7 +8,7 @@
 Numerical parity testing was executed via pytest using deterministic tick sequences:
 
 ```powershell
-pytest Python/algomind/orderflow_lab/tests/test_python_mql5_parity.py -v
+pytest Python/Amigo/orderflow_lab/tests/test_python_mql5_parity.py -v
 ```
 
 | Metric | Python File & Function | MQL5 File & Class | Input Test Vector | Tolerance | Result | Status Label |
@@ -27,3 +27,4 @@ pytest Python/algomind/orderflow_lab/tests/test_python_mql5_parity.py -v
 - **Python Runtime**: Python 3.14.7, pytest-9.1.1
 - **MQL5 Simulator Engine**: Direct struct and class parity runner (`MQL5ParitySimulator`) matching C++ MQL5 logic line-by-line.
 - **Standalone MQL5 Script**: `MQL5_Parity_Tester.mq5` compiled for MT5 Terminal verification.
+

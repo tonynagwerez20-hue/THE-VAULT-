@@ -1,4 +1,4 @@
-"""Independent Verification Suite: Six Horizon x Strategy Combinations.
+﻿"""Independent Verification Suite: Six Horizon x Strategy Combinations.
 
 Validates the Three Trading Horizons (SCALPING, INTRADAY, SWING)
 across the two core strategy families (MEAN_REVERSION, TREND_CONTINUATION)
@@ -21,18 +21,18 @@ Validates:
 """
 
 import pytest
-from algomind.schema import Horizon, DataQuality, ExternalContext
-from algomind.account_execution import (
+from Amigo.schema import Horizon, DataQuality, ExternalContext
+from Amigo.account_execution import (
     AccountIdentification, SymbolCapabilityProfile,
     AccountClass, MinLotStatus, FeasibilityStatus, Action,
     evaluate_account_execution
 )
-from algomind.risk_controller import (
+from Amigo.risk_controller import (
     RiskController, RiskState, AdaptiveRiskResult,
     interpolate_risk_curve, interpolate_distortion_curve,
     DEFAULT_RISK_CURVE
 )
-from algomind.position_manager import (
+from Amigo.position_manager import (
     PositionManager, PositionDirection, TrailingMode, SymbolInfo
 )
 
@@ -414,3 +414,4 @@ class TestSwingTrendContinuation:
         # Price rallies to 2036.00 -> Trailing stop ratchets to 2000 + 36 * 0.75 = 2027.00
         pm.on_tick(position_id=105, current_price=2036.00, sym_info=sym)
         assert pos.current_stop == 2027.00
+

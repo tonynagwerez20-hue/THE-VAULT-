@@ -1,4 +1,4 @@
-"""
+﻿"""
 Parse the correct MT5 tester log for DECISION records.
 Uses a line-by-line approach with flexible regex.
 """
@@ -28,13 +28,13 @@ for LOG_PATH in LOG_PATHS:
     action_count= sum(1 for l in lines if "[ACTION_TRADE]" in l or "ACTION_TRADE" in l)
     minlot_count= sum(1 for l in lines if "MIN_LOT" in l)
     score_count = sum(1 for l in lines if "reason=" in l)
-    algomind_ct = sum(1 for l in lines if "[AlgoMind]" in l or "AlgoMind" in l)
+    Amigo_ct = sum(1 for l in lines if "[Amigo]" in l or "Amigo" in l)
 
     print(f"Lines with [DECISION]     : {dec_count:,}")
     print(f"Lines with ACTION_TRADE   : {action_count:,}")
     print(f"Lines with MIN_LOT        : {minlot_count:,}")
     print(f"Lines with reason=        : {score_count:,}")
-    print(f"Lines with AlgoMind       : {algomind_ct:,}")
+    print(f"Lines with Amigo       : {Amigo_ct:,}")
 
     # Print first 5 DECISION lines raw
     if dec_count > 0:
@@ -52,3 +52,4 @@ for LOG_PATH in LOG_PATHS:
         print("\nNo [DECISION] lines found. Showing first 5 lines:")
         for l in lines[:5]:
             print(f"  {repr(l[:200])}")
+

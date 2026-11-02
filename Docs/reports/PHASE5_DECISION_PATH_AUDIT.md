@@ -1,8 +1,8 @@
-# PHASE 5 — DECISION PATH AUDIT & INFLUENCE MATRIX
+﻿# PHASE 5 â€” DECISION PATH AUDIT & INFLUENCE MATRIX
 
 **Document Status**: Authoritative Engineering Audit  
 **Date**: 24 September 2026  
-**System**: AlgoMind / ASAP Retail Order-Flow System  
+**System**: Amigo / ASAP Retail Order-Flow System  
 
 ---
 
@@ -15,7 +15,7 @@ This document maps every component in the system to determine whether it is acti
 | **MT5 Price Ticks / Bar Rates** | YES | YES | YES | YES | YES | YES | YES | `IMPLEMENTED AND VERIFIED` |
 | **Legacy Delta A & B (`OrderFlow.mqh`)** | YES | YES | YES | YES (`fusion`) | YES (`pressure`) | NO | YES | `IMPLEMENTED AND VERIFIED` |
 | **Structure Engine (BOS/ChoCh/Swings)** | YES | YES | YES | YES | YES | YES (`sl`) | YES | `IMPLEMENTED AND VERIFIED` |
-| **External Context (`algomind_ext_in.txt`)**| YES | YES | YES | NO | YES (`cftc`/`options`) | YES (`DQ_STALE`) | YES | `IMPLEMENTED AND VERIFIED` |
+| **External Context (`Amigo_ext_in.txt`)**| YES | YES | YES | NO | YES (`cftc`/`options`) | YES (`DQ_STALE`) | YES | `IMPLEMENTED AND VERIFIED` |
 | **Proxy Footprint (`CAM_Footprint`)** | YES (In Code) | PENDING | NO | NO | NO | NO | NO | `IMPLEMENTED BUT NOT CONNECTED` |
 | **Cumulative Delta (`GetCumulativeDelta`)**| YES (In Code) | PENDING | NO | NO | NO | NO | NO | `IMPLEMENTED BUT NOT CONNECTED` |
 | **Proxy VWAP (`CAM_ProxyVWAP`)** | YES (In Code) | PENDING | NO | NO | NO | NO | NO | `IMPLEMENTED BUT NOT CONNECTED` |
@@ -33,3 +33,4 @@ This document maps every component in the system to determine whether it is acti
 1. **New Order-Flow Engines are SHADOW ONLY**: `AM_Footprint`, `AM_ProxyVWAP`, `AM_ActivityProfile`, `AM_FlowPressure`, and `AM_FlowEvents` execute calculations and publish `[FLOW_DIAG]` logs, but their outputs do **NOT** enter `FeatureSnapshot` or modify `ScoreStrategies()` or `EvaluateRegime()`.
 2. **Legacy Delta Retains Live Scoring Authority**: Strategy scoring (`MR_Evidence` and `ContinuationEvidence`) is driven strictly by `f.fusion`, `f.dev_vwap_atr`, `f.structure_dir`, `f.bull_flip`, `f.bear_flip`, and `f.surge`, which are populated by `BuildFeatureVector()` using `OrderFlow.mqh`.
 3. **Fail-Closed Safety**: Any disconnect, staleness, or missing file in the external context immediately triggers `DQ_STALE_EXTERNAL` or `DQ_FATAL`, causing `Decide()` to return `ACTION_NO_TRADE` or `ACTION_WAIT`.
+

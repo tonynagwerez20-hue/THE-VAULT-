@@ -1,5 +1,5 @@
-# PYTHON ↔ MT5 RUNTIME PARITY REPORT
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# PYTHON â†” MT5 RUNTIME PARITY REPORT
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 
 ---
@@ -21,3 +21,4 @@
 ## 2. Parity Test Execution
 - **Pytest Runner**: `test_python_mql5_parity.py` (2/2 parity tests PASSED).
 - **MQL5 Parity Tester**: `MQL5_Parity_Tester.mq5` compiled cleanly with 0 errors via `metaeditor64.exe`.
+

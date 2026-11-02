@@ -1,11 +1,11 @@
-# ALGOMIND PHASE 6 LEVEL 3 RUNTIME EVENT-PATH ISOLATION REPORT
+﻿# Amigo PHASE 6 LEVEL 3 RUNTIME EVENT-PATH ISOLATION REPORT
 
-**Project:** AlgoMind / ASAP Retail Order-Flow System  
+**Project:** Amigo / ASAP Retail Order-Flow System  
 **Symbol / Timeframe:** `XAUUSD` / `M5`  
 **Execution Environment:** Windows 10, MetaTrader 5 (PID 7964), Exness Demo (`Exness-MT5Trial`)  
 **Operating Mode:** SHADOW ONLY (`InpShadowOnly = true`)  
 **Report Date:** 2026-09-24  
-**Authoritative Level 3 Status:** `LEVEL 3 — PARTIALLY VERIFIED`  
+**Authoritative Level 3 Status:** `LEVEL 3 â€” PARTIALLY VERIFIED`  
 **Level 4 Live Trading:** `NOT AUTHORIZED`  
 **Git Commit / Push:** `NOT APPROVED`
 
@@ -42,10 +42,10 @@
 
 ## 3. B. FRESH RUNTIME EVIDENCE
 
-### 1. Initialization Evidence (08:01:32.853 AM) — VERIFIED RUNTIME:
+### 1. Initialization Evidence (08:01:32.853 AM) â€” VERIFIED RUNTIME:
 ```text
-2026.09.24 08:00:15.043	AMIGO (XAUUSD,M5)	[AlgoMind][INFO][DEINIT] reason=1
-2026.09.24 08:01:32.853	AMIGO (XAUUSD,M5)	[AlgoMind][INFO][INIT] AlgoMind started on XAUUSD tf=5 ML=OFF
+2026.09.24 08:00:15.043	AMIGO (XAUUSD,M5)	[Amigo][INFO][DEINIT] reason=1
+2026.09.24 08:01:32.853	AMIGO (XAUUSD,M5)	[Amigo][INFO][INIT] Amigo started on XAUUSD tf=5 ML=OFF
 2026.09.24 08:01:32.853	AMIGO (XAUUSD,M5)	[P22_AUDIT][TASK1] TICK_SZ=0.00100 TICK_VAL=0.10000 TICK_VAL_PROF=0.10000 TICK_VAL_LOSS=0.10000 CS=100.0 VOL_MIN=0.01 VOL_STEP=0.01 VOL_MAX=200.00 PT=0.00100 DIG=3
 2026.09.24 08:01:32.853	AMIGO (XAUUSD,M5)	[P22_AUDIT][TASK2_BUY] 1.00lot(0.001=0.1000, 0.01=1.0000, 1.00=100.0000) | 0.10lot(0.001=0.0100, 0.01=0.1000, 1.00=10.0000) | 0.01lot(0.001=0.0000, 0.01=0.0100, 1.00=1.0000)
 2026.09.24 08:01:32.853	AMIGO (XAUUSD,M5)	[P22_AUDIT][TASK2_SELL] 1.00lot(1.00=100.0000) | 0.10lot(1.00=10.0000) | 0.01lot(1.00=1.0000)
@@ -54,7 +54,7 @@
 2026.09.24 08:01:32.853	AMIGO (XAUUSD,M5)	[P22_AUDIT][TASK4] stop=5.00 risk_b=2.50 raw=0.00500 norm=0.04 min_loss=5.00 ocp_min_loss=5.00 dec=APPROVED
 ```
 
-### 2. Post-Init Runtime Evidence (08:01:32 to 08:36:50 AM) — UNVERIFIED:
+### 2. Post-Init Runtime Evidence (08:01:32 to 08:36:50 AM) â€” UNVERIFIED:
 - **Observed Log Output:** 0 new lines emitted.
 - **M5 Boundaries Passed in Observation Window:** 7 candle boundaries (`08:05`, `08:10`, `08:15`, `08:20`, `08:25`, `08:30`, `08:35`).
 - **`FLOW_DIAG` Evidence:** 0 lines observed.
@@ -79,7 +79,7 @@
 | **Decision Pipeline** | `UNVERIFIED` | `Decide()` and `LogDecision()` output not observed in log stream. |
 | **Shadow Interception** | `UNVERIFIED` | Interception block (`InpShadowOnly = true`) unreached without candidate trade. |
 | **Failure Injection** | `UNVERIFIED` | Dynamic fault injection test pending confirmed runtime stream. |
-| **Python ↔ MQL5 Live Parity**| `UNVERIFIED` | Live stream comparison pending confirmed MQL5 telemetry. |
+| **Python â†” MQL5 Live Parity**| `UNVERIFIED` | Live stream comparison pending confirmed MQL5 telemetry. |
 
 ---
 
@@ -92,7 +92,7 @@ To preserve strict empirical standards, logging dynamics are categorized into fo
   - The file contains initialization entries at `08:01:32.853` and no subsequent entries up to `08:36:50`.
 - **INFERRED:**
   - If `OnClosedBar()` had executed and completed normally, `FLOW_DIAG` and `LogDecision` would have passed string buffers to MT5's `PrintFormat()` routine.
-- **HYPOTHESIZED (`CURRENT HYPOTHESIS — NOT VERIFIED`):**
+- **HYPOTHESIZED (`CURRENT HYPOTHESIS â€” NOT VERIFIED`):**
   - Hypothesis A: MT5 log buffers `PrintFormat` output in RAM until a buffer size limit is reached or file handles are closed/flushed on deinit.
   - Hypothesis B: `OnTick()` is not being called by MT5 (e.g., chart ticker stalled, market quiet, or symbol session inactive).
   - Hypothesis C: `OnTick()` is called, but early-exits or fails silently (e.g. `iTime()` returning 0 or `BuildMarketSnapshot` returning false without error logging).
@@ -218,21 +218,22 @@ Because post-reattachment runtime telemetry remains unobserved, we propose 5 min
 
 ## 8. G. NEXT GATE SELECTION
 
-Selected Next Gate: **`B — Add minimal diagnostic instrumentation proposal`**
+Selected Next Gate: **`B â€” Add minimal diagnostic instrumentation proposal`**
 
 **Rationale:**  
-The existing running EA has passed 7 M5 bar boundaries (`08:05` through `08:35`) without producing post-initialization log telemetry. Because strategy logic and risk limits are locked by governance, adding targeted, fail-safe diagnostic instrumentation (Points 1–5 above) is the only disciplined, evidence-based method to isolate the runtime event path.
+The existing running EA has passed 7 M5 bar boundaries (`08:05` through `08:35`) without producing post-initialization log telemetry. Because strategy logic and risk limits are locked by governance, adding targeted, fail-safe diagnostic instrumentation (Points 1â€“5 above) is the only disciplined, evidence-based method to isolate the runtime event path.
 
 ---
 
 ## 9. FINAL GOVERNANCE STATUS
 
 ```text
-LEVEL 3 — PARTIALLY VERIFIED
+LEVEL 3 â€” PARTIALLY VERIFIED
 
-LEVEL 4 LIVE TRADING — NOT AUTHORIZED
+LEVEL 4 LIVE TRADING â€” NOT AUTHORIZED
 
-GIT COMMIT — NOT APPROVED
+GIT COMMIT â€” NOT APPROVED
 
-GIT PUSH — NOT APPROVED
+GIT PUSH â€” NOT APPROVED
 ```
+

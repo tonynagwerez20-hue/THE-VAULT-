@@ -1,0 +1,151 @@
+﻿import pandas as pd
+import numpy as np
+
+# Load trade level dataset
+df = pd.read_csv("c:/Users/USER/Desktop/Amigo/Python/Amigo_trade_level_dataset.csv")
+
+print(f"Loaded {len(df)} trades from Amigo_trade_level_dataset.csv")
+
+# Account Specifications (Live MT5 Account 296222644)
+INITIAL_BALANCE = 16.15
+LEVERAGE = 2000.0
+TARGET_RISK_PCT = 0.5  # 0.5% target risk per trade
+MIN_LOT = 0.01
+TICK_SIZE = 0.01
+TICK_VALUE = 1.00  # $1.00 per 0.01 tick on 1.00 lot (contract size 100 oz)
+
+# 1. In-Sample (IS) vs Out-of-Sample (OOS) Split (70% IS / 30% OOS)
+split_idx = int(len(df) * 0.70)
+df_is = df.iloc[:split_idx].copy()
+df_oos = df.iloc[split_idx:].copy()
+
+print(f"\n--- DATASET SPLIT ---")
+print(f"In-Sample (IS) Trades: {len(df_is)} (from {df_is['entry_time'].iloc[0]} to {df_is['entry_time'].iloc[-1]})")
+print(f"Out-of-Sample (OOS) Trades: {len(df_oos)} (from {df_oos['entry_time'].iloc[0]} to {df_oos['entry_time'].iloc[-1]})")
+
+def simulate_fast(trades_df: pd.DataFrame, initial_balance: float, adaptive_mode: bool = True):
+    equity = initial_balance
+    peak_equity = initial_balance
+    max_dd_dollars = 0.0
+    max_dd_pct = 0.0
+    trade_pnls = []
+    ruined = False
+
+    r_multiples = trades_df['r_multiple'].values
+    stops = np.abs(trades_df['entry_price'].values - trades_df['sl'].values)
+
+    for i in range(len(r_multiples)):
+        if equity <= 0:
+            ruined = True
+            break
+
+        stop_dist = stops[i]
+        target_risk_amt = equity * (TARGET_RISK_PCT / 100.0)
+        max_dist_allowed = (target_risk_amt * 5.0) / (MIN_LOT * (TICK_VALUE / TICK_SIZE))
+        
+        if adaptive_mode:
+            selected_stop_dist = min(0.30, max_dist_allowed) if stop_dist > max_dist_allowed else stop_dist
+        else:
+            selected_stop_dist = stop_dist
+
+        risk_per_lot = (selected_stop_dist / TICK_SIZE) * TICK_VALUE
+        trade_risk_dollars = MIN_LOT * risk_per_lot
+
+        r_mult = r_multiples[i]
+        pnl = (trade_risk_dollars * r_mult) if r_mult > 0 else -trade_risk_dollars
+
+        equity += pnl
+        trade_pnls.append(pnl)
+
+        if equity > peak_equity:
+            peak_equity = equity
+        dd_dollars = peak_equity - equity
+        dd_pct = (dd_dollars / peak_equity * 100.0) if peak_equity > 0 else 0.0
+
+        if dd_dollars > max_dd_dollars:
+            max_dd_dollars = dd_dollars
+        if dd_pct > max_dd_pct:
+            max_dd_pct = dd_pct
+
+        if equity <= initial_balance * 0.50:
+            ruined = True
+
+    trade_pnls = np.array(trade_pnls)
+    wins = trade_pnls[trade_pnls > 0]
+    losses = trade_pnls[trade_pnls < 0]
+
+    win_rate = (len(wins) / len(trade_pnls) * 100.0) if len(trade_pnls) > 0 else 0.0
+    profit_factor = (np.sum(wins) / abs(np.sum(losses))) if len(losses) > 0 and abs(np.sum(losses)) > 0 else 0.0
+    expectancy = np.mean(trade_pnls) if len(trade_pnls) > 0 else 0.0
+    
+    std_dev = np.std(trade_pnls) if len(trade_pnls) > 1 else 1.0
+    downside_std = np.std(losses) if len(losses) > 1 else 1.0
+    sharpe = (expectancy / std_dev * np.sqrt(252)) if std_dev > 0 else 0.0
+    sortino = (expectancy / downside_std * np.sqrt(252)) if downside_std > 0 else 0.0
+
+    return {
+        "final_equity": equity,
+        "net_profit": equity - initial_balance,
+        "return_pct": ((equity - initial_balance) / initial_balance * 100.0),
+        "total_trades": len(trade_pnls),
+        "win_rate": win_rate,
+        "profit_factor": profit_factor,
+        "expectancy": expectancy,
+        "max_dd_dollars": max_dd_dollars,
+        "max_dd_pct": max_dd_pct,
+        "sharpe": sharpe,
+        "sortino": sortino,
+        "ruined": ruined,
+    }
+
+# Run Baseline In-Sample & Out-of-Sample Simulations
+is_res = simulate_fast(df_is, INITIAL_BALANCE, adaptive_mode=True)
+oos_res = simulate_fast(df_oos, INITIAL_BALANCE, adaptive_mode=True)
+
+print("\n==================================================================")
+print("IN-SAMPLE (IS) PERFORMANCE REPORT ($16.15 Balance, 1:2000 Leverage)")
+print("==================================================================")
+for k, v in is_res.items():
+    print(f"{k:20s}: {v:.4f}" if isinstance(v, float) else f"{k:20s}: {v}")
+
+print("\n==================================================================")
+print("OUT-OF-SAMPLE (OOS) PERFORMANCE REPORT ($16.15 Balance, 1:2000 Leverage)")
+print("==================================================================")
+for k, v in oos_res.items():
+    print(f"{k:20s}: {v:.4f}" if isinstance(v, float) else f"{k:20s}: {v}")
+
+# 2. Monte Carlo Resampling (10,000 Iterations)
+print("\n==================================================================")
+print("MONTE CARLO RESAMPLING (10,000 SIMULATION RUNS)")
+print("==================================================================")
+N_SIMULATIONS = 10000
+mc_final_equities = []
+mc_max_dds_pct = []
+mc_ruin_count = 0
+mc_profit_factors = []
+
+np.random.seed(42)
+
+for sim in range(N_SIMULATIONS):
+    sampled_df = df.sample(n=len(df), replace=True).reset_index(drop=True)
+    res = simulate_fast(sampled_df, INITIAL_BALANCE, adaptive_mode=True)
+    mc_final_equities.append(res['final_equity'])
+    mc_max_dds_pct.append(res['max_dd_pct'])
+    mc_profit_factors.append(res['profit_factor'])
+    if res['ruined']:
+        mc_ruin_count += 1
+
+mc_final_equities = np.array(mc_final_equities)
+mc_max_dds_pct = np.array(mc_max_dds_pct)
+
+print(f"Simulations Completed: {N_SIMULATIONS}")
+print(f"Ruin Probability (<50% Equity): {(mc_ruin_count / N_SIMULATIONS * 100.0):.2f}%")
+print(f"Median Final Equity: ${np.median(mc_final_equities):.2f}")
+print(f"5th Percentile Final Equity (Worst Case): ${np.percentile(mc_final_equities, 5):.2f}")
+print(f"95th Percentile Final Equity (Best Case): ${np.percentile(mc_final_equities, 95):.2f}")
+print(f"Median Max Drawdown: {np.median(mc_max_dds_pct):.2f}%")
+print(f"95th Percentile Max Drawdown: {np.percentile(mc_max_dds_pct, 95):.2f}%")
+print(f"Median Profit Factor: {np.median(mc_profit_factors):.2f}")
+
+print("\n--- QUANT FINANCE SURVIVAL AUDIT COMPLETE ---")
+

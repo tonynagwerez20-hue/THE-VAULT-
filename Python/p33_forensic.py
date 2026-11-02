@@ -1,6 +1,6 @@
-# p33_forensic.py
+﻿# p33_forensic.py
 """
-AlgoMind AMIGO — P3.3 Forensic Reconciliation & Regime Analysis
+Amigo AMIGO — P3.3 Forensic Reconciliation & Regime Analysis
 READ-ONLY: No strategy changes. Pure diagnostic analysis.
 
 Tasks covered:
@@ -28,14 +28,14 @@ from pathlib import Path
 from scipy import stats
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
-BASE_DIR   = Path(r"C:\Users\USER\Desktop\ALGOMIND\Python")
+BASE_DIR   = Path(r"C:\Users\USER\Desktop\Amigo\Python")
 LOG_PATH   = Path(r"C:\Users\USER\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260916.log")
-CSV_PATH   = BASE_DIR / "algomind_trade_level_dataset.csv"
+CSV_PATH   = BASE_DIR / "Amigo_trade_level_dataset.csv"
 OUT_DIR    = BASE_DIR
 REPORT_PATH = BASE_DIR / "p33_forensic_report.md"
 
 print("=" * 70)
-print("AlgoMind AMIGO — P3.3 Forensic Reconciliation")
+print("Amigo AMIGO — P3.3 Forensic Reconciliation")
 print("=" * 70)
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -50,23 +50,23 @@ with open(LOG_PATH, "r", encoding="utf-8", errors="replace") as f:
 print(f"  Total log lines: {len(log_lines):,}")
 
 # --- Parse [DECISION] lines ---------------------------------------------------
-# Pattern: timestamp  [AlgoMind][DECISION] id=... act=N reg=N hyp=N
+# Pattern: timestamp  [Amigo][DECISION] id=... act=N reg=N hyp=N
 # next line (same batch):  score=X.XXXX reason=REASON
 decision_re = re.compile(
-    r"(\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}:\d{2})\s+\[AlgoMind\]\[DECISION\]\s+"
+    r"(\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}:\d{2})\s+\[Amigo\]\[DECISION\]\s+"
     r"id=(\d+)\s+sym=\S+\s+act=(\d+)\s+reg=(\d+)\s+hyp=(\d+)"
 )
 score_re = re.compile(r"score=([\d.]+)\s+reason=(\w+)")
 
 # Also parse ACTION_TRADE
 action_re = re.compile(
-    r"(\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}:\d{2})\s+\[AlgoMind\]\[ACTION_TRADE\]\s+"
+    r"(\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}:\d{2})\s+\[Amigo\]\[ACTION_TRADE\]\s+"
     r"id=(\d+).*?dir=(\w+).*?entry=([\d.]+).*?sl=([\d.]+).*?tp=([\d.]+)"
 )
 
 # Also parse MIN_LOT_EXCEEDS_RISK
 minlot_re = re.compile(
-    r"(\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}:\d{2})\s+\[AlgoMind\].*?MIN_LOT_EXCEEDS_RISK.*?id=(\d+)"
+    r"(\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}:\d{2})\s+\[Amigo\].*?MIN_LOT_EXCEEDS_RISK.*?id=(\d+)"
 )
 
 decisions = []
@@ -588,7 +588,7 @@ fig.savefig(plot_regime, dpi=120); plt.close(fig)
 print("\n\n[REPORT] Writing p33_forensic_report.md...")
 
 with open(REPORT_PATH, "w", encoding="utf-8") as md:
-    md.write("# AlgoMind AMIGO — P3.3 Forensic Reconciliation Report\n\n")
+    md.write("# Amigo AMIGO — P3.3 Forensic Reconciliation Report\n\n")
     md.write("**READ-ONLY ANALYSIS. No strategy parameters, risk settings, or code were modified.**\n\n")
     md.write("Dataset: 1,260 executed trades | XAUUSDm M5 | 2025-10-01 → 2026-08-28\n\n")
     md.write("---\n\n")
@@ -860,3 +860,4 @@ with open(REPORT_PATH, "w", encoding="utf-8") as md:
 
 print(f"\nReport written: {REPORT_PATH}")
 print("Done.")
+

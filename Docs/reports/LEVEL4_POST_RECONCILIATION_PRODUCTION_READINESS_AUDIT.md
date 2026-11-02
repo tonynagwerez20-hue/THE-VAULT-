@@ -1,6 +1,6 @@
-# ALGOMIND / ASAP — LEVEL 4 POST-RECONCILIATION PRODUCTION READINESS & ENGINEERING GAP CLOSURE AUDIT REPORT
+﻿# Amigo / ASAP â€” LEVEL 4 POST-RECONCILIATION PRODUCTION READINESS & ENGINEERING GAP CLOSURE AUDIT REPORT
 
-**Project:** AlgoMind / ASAP Retail Order-Flow System  
+**Project:** Amigo / ASAP Retail Order-Flow System  
 **Symbol / Timeframe:** `XAUUSD` / `M5`  
 **Execution Environment:** Windows 10, MetaTrader 5 (PID 7964), Exness Demo (`Exness-MT5Trial`)  
 **Operating Mode:** SHADOW MODE (`InpShadowOnly = true`)  
@@ -14,7 +14,7 @@
 Following the completion of the Level 4 Account Capability and Setup Grading Parity Audit (`LEVEL4_ACCOUNT_CAPABILITY_TWO_STRATEGY_PARITY_AUDIT.md`), this audit establishes the exact engineering gaps, calibration requirements, and owner decisions remaining between the current verified state and a fully production-ready system.
 
 ### Production Readiness Classification:
-`PRODUCTION READINESS: PARTIALLY VERIFIED — ENGINEERING GAPS REMAIN`
+`PRODUCTION READINESS: PARTIALLY VERIFIED â€” ENGINEERING GAPS REMAIN`
 
 ### Core Audit Findings:
 1. **Architecture & Decoupling Fully Verified:** The separation between Market Setup Quality Assessment (`Strategy Engine.mqh`) and Account Capability / Position Sizing (`Risk Engine.mqh`) is verified in static source code and empirical MT5 runtime logs.
@@ -31,41 +31,41 @@ Following the completion of the Level 4 Account Capability and Setup Grading Par
 
 ```text
                      MARKET DATA
-                          │
-                          ▼
+                          â”‚
+                          â–¼
                      RAW METRICS (BuildMarketSnapshot)
-                          │
-                          ▼
+                          â”‚
+                          â–¼
               NORMALIZED METRICS (BuildFeatureVector)
-                          │
-                          ▼
+                          â”‚
+                          â–¼
             MANDATORY CONDITIONS (DQ Gates / Regime)
-                          │
-             ┌────────────┴────────────┐
-             ▼                         ▼
+                          â”‚
+             â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+             â–¼                         â–¼
        MEAN REVERSION            CONTINUATION
    (MR_Evidence - 4 Metrics) (ContinuationEvidence - 5 Metrics)
-             │                         │
-             └────────────┬────────────┘
-                          ▼
+             â”‚                         â”‚
+             â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                          â–¼
                    STRATEGY SCORE (ScoreStrategies)
-                          ▼
+                          â–¼
                     DECISION GATE (Decide - Threshold 0.65, Margin 0.15)
-                          ▼
+                          â–¼
                  STRATEGY ELIGIBILITY (ACTION_TRADE / ACTION_WAIT / ACTION_NO_TRADE)
-                          │
-                          ▼
+                          â”‚
+                          â–¼
                   ACCOUNT CAPABILITY (ComputeLotSize - Equity x 0.5%)
-                          │
-          ┌───────────────┼───────────────┐
-          ▼               ▼               ▼
+                          â”‚
+          â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+          â–¼               â–¼               â–¼
         RISK            MARGIN         LOT SIZE
     (0.5% Cap)      (Free Margin)    (0.01 Step)
-          │               │               │
-          └───────────────┼───────────────┘
-                          ▼
+          â”‚               â”‚               â”‚
+          â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                          â–¼
                  EXECUTION FEASIBILITY (lots >= 0.01)
-                          ▼
+                          â–¼
          FINAL ACTION (TRADE / RISK_VETO / WAIT / NO_TRADE)
 ```
 
@@ -118,7 +118,7 @@ Following the completion of the Level 4 Account Capability and Setup Grading Par
 ## 7. SCORE / GRADE / ELIGIBILITY AUDIT
 
 - **Implementation:** `Strategy Engine.mqh` `Decide()` evaluates `best_score >= score_threshold` (0.65) and `margin >= score_margin` (0.15).
-- **Grade Representation:** AlgoMind represents setup quality as a continuous score (`0.00` to `1.00`) and confidence metric (`0.0` to `1.0`), rather than arbitrary letter grades (A/B/C).
+- **Grade Representation:** Amigo represents setup quality as a continuous score (`0.00` to `1.00`) and confidence metric (`0.0` to `1.0`), rather than arbitrary letter grades (A/B/C).
 - **Grade Calibration:** Boundaries for score thresholds are defined in configuration inputs (`InpScoreThreshold = 0.65`, `InpScoreMargin = 0.15`).
 
 ---
@@ -139,7 +139,7 @@ Following the completion of the Level 4 Account Capability and Setup Grading Par
 | **TECHNICAL FLOOR** | **`$5.30`** | Margin for 0.01 lot XAUUSD at 1:500 leverage ($\frac{1 \text{ oz} \times \$2650}{500}$) | `VERIFIED COMPUTATIONAL BENCHMARK` |
 | **RISK-COMPLIANT FLOOR** | **`$7,000.00`** | $\frac{\text{min\_lot\_loss}}{\text{risk\_pct}} = \frac{0.01 \times 35.0 \times 100.0}{0.005} = \frac{\$35.00}{0.005}$ | `VERIFIED COMPUTATIONAL BENCHMARK` |
 | **LOW-DISTORTION FLOOR** | **`$14,000.00`** | Equity level where volume step (0.01 lot) truncation error $\le 5\%$ | `VERIFIED COMPUTATIONAL BENCHMARK` |
-| **HIGH-EXECUTABILITY FLOOR**| **`$10,000.00`** | Equity level where $\ge 95\%$ of variable ATR stops (25–50 pts) pass risk gate | `VERIFIED COMPUTATIONAL BENCHMARK` |
+| **HIGH-EXECUTABILITY FLOOR**| **`$10,000.00`** | Equity level where $\ge 95\%$ of variable ATR stops (25â€“50 pts) pass risk gate | `VERIFIED COMPUTATIONAL BENCHMARK` |
 
 *Note:* All floors are computational benchmarks derived from XAUUSD broker specifications (`TICK_SZ=0.001`, `TICK_VAL=0.10`, `CS=100.0`, `MIN_VOL=0.01`) and standard 0.5% risk allowance.
 
@@ -179,7 +179,7 @@ Live MT5 terminal log (`20260924.log`) evidence summary:
 Isolated test script (`Test_ShadowHarness.mq5`) evidence summary:
 - Executed 3 valid `TradeIntent` test fixtures against `ExecuteIntent()`.
 - Evaluated `g_cfg.shadow_only == true`.
-- Emitted `[AlgoMind][INFO][EXEC_SHADOW] [SHADOW MODE EXECUTION BLOCKED]`.
+- Emitted `[Amigo][INFO][EXEC_SHADOW] [SHADOW MODE EXECUTION BLOCKED]`.
 - Returned `SHADOW_MODE_EXECUTION_BLOCKED` retcode 10009.
 - Mock order submissions = `0`. Real `OrderSend()` calls = `0`. (`VERIFIED TEST HARNESS`).
 
@@ -203,7 +203,7 @@ Isolated test script (`Test_ShadowHarness.mq5`) evidence summary:
 
 ## 16. REQUIRED OWNER DECISIONS LIST
 
-1. **Small-Account Min-Lot Risk Override Policy:** Owner decision whether to expose `InpAllowMinLotOverride` and `InpMaxAllowedDistortion` in `AMIGO.mq5` inputs to enable trading on $1.5k–$3k accounts.
+1. **Small-Account Min-Lot Risk Override Policy:** Owner decision whether to expose `InpAllowMinLotOverride` and `InpMaxAllowedDistortion` in `AMIGO.mq5` inputs to enable trading on $1.5kâ€“$3k accounts.
 2. **Score Threshold Calibration Approval:** Owner review and formal approval of default `InpScoreThreshold = 0.65` and `InpScoreMargin = 0.15`.
 
 ---
@@ -264,7 +264,7 @@ PARTIALLY IMPLEMENTED (GAP-01: div_score is 0.0 placeholder)
 DISPLACEMENT:
 PARTIALLY IMPLEMENTED (GAP-02: disp is 0.0 placeholder)
 
-RAW → NORMALIZED:
+RAW â†’ NORMALIZED:
 VERIFIED RUNTIME
 
 MANDATORY CONDITIONS:
@@ -326,14 +326,14 @@ CALIBRATION REQUIRED:
 - Calibration of divergence and displacement weights in strategy scoring
 
 OWNER DECISIONS REQUIRED:
-- Owner policy decision on min-lot risk override for small accounts ($1.5k–$3k)
+- Owner policy decision on min-lot risk override for small accounts ($1.5kâ€“$3k)
 - Owner approval of score thresholds (0.65 threshold / 0.15 margin)
 
 PRODUCTION CODE CHANGED:
 NO
 
 LIVE TRADING AUTHORIZATION:
-SEPARATE DECISION — DO NOT INFER
+SEPARATE DECISION â€” DO NOT INFER
 
 GIT COMMIT:
 NOT APPROVED
@@ -341,3 +341,4 @@ NOT APPROVED
 GIT PUSH:
 NOT APPROVED
 ```
+

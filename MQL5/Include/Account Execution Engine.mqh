@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //| Account Execution Engine.mqh                                     |
 //| Surgical Account Identification, Symbol Capability Profile,      |
 //| Provenance Tagging, 3-State Min-Lot Sizing, Risk & Feasibility   |
@@ -315,7 +315,7 @@ AccountExecutionEnvelope AccountExecutionEvaluate(
    double stop,
    double target,
    double target_risk_pct,
-   const AlgoMindConfig &cfg,
+   const AmigoConfig &cfg,
    ENUM_ACTION strategy_proposed_action,
    double max_allowed_distortion_override = 0.0
 )
@@ -559,7 +559,7 @@ void LogAccountExecutionDiagnostic(const AccountExecutionEnvelope &env)
 
    double rr_val = (env.stop_distance > 0.0) ? (MathAbs(env.target - env.entry) / env.stop_distance) : 0.0;
 
-   PrintFormat("[AlgoMind][SL_ADAPT] sym=%s dir=%s entry=%.5f original_sl=%.5f original_dist=%.5f adaptive_required=%d max_account_stop_dist=%.5f candidate_sl=%.5f candidate_dist=%.5f selected_sl=%.5f rr=%.2f target_risk=%.2f actual_risk=%.2f actual_risk_pct=%.2f final_volume=%.2f status=%s reason=%s",
+   PrintFormat("[Amigo][SL_ADAPT] sym=%s dir=%s entry=%.5f original_sl=%.5f original_dist=%.5f adaptive_required=%d max_account_stop_dist=%.5f candidate_sl=%.5f candidate_dist=%.5f selected_sl=%.5f rr=%.2f target_risk=%.2f actual_risk=%.2f actual_risk_pct=%.2f final_volume=%.2f status=%s reason=%s",
                env.symbol_cap.symbol, (env.direction == +1) ? "BUY" : "SELL", env.entry, env.original_sl, env.original_stop_distance,
                (env.sl_adapt_status != ORIGINAL_SL_EXECUTABLE) ? 1 : 0, env.max_account_stop_dist, env.adaptive_sl,
                (env.adaptive_sl > 0.0) ? MathAbs(env.entry - env.adaptive_sl) : 0.0, env.selected_sl, rr_val,
@@ -588,3 +588,4 @@ void LogAccountExecutionDiagnostic(const AccountExecutionEnvelope &env)
    PrintFormat("[FINAL_ACTION] action=%s classification=%s reason=%s", act_str, class_str, env.reason);
 }
 //+------------------------------------------------------------------+
+

@@ -1,5 +1,5 @@
-# FOOTPRINT AND PROXY DELTA INTEGRATION AUDIT
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# FOOTPRINT AND PROXY DELTA INTEGRATION AUDIT
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 
 ---
@@ -8,33 +8,33 @@
 
 ```text
 [Producer: MQL5 Tick Feed / Python Ticks]
-                    │
-                    ▼
+                    â”‚
+                    â–¼
           [Price Bin Engine]
-                    │
-                    ▼
+                    â”‚
+                    â–¼
          [Proxy Footprint Engine]
        (Tick Rule Classification)
-                    │
-        ┌───────────┴───────────┐
-        ▼                       ▼
+                    â”‚
+        â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+        â–¼                       â–¼
  [Footprint Delta]      [Cumulative Delta]
-        │                       │
-        └───────────┬───────────┘
-                    ▼
+        â”‚                       â”‚
+        â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                    â–¼
         [Footprint Pressure Engine]
-        (P = Σδ / (Σ|δ| + ε) ∈ [-1, +1])
-                    │
-        ┌───────────┼───────────┐
-        ▼           ▼           ▼
+        (P = Î£Î´ / (Î£|Î´| + Îµ) âˆˆ [-1, +1])
+                    â”‚
+        â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+        â–¼           â–¼           â–¼
      [Surge]      [Flip]   [Transition]
-        │           │           │
-        └───────────┼───────────┘
-                    ▼
+        â”‚           â”‚           â”‚
+        â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                    â–¼
           [Multi-Bar Events]
      (Persistence, Divergence)
-                    │
-                    ▼
+                    â”‚
+                    â–¼
        [Shadow Mode Log / EA Output]
 ```
 
@@ -54,3 +54,4 @@
 
 ## 3. Labeling Integrity Standard
 Retail tick data is strictly labeled `PROXY` / `ESTIMATED_DIRECTION`. It is never falsely presented as centralized exchange level-2 depth or true aggressive trader execution.
+

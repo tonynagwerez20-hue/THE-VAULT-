@@ -1,5 +1,5 @@
-# FOMC MINUTES REACTION SPECIFICATION
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# FOMC MINUTES REACTION SPECIFICATION
+**Amigo / ASAP Retail Order-Flow System**
 
 ## 1. Document vs. Numerical Event Distinction
 Unlike CPI or NFP numbers, FOMC Minutes are document-based textual releases. Python extracts sentiment, policy bias (Hawkish / Dovish), and language shift metrics.
@@ -22,3 +22,4 @@ Simultaneously measure market responses across instruments:
 - `XAUUSD_cumulative_delta`
 
 If text sentiment conflicts with initial price/delta reaction, the event state becomes `UNCONFIRMED` and trading is restricted until `POST_EVENT_STABILIZATION`.
+

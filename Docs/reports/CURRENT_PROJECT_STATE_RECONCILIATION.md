@@ -1,12 +1,12 @@
-# CURRENT PROJECT STATE RECONCILIATION REPORT
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# CURRENT PROJECT STATE RECONCILIATION REPORT
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 **Document Status:** Authoritative System Audit & Reconciliation
 
 ---
 
 ## 1. Executive Summary & Audit Overview
-This reconciliation report audits the AlgoMind codebase against the Master Engineering Instruction (22 September 2026). It details the current status of every subsystem, data pipeline, MQL5 execution component, and external Python module using strict non-negotiable classification labels.
+This reconciliation report audits the Amigo codebase against the Master Engineering Instruction (22 September 2026). It details the current status of every subsystem, data pipeline, MQL5 execution component, and external Python module using strict non-negotiable classification labels.
 
 ---
 
@@ -16,7 +16,7 @@ This reconciliation report audits the AlgoMind codebase against the Master Engin
 
 | Module / Component | Description | Status Label | Traceability / Findings |
 | :--- | :--- | :--- | :--- |
-| **`Contracts.mqh`** | Frozen Phase-0 Schema (V1.0.0), `MarketSnapshot`, `FeatureSnapshot`, `TradeIntent`, `ExternalContext`. | `IMPLEMENTED AND VERIFIED` | Core structs match Master Spec §13. `ALGOMIND_SCHEMA_VERSION = 100`. |
+| **`Contracts.mqh`** | Frozen Phase-0 Schema (V1.0.0), `MarketSnapshot`, `FeatureSnapshot`, `TradeIntent`, `ExternalContext`. | `IMPLEMENTED AND VERIFIED` | Core structs match Master Spec Â§13. `Amigo_SCHEMA_VERSION = 100`. |
 | **`Regime Engine.mqh`** | Market State Machine: `TREND_UP`, `TREND_DOWN`, `BALANCED`, `EXPANSION`, `EXHAUSTION`, `NEWS`, `NO_TRADE`. | `IMPLEMENTED AND VERIFIED` | Evaluates feature vectors with hysteresis and persistence. |
 | **`Strategy Engine.mqh`** | Scoring for `HYP_CONTINUATION` and `HYP_MEAN_REVERSION` strategies. | `IMPLEMENTED AND VERIFIED` | Combines directional evidence, CFTC modifiers, and options basis. |
 | **`Risk Engine.mqh`** | Account capability, drawdown locks, lot calculation, margin checks, hard risk limits ($5\%$). | `IMPLEMENTED AND VERIFIED` | Hard risk vetoes enforced; zero martingale allowed. |
@@ -30,7 +30,7 @@ This reconciliation report audits the AlgoMind codebase against the Master Engin
 
 ---
 
-### 2.2 Python External Intelligence & Research Lab (`Python/algomind/`)
+### 2.2 Python External Intelligence & Research Lab (`Python/Amigo/`)
 
 | Module / Component | Description | Status Label | Traceability / Findings |
 | :--- | :--- | :--- | :--- |
@@ -60,31 +60,32 @@ This reconciliation report audits the AlgoMind codebase against the Master Engin
 ```
                   EXTERNAL INFORMATION
         (CFTC, Options, Python News, Futures Repo)
-                           │
-                           ▼
+                           â”‚
+                           â–¼
                   PYTHON RESEARCH LAB
                (Normalization & Context)
-                           │
-                           ▼
+                           â”‚
+                           â–¼
                  LOCAL FILE HANDSHAKE
              (Atomic Key-Value Exchange)
-                           │
-                           ▼
+                           â”‚
+                           â–¼
                MQL5 EXTERNAL CONTEXT COMPACTOR
-                           │
-    MT5 RETAIL TICKS ──────┤
-                           ▼
+                           â”‚
+    MT5 RETAIL TICKS â”€â”€â”€â”€â”€â”€â”¤
+                           â–¼
                 NATIVE MQL5 FLOW ENGINE
              (Proxy VWAP, Footprint, Profile)
-                           │
-                           ▼
+                           â”‚
+                           â–¼
                   CANONICAL MARKET STATE
                 (Regime & Strategy Engines)
-                           │
-                           ▼
+                           â”‚
+                           â–¼
                   ACCOUNT CAPABILITY &
                     HARD RISK ENGINE
-                           │
-                           ▼
+                           â”‚
+                           â–¼
                  MQL5 FINAL EXECUTION AUTHORITY
 ```
+

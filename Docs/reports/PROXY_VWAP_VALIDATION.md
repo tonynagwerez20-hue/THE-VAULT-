@@ -1,5 +1,5 @@
-# PROXY VWAP VALIDATION REPORT
-**AlgoMind / ASAP Retail Order-Flow Project**
+﻿# PROXY VWAP VALIDATION REPORT
+**Amigo / ASAP Retail Order-Flow Project**
 
 ## 1. Mathematical Formulation
 Proxy VWAP is calculated incrementally across session boundaries:
@@ -19,3 +19,4 @@ $$Z_{\text{vwap}} = \frac{\text{Price}_t - \text{ProxyVWAP}}{\text{ATR} + \epsil
 - **Correlation with Reference VWAP**: MT5 Proxy VWAP maintains $> 0.985$ rank correlation with CME COMEX Futures VWAP across standard session hours.
 - **Mean Absolute Deviation**: Average drift between retail tick VWAP and COMEX futures VWAP is $< 0.45$ XAUUSD points, attributable to CFD spread drift and interest rate differentials.
 - **Fail-Safe**: If tick volume drops to zero, the engine falls back gracefully to typical price weighting without division-by-zero errors.
+

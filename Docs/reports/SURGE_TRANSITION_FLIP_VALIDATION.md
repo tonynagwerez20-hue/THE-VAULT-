@@ -1,5 +1,5 @@
-# SURGE, TRANSITION & FLIP VALIDATION REPORT
-**AlgoMind / ASAP Retail Order-Flow Project**
+﻿# SURGE, TRANSITION & FLIP VALIDATION REPORT
+**Amigo / ASAP Retail Order-Flow Project**
 
 ## 1. Flow Event Definitions
 - **Transition**: Any change in Footprint Pressure state (e.g., `NEUTRAL_TO_BULLISH`, `BULLISH_TO_NEUTRAL`).
@@ -9,3 +9,4 @@
 ## 2. Signal Quality & Persistence
 - **2-Bar Persistence**: Requiring pressure state persistence for 2 consecutive M5 bars reduces false-positive flip signals by $42.8\%$.
 - **Surge Reliability**: Surge candidates correctly identify rotational momentum breakouts in $68.4\%$ of observed high-volatility sessions.
+

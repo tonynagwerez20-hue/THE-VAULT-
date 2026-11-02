@@ -1,6 +1,6 @@
-# ALGOMIND PHASE 6 — ISOLATED SHADOW-GATE TEST HARNESS RESULTS REPORT
+﻿# Amigo PHASE 6 â€” ISOLATED SHADOW-GATE TEST HARNESS RESULTS REPORT
 
-**Project:** AlgoMind / ASAP Retail Order-Flow System  
+**Project:** Amigo / ASAP Retail Order-Flow System  
 **Symbol / Timeframe:** `XAUUSD` / `M5`  
 **Execution Environment:** Windows 10, MetaTrader 5 (PID 7964), Isolated MQL5 Test Harness (`Test_ShadowHarness.mq5`)  
 **Operating Mode:** SHADOW MODE (`InpShadowOnly = true`)  
@@ -21,31 +21,31 @@ Normal MT5 production runtime previously verified the pipeline down through `FLO
 
 ```text
 Decide() candidate signal generation
- └── MQL5/Experts/AMIGO.mq5 (L383-L387) & Include/Strategy Engine.mqh
-      ↓
+ â””â”€â”€ MQL5/Experts/AMIGO.mq5 (L383-L387) & Include/Strategy Engine.mqh
+      â†“
 RiskAllows() hard risk limits gate
- └── MQL5/Experts/AMIGO.mq5 (L401-L405) & Include/Risk Engine.mqh
-      ↓
+ â””â”€â”€ MQL5/Experts/AMIGO.mq5 (L401-L405) & Include/Risk Engine.mqh
+      â†“
 ComputeLotSize() position sizing & min-lot validation
- └── MQL5/Experts/AMIGO.mq5 (L444-L450) & Include/Risk Engine.mqh
-      ↓ [Normal production runtime vetoes here if lots <= 0.0]
+ â””â”€â”€ MQL5/Experts/AMIGO.mq5 (L444-L450) & Include/Risk Engine.mqh
+      â†“ [Normal production runtime vetoes here if lots <= 0.0]
 ValidateIntent() trade intent validation
- └── MQL5/Experts/AMIGO.mq5 (L476-L480) & Include/Contracts.mqh
-      ↓
+ â””â”€â”€ MQL5/Experts/AMIGO.mq5 (L476-L480) & Include/Contracts.mqh
+      â†“
 ExecuteIntent() order request construction
- └── Include/Execution Engine.mqh (L87-L125)
-      ↓
+ â””â”€â”€ Include/Execution Engine.mqh (L87-L125)
+      â†“
 OrderCheck() read-only broker syntax/margin check
- └── Include/Execution Engine.mqh (L127-L134)
-      ↓
+ â””â”€â”€ Include/Execution Engine.mqh (L127-L134)
+      â†“
 if(g_cfg.shadow_only) safety gate
- └── Include/Execution Engine.mqh (L137-L145)
-      ├── Logs: [EXEC_SHADOW] [SHADOW MODE EXECUTION BLOCKED]...
-      ├── Sets: r.accepted = false, r.retcode = 10009, r.comment = "SHADOW_MODE_EXECUTION_BLOCKED"
-      └── Returns r WITHOUT calling OrderSend()
-      ↓
+ â””â”€â”€ Include/Execution Engine.mqh (L137-L145)
+      â”œâ”€â”€ Logs: [EXEC_SHADOW] [SHADOW MODE EXECUTION BLOCKED]...
+      â”œâ”€â”€ Sets: r.accepted = false, r.retcode = 10009, r.comment = "SHADOW_MODE_EXECUTION_BLOCKED"
+      â””â”€â”€ Returns r WITHOUT calling OrderSend()
+      â†“
 OrderSend() live order submission
- └── Include/Execution Engine.mqh (L147) [STRICTLY PROTECTED BEHIND SHADOW GATE]
+ â””â”€â”€ Include/Execution Engine.mqh (L147) [STRICTLY PROTECTED BEHIND SHADOW GATE]
 ```
 
 ---
@@ -67,22 +67,22 @@ The test harness is implemented as an isolated MQL5 diagnostic script:
 
 ```text
 ISOLATED TEST HARNESS (Test_ShadowHarness.mq5)
-  │
-  ├── 1. Verify environment: InpShadowOnly = true
-  │
-  ├── 2. Instantiate 3 deterministic valid TradeIntent test fixtures
-  │
-  ├── 3. Execute ValidateIntent(ti, g_cfg, vreason)
-  │
-  ├── 4. Invoke ExecuteIntent(ti, lots, g_cfg) directly
-  │       │
-  │       ├── ExecuteIntent() builds MqlTradeRequest
-  │       ├── OrderCheck() performs syntax/margin validation
-  │       ├── if(g_cfg.shadow_only) evaluates to TRUE
-  │       ├── Logs [EXEC_SHADOW] [SHADOW MODE EXECUTION BLOCKED]
-  │       └── Returns r.comment = "SHADOW_MODE_EXECUTION_BLOCKED"
-  │
-  └── 5. Mock Broker Sink: Verify submission_count = 0, OrderSend = 0
+  â”‚
+  â”œâ”€â”€ 1. Verify environment: InpShadowOnly = true
+  â”‚
+  â”œâ”€â”€ 2. Instantiate 3 deterministic valid TradeIntent test fixtures
+  â”‚
+  â”œâ”€â”€ 3. Execute ValidateIntent(ti, g_cfg, vreason)
+  â”‚
+  â”œâ”€â”€ 4. Invoke ExecuteIntent(ti, lots, g_cfg) directly
+  â”‚       â”‚
+  â”‚       â”œâ”€â”€ ExecuteIntent() builds MqlTradeRequest
+  â”‚       â”œâ”€â”€ OrderCheck() performs syntax/margin validation
+  â”‚       â”œâ”€â”€ if(g_cfg.shadow_only) evaluates to TRUE
+  â”‚       â”œâ”€â”€ Logs [EXEC_SHADOW] [SHADOW MODE EXECUTION BLOCKED]
+  â”‚       â””â”€â”€ Returns r.comment = "SHADOW_MODE_EXECUTION_BLOCKED"
+  â”‚
+  â””â”€â”€ 5. Mock Broker Sink: Verify submission_count = 0, OrderSend = 0
 ```
 
 ---
@@ -108,21 +108,21 @@ Three deterministic, valid trade intent test fixtures were executed:
 --- EXECUTING DETERMINISTIC SHADOW HARNESS TESTS ---
 [HARNESS_INTENT] id=9001 symbol=XAUUSD type=BUY volume=0.01 entry=2650.00000 sl=2640.00000 tp=2670.00000
 [EXECUTE_INTENT_ENTRY] reached=true intent_id=9001
-[AlgoMind][INFO][EXEC_SHADOW] [SHADOW MODE EXECUTION BLOCKED] dir=1 lots=0.01 price=2650.00000 sl=2640.00000 tp=2670.00000 score=0.550 hyp=2
+[Amigo][INFO][EXEC_SHADOW] [SHADOW MODE EXECUTION BLOCKED] dir=1 lots=0.01 price=2650.00000 sl=2640.00000 tp=2670.00000 score=0.550 hyp=2
 [SHADOW_GATE] shadow_only=true retcode=10009 comment=SHADOW_MODE_EXECUTION_BLOCKED
 [SHADOW_INTERCEPT] intercepted=true intent_id=9001 retcode=10009 comment=SHADOW_MODE_EXECUTION_BLOCKED
 [MOCK_BROKER] submission_count=0
 
 [HARNESS_INTENT] id=9002 symbol=XAUUSD type=SELL volume=0.02 entry=2649.80000 sl=2659.80000 tp=2629.80000
 [EXECUTE_INTENT_ENTRY] reached=true intent_id=9002
-[AlgoMind][INFO][EXEC_SHADOW] [SHADOW MODE EXECUTION BLOCKED] dir=-1 lots=0.02 price=2649.80000 sl=2659.80000 tp=2629.80000 score=0.600 hyp=2
+[Amigo][INFO][EXEC_SHADOW] [SHADOW MODE EXECUTION BLOCKED] dir=-1 lots=0.02 price=2649.80000 sl=2659.80000 tp=2629.80000 score=0.600 hyp=2
 [SHADOW_GATE] shadow_only=true retcode=10009 comment=SHADOW_MODE_EXECUTION_BLOCKED
 [SHADOW_INTERCEPT] intercepted=true intent_id=9002 retcode=10009 comment=SHADOW_MODE_EXECUTION_BLOCKED
 [MOCK_BROKER] submission_count=0
 
 [HARNESS_INTENT] id=9003 symbol=XAUUSD type=BUY volume=0.01 entry=2650.00000 sl=2645.00000 tp=2665.00000
 [EXECUTE_INTENT_ENTRY] reached=true intent_id=9003
-[AlgoMind][INFO][EXEC_SHADOW] [SHADOW MODE EXECUTION BLOCKED] dir=1 lots=0.01 price=2650.00000 sl=2645.00000 tp=2665.00000 score=0.520 hyp=2
+[Amigo][INFO][EXEC_SHADOW] [SHADOW MODE EXECUTION BLOCKED] dir=1 lots=0.01 price=2650.00000 sl=2645.00000 tp=2665.00000 score=0.520 hyp=2
 [SHADOW_GATE] shadow_only=true retcode=10009 comment=SHADOW_MODE_EXECUTION_BLOCKED
 [SHADOW_INTERCEPT] intercepted=true intent_id=9003 retcode=10009 comment=SHADOW_MODE_EXECUTION_BLOCKED
 [MOCK_BROKER] submission_count=0
@@ -187,7 +187,7 @@ Three deterministic, valid trade intent test fixtures were executed:
 ## K. FINAL MANDATORY STATUS BLOCK
 
 ```text
-PHASE 6 — SHADOW TEST HARNESS
+PHASE 6 â€” SHADOW TEST HARNESS
 
 HARNESS RESULT:
 PASS
@@ -199,10 +199,10 @@ TEST-HARNESS EXECUTION ENGINE:
 VERIFIED
 
 TEST-HARNESS SHADOW GATE:
-VERIFIED RUNTIME — DIRECT
+VERIFIED RUNTIME â€” DIRECT
 
 TEST-HARNESS SHADOW INTERCEPTION:
-VERIFIED RUNTIME — DIRECT
+VERIFIED RUNTIME â€” DIRECT
 
 MOCK BROKER SUBMISSIONS:
 0
@@ -211,13 +211,13 @@ REAL BROKER SUBMISSIONS:
 0
 
 PRODUCTION STRATEGY LOGIC:
-UNCHANGED — 0 production code changes
+UNCHANGED â€” 0 production code changes
 
 PRODUCTION RISK LOGIC:
-UNCHANGED — 0 production code changes
+UNCHANGED â€” 0 production code changes
 
 PRODUCTION EXECUTION LOGIC:
-UNCHANGED — 0 production code changes
+UNCHANGED â€” 0 production code changes
 
 LEVEL 3 STATUS:
 PARTIALLY VERIFIED
@@ -235,3 +235,4 @@ NOT APPROVED
 > **Authoritative Conclusion Note:**  
 > The production execution-engine shadow gate was directly exercised in an isolated non-broker test harness and intercepted valid test execution intents without broker submission.  
 > Normal MT5 production runtime has not yet been observed reaching that boundary.
+

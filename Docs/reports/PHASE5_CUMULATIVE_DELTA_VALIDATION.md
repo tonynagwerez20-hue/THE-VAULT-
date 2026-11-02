@@ -1,8 +1,8 @@
-# PHASE 5 — CUMULATIVE DELTA VALIDATION REPORT
+﻿# PHASE 5 â€” CUMULATIVE DELTA VALIDATION REPORT
 
 **Document Status**: Authoritative Engineering Audit  
 **Date**: 24 September 2026  
-**System**: AlgoMind / ASAP Retail Order-Flow System  
+**System**: Amigo / ASAP Retail Order-Flow System  
 
 ---
 
@@ -37,3 +37,4 @@ Per strict project governance:
 | Does Cumulative Delta reset? | YES (`ResetCumulativeDelta`) | Confirm reset trigger | `IMPLEMENTED BUT UNVERIFIED AT RUNTIME` |
 | Is Cumulative Delta in scoring? | NO | **Do NOT connect without owner sign-off** | `REQUIRES OWNER DECISION (DEC-005)` |
 | Which reset scope to standardise?| `SESSION` | Select `SESSION` vs `ROLLING_50` vs `EVENT` | `REQUIRES OWNER DECISION (DEC-002)` |
+

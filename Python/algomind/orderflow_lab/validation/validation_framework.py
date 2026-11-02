@@ -1,4 +1,4 @@
-"""Validation Framework (spec §37-40).
+﻿"""Validation Framework (spec §37-40).
 
 Compares proxy flow outputs against reference data using:
   - Sign agreement
@@ -233,7 +233,7 @@ class SessionBreakdown:
 
 @dataclass
 class RegimeBreakdown:
-    """Metrics broken down by AlgoMind regime."""
+    """Metrics broken down by Amigo regime."""
     regime: str
     bar_count: int = 0
     continuous: Optional[ContinuousMetrics] = None
@@ -325,3 +325,4 @@ class ParityReport:
                     f"diff={f.absolute_difference:.2e} tol={f.tolerance:.2e}"
                 )
         return "\n".join(lines)
+

@@ -1,5 +1,5 @@
-# EXTERNAL INTELLIGENCE ARCHITECTURE SPECIFICATION
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# EXTERNAL INTELLIGENCE ARCHITECTURE SPECIFICATION
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 **Status:** Frozen Data Contract Specification
 
@@ -44,3 +44,4 @@ expiry_timestamp            : ISO-8601 UTC string
 - **Options Proxy Data**: Maximum allowed age = 24 hours ($86,400$ seconds). If age exceeds limit, `options_valid` becomes `false`.
 - **News Events**: Active window evaluated dynamically around scheduled timestamps ($\pm 15$ to $\pm 30$ minutes).
 - **Transport Failure**: If file age exceeds 300 seconds, MQL5 sets `DQ_STALE_EXTERNAL` bitmask flag and reverts to purely local MQL5 strategy state.
+

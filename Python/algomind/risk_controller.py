@@ -1,4 +1,4 @@
-"""AMIGO Account-Size-Correlated Risk + Distortion Engine (Python Mirror).
+﻿"""AMIGO Account-Size-Correlated Risk + Distortion Engine (Python Mirror).
 
 Implements the deterministic RiskController component matching MQL5 RiskController.mqh:
   - Account-size risk spline curve (1.50% at $10 -> 0.50% at $500+)
@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List, Tuple
 
-from algomind.account_execution import AccountClass, classify_account
+from Amigo.account_execution import AccountClass, classify_account
 
 ABSOLUTE_MAX_RISK_PERCENT = 2.00
 ABSOLUTE_MAX_DISTORTION = 10.00
@@ -296,3 +296,4 @@ class RiskController:
             trade_allowed=True,
             reason="RISK_OK",
         )
+

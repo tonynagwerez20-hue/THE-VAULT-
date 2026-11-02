@@ -1,5 +1,5 @@
-# SHADOW COUNTERFACTUAL AUDIT REPORT
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# SHADOW COUNTERFACTUAL AUDIT REPORT
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 
 ---
@@ -7,7 +7,7 @@
 ## 1. Counterfactual Comparison Framework
 To audit influence without risking strategy degradation, decisions are evaluated under two parallel models:
 
-1. **Baseline Model**: Validated AlgoMind strategy using legacy proxy fusion ($F = \text{clip}(0.5 z_A + 0.5 z_B, -1, +1)$) and existing CFTC/options modifiers.
+1. **Baseline Model**: Validated Amigo strategy using legacy proxy fusion ($F = \text{clip}(0.5 z_A + 0.5 z_B, -1, +1)$) and existing CFTC/options modifiers.
 2. **Enhanced Shadow Model**: Baseline model augmented with Footprint Pressure ($P_t$), Cumulative Delta ($\text{CD}_t$), and Reconciled News Event states.
 
 ---
@@ -25,3 +25,4 @@ To audit influence without risking strategy degradation, decisions are evaluated
 
 ## 3. Findings
 The enhanced shadow features increase decision explainability and fail-closed safety during news releases without reducing baseline signal quality during normal trending market regimes.
+

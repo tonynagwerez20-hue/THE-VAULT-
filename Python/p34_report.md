@@ -1,12 +1,12 @@
-# AlgoMind AMIGO — P3.4 Canonical Dataset Validation and August Forensics
+﻿# Amigo AMIGO â€” P3.4 Canonical Dataset Validation and August Forensics
 
 **READ-ONLY ANALYSIS. No strategy parameters, risk settings, or MQL5 code were modified.**
 
-Canonical dataset: 793 trades | XAUUSDm M5 | 2025-10-01 → 2026-08-28
+Canonical dataset: 793 trades | XAUUSDm M5 | 2025-10-01 â†’ 2026-08-28
 
 ---
 
-## Task 1 — Full Duplicate Taxonomy
+## Task 1 â€” Full Duplicate Taxonomy
 
 | Metric | Count |
 |---|---|
@@ -31,7 +31,7 @@ Canonical dataset: 793 trades | XAUUSDm M5 | 2025-10-01 → 2026-08-28
 | 7x | 10 |
 | 8x | 5 |
 
-### SAME_ID_DIFFERENT_DATA — All Conflicting Groups
+### SAME_ID_DIFFERENT_DATA â€” All Conflicting Groups
 
 **trade_id = 2** (8 rows):
 
@@ -1353,7 +1353,7 @@ Canonical dataset: 793 trades | XAUUSDm M5 | 2025-10-01 → 2026-08-28
 
 ---
 
-## Task 2 — Authoritative Row Selection
+## Task 2 â€” Authoritative Row Selection
 
 | Duplicate Type | Rule Applied | Rows Affected |
 |---|---|---|
@@ -1367,7 +1367,7 @@ Canonical dataset: 793 trades | XAUUSDm M5 | 2025-10-01 → 2026-08-28
 
 ---
 
-## Task 3 — Verification Against MT5
+## Task 3 â€” Verification Against MT5
 
 > [!WARNING]
 > No saved MT5 HTML report file was found on disk. MT5 report figures are taken from the P3 run summary as previously reported. They cannot be independently re-verified from a file.
@@ -1383,13 +1383,13 @@ Canonical dataset: 793 trades | XAUUSDm M5 | 2025-10-01 → 2026-08-28
 | Profit factor | 1.65 | 1.47 | -0.18 |
 
 > [!IMPORTANT]
-> The MT5 report counts **1,260 trades** — identical to the raw CSV row count. This confirms the MT5 report was produced from or alongside the raw (undeduplicated) CSV. The MT5 report figures reflect the inflated dataset. The canonical 793-trade figures differ from the MT5 report and should be treated as the clean baseline.
+> The MT5 report counts **1,260 trades** â€” identical to the raw CSV row count. This confirms the MT5 report was produced from or alongside the raw (undeduplicated) CSV. The MT5 report figures reflect the inflated dataset. The canonical 793-trade figures differ from the MT5 report and should be treated as the clean baseline.
 
 ---
 
-## Task 4 — Sequence Analysis on Canonical 793 Trades
+## Task 4 â€” Sequence Analysis on Canonical 793 Trades
 
-N = 10000 shuffles | p = `(count ≥ actual + 1) / (N + 1)` | Dataset: 793 canonical trades | Seed: 2024
+N = 10000 shuffles | p = `(count â‰¥ actual + 1) / (N + 1)` | Dataset: 793 canonical trades | Seed: 2024
 
 | Metric | Shuffled Mean | Shuffled Median | 5th pct | 95th pct | Actual | p-value |
 |---|---|---|---|---|---|---|
@@ -1402,15 +1402,15 @@ N = 10000 shuffles | p = `(count ≥ actual + 1) / (N + 1)` | Dataset: 793 canon
 >
 > Interpretation is limited to: the trade R-multiple sequence is non-randomly ordered. Losses and wins cluster in sustained runs that exceed any of the 10,000 random permutations of the same trades. **This does not establish that market regimes caused the clustering.**
 
-![Max Drawdown](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p34_mc_dd.png)
+![Max Drawdown](file:///C:/Users/USER/Desktop/Amigo/Python/p34_mc_dd.png)
 
-![Losing Streak](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p34_mc_loss.png)
+![Losing Streak](file:///C:/Users/USER/Desktop/Amigo/Python/p34_mc_loss.png)
 
-![Winning Streak](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p34_mc_win.png)
+![Winning Streak](file:///C:/Users/USER/Desktop/Amigo/Python/p34_mc_win.png)
 
 ---
 
-## Task 5 — July vs August Forensic
+## Task 5 â€” July vs August Forensic
 
 | Metric | July 2026 | August 2026 | Delta |
 |---|---|---|---|
@@ -1441,7 +1441,7 @@ Mann-Whitney U (Jul vs Aug R): U=10623, p=0.00000000
 
 ---
 
-## Task 6 — Performance Shift Variables
+## Task 6 â€” Performance Shift Variables
 
 | Variable | Jul Mean | Aug Mean | Abs Diff | % Diff | MW p-value | Cohen's d |
 |---|---|---|---|---|---|---|
@@ -1469,11 +1469,11 @@ Mann-Whitney U (Jul vs Aug R): U=10623, p=0.00000000
 
 ---
 
-## Task 7 — Directional Asymmetry
+## Task 7 â€” Directional Asymmetry
 
-| Metric | Buy | Sell | Sell − Buy |
+| Metric | Buy | Sell | Sell âˆ’ Buy |
 |---|---|---|---|
-| Count | 493 | 300 | — |
+| Count | 493 | 300 | â€” |
 | Win Rate | 0.3996 | 0.5067 | +0.1071 |
 | Mean R | 0.1348 | 0.4858 | +0.3510 |
 | Median R | -1.0000 | 1.0000 | +2.0000 |
@@ -1494,11 +1494,11 @@ Mann-Whitney U (Jul vs Aug R): U=10623, p=0.00000000
 > [!IMPORTANT]
 > Directional asymmetry is statistically significant. This is a diagnostic finding. Cause unknown without Score/ATR data. Disabling buys is a strategy change; out of scope.
 
-![Direction & Exit Box Plots](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p34_dir_exit_box.png)
+![Direction & Exit Box Plots](file:///C:/Users/USER/Desktop/Amigo/Python/p34_dir_exit_box.png)
 
 ---
 
-## Task 8 — July/August Decomposition by Direction
+## Task 8 â€” July/August Decomposition by Direction
 
 | Metric | July 2026 | August 2026 | Delta |
 |---|---|---|---|
@@ -1521,25 +1521,25 @@ Mann-Whitney U (Jul vs Aug R): U=10623, p=0.00000000
 
 **MW Jul-sell vs Aug-sell:** U=2972, p=0.000000
 
-### Classification: **C — deterioration concentrated in SELL direction**
+### Classification: **C â€” deterioration concentrated in SELL direction**
 
-![Jul/Aug Decomposition](file:///C:/Users/USER/Desktop/ALGOMIND/Python/p34_jul_aug_decomp.png)
+![Jul/Aug Decomposition](file:///C:/Users/USER/Desktop/Amigo/Python/p34_jul_aug_decomp.png)
 
 ---
 
-## Task 9 — Dataset Export Code Inspection
+## Task 9 â€” Dataset Export Code Inspection
 
 | Aspect | Finding |
 |---|---|
 | Source file | No automated Python/MQL5 code found that generates the CSV |
-| Generation method | Manual MT5 Strategy Tester → Trade tab → Save As CSV |
+| Generation method | Manual MT5 Strategy Tester â†’ Trade tab â†’ Save As CSV |
 | Append behaviour | MT5 appends to existing file without deduplication |
 | trade_id generation | MT5 position ticket / deal ticket (resets each backtest) |
-| Globally unique | NO — same ticket numbers appear in different runs |
+| Globally unique | NO â€” same ticket numbers appear in different runs |
 | run_id field | NOT PRESENT |
-| Dataset reset at test start | NOT AUTOMATED — requires manual deletion |
+| Dataset reset at test start | NOT AUTOMATED â€” requires manual deletion |
 
-### Proposed Minimum Fix (not yet implemented — requires approval)
+### Proposed Minimum Fix (not yet implemented â€” requires approval)
 
 | Option | Description | Risk |
 |---|---|---|
@@ -1552,7 +1552,7 @@ Mann-Whitney U (Jul vs Aug R): U=10623, p=0.00000000
 
 ---
 
-## Task 10 — Final Status
+## Task 10 â€” Final Status
 
 ### CONFIRMED
 
@@ -1561,7 +1561,7 @@ Mann-Whitney U (Jul vs Aug R): U=10623, p=0.00000000
 3. **R-multiple = net_pnl / planned_risk** exactly on all 793 trades (diff = 0.0).
 4. **Sequence clustering confirmed** on 793 canonical trades: DD p=0.000100, Loss p=0.000700, Win p=0.000100.
 5. **Directional asymmetry confirmed**: Sell WR 50.7% vs Buy WR 40.0%; MW p=0.000343; d=0.237.
-6. **July→August shift is real and significant** (MW p=1.28e-11).
+6. **Julyâ†’August shift is real and significant** (MW p=1.28e-11).
 7. **Dataset CSV origin confirmed**: manual MT5 export, no automated pipeline.
 8. **MT5 trade count (1,260) matches raw CSV row count**, confirming the report was produced from the contaminated dataset.
 
@@ -1575,7 +1575,7 @@ Mann-Whitney U (Jul vs Aug R): U=10623, p=0.00000000
 
 1. **SAME_ID_DIFFERENT_DATA (152 IDs)**: Conflicting rows with same trade_id but different trade data. The earliest-entry-time rule was applied but is not guaranteed to select the correct run's row.
 2. **MT5 vs canonical mismatch**: MT5 report counts 1,260 trades; canonical has 793. The authoritative trade-level truth cannot be determined without a saved MT5 HTML report from a single clean run.
-3. **Root cause of July→August shift**: Win rate 67%→25%, TP% 61%→18%, sell%→buy% reversal. Score, ATR, Margin, Regime fields absent from CSV.
+3. **Root cause of Julyâ†’August shift**: Win rate 67%â†’25%, TP% 61%â†’18%, sell%â†’buy% reversal. Score, ATR, Margin, Regime fields absent from CSV.
 4. **Candidate population (12,687 / 7,089)**: EA journal not on disk; cannot verify.
 
 ### ENGINEERING GAPS
@@ -1589,3 +1589,4 @@ Mann-Whitney U (Jul vs Aug R): U=10623, p=0.00000000
 ---
 
 *All analyses are read-only. No MQL5 source, thresholds, risk parameters, or CSV were modified.*
+

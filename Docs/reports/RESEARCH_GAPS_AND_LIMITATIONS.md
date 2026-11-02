@@ -1,5 +1,5 @@
-# RESEARCH GAPS & LIMITATIONS AUDIT
-**AlgoMind / ASAP Retail Order-Flow Project**
+﻿# RESEARCH GAPS & LIMITATIONS AUDIT
+**Amigo / ASAP Retail Order-Flow Project**
 
 ## 1. Strict Boundary Audit
 
@@ -16,3 +16,4 @@
 
 4. **Zero Lookahead Enforced**:
    - All feature calculations use strictly historical data up to time $t$.
+

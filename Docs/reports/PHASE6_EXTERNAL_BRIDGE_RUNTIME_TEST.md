@@ -1,16 +1,16 @@
-# PHASE 6 — EXTERNAL BRIDGE RUNTIME TEST REPORT
+﻿# PHASE 6 â€” EXTERNAL BRIDGE RUNTIME TEST REPORT
 
 **Document Status**: Authoritative Engineering Audit  
 **Date**: 24 September 2026  
-**System**: AlgoMind / ASAP Retail Order-Flow System  
+**System**: Amigo / ASAP Retail Order-Flow System  
 
 ---
 
 ## 1. External Bridge Architecture
 
 The external bridge transfers intelligence asynchronously between Python and MQL5 via atomic file exchange:
-- **Inbox (Python $\rightarrow$ MQL5)**: `MQL5\Files\algomind_ext_in.txt`
-- **Outbox (MQL5 $\rightarrow$ Python)**: `MQL5\Files\algomind_mkt_out.txt`
+- **Inbox (Python $\rightarrow$ MQL5)**: `MQL5\Files\Amigo_ext_in.txt`
+- **Outbox (MQL5 $\rightarrow$ Python)**: `MQL5\Files\Amigo_mkt_out.txt`
 - **Freshness Gate**: `InpStaleThresholdSec = 120` seconds.
 
 ---
@@ -30,3 +30,4 @@ The external bridge transfers intelligence asynchronously between Python and MQL
 ## 3. Bridge Verification Summary
 
 The external bridge is **IMPLEMENTED AND VERIFIED** in the live MT5 environment. `ReadExternalContext()` executes every 5 seconds inside `OnTick()`, correctly updates `g_ext`, and triggers `DQ_STALE_EXTERNAL` whenever file updates cease.
+

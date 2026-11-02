@@ -1,8 +1,8 @@
-# PHASE 6 — SHADOW SAFETY RUNTIME TEST REPORT
+﻿# PHASE 6 â€” SHADOW SAFETY RUNTIME TEST REPORT
 
 **Document Status**: Authoritative Engineering Audit  
 **Date**: 24 September 2026  
-**System**: AlgoMind / ASAP Retail Order-Flow System  
+**System**: Amigo / ASAP Retail Order-Flow System  
 
 ---
 
@@ -12,7 +12,7 @@ The shadow safety architecture relies on a multi-layer defense strategy:
 
 1. **Layer 1 (Input Gate)**: `InpShadowOnly = true` is set as default input parameter in `AMIGO.mq5`.
 2. **Layer 2 (Config Storage)**: `g_cfg.shadow_only` is initialized in `OnInit()`.
-3. **Layer 3 (Execution Engine Intercept)**: `Execution Engine.mqh` lines 136–144 intercepts `OrderSend()` calls immediately before transmission to the broker:
+3. **Layer 3 (Execution Engine Intercept)**: `Execution Engine.mqh` lines 136â€“144 intercepts `OrderSend()` calls immediately before transmission to the broker:
 
 ```cpp
 if(g_cfg.shadow_only)
@@ -32,7 +32,7 @@ if(g_cfg.shadow_only)
 
 | Safety Level | Verification Method | Status |
 | :--- | :--- | :--- |
-| **Static Code Gate** | Source Inspection of `Execution Engine.mqh` L136–144 | `IMPLEMENTED AND VERIFIED` |
+| **Static Code Gate** | Source Inspection of `Execution Engine.mqh` L136â€“144 | `IMPLEMENTED AND VERIFIED` |
 | **Compiled Gate** | Binary disassembly / Clean compilation (0 errors) | `IMPLEMENTED AND VERIFIED` |
 | **Demo Account Environment** | Active broker server is `Exness-MT5Trial` | `IMPLEMENTED AND VERIFIED` |
 | **Runtime Interception Log** | `[EXEC_SHADOW]` log capture on trade candidate | `UNVERIFIED AT RUNTIME (Awaiting Trade Candidate)` |
@@ -42,3 +42,4 @@ if(g_cfg.shadow_only)
 ## 3. Safety Conclusion
 
 The system is certified **VERIFIED SAFE FOR SHADOW RUNTIME**. Order submission is unreachable when `InpShadowOnly == true`.
+

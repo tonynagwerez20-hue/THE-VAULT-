@@ -1,11 +1,11 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //| Contract.mqh - Canonical data contracts (frozen Phase-0 schema)  |
 //+------------------------------------------------------------------+
-#property copyright "AlgoMind"
+#property copyright "Amigo"
 #property strict
 
-#define ALGOMIND_SCHEMA_VERSION 100   // v1.0.0
-#define ALGOMIND_MAX_REASON_CODES 16
+#define Amigo_SCHEMA_VERSION 100   // v1.0.0
+#define Amigo_MAX_REASON_CODES 16
 
 //--- Regime enum (per Master Harmonized Spec §13)
 enum ENUM_REGIME

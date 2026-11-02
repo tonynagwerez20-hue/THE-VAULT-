@@ -1,7 +1,7 @@
-{
+﻿{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "algomind/external_context_v1",
-  "title": "AlgoMind ExternalContext v1",
+  "$id": "Amigo/external_context_v1",
+  "title": "Amigo ExternalContext v1",
   "description": "Canonical external-context payload written by Python for MQL5.",
   "type": "object",
   "properties": {
@@ -31,3 +31,4 @@
   },
   "additionalProperties": false
 }
+

@@ -1,5 +1,5 @@
-# FOOTPRINT RUNTIME VALIDATION REPORT
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# FOOTPRINT RUNTIME VALIDATION REPORT
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 
 ---
@@ -23,3 +23,4 @@ The native MQL5 Footprint engine (`AM_Footprint.mqh`) processes raw retail ticks
 
 ## 3. Status
 `IMPLEMENTED AND VERIFIED` in Level 1 & Level 2 integration; running in **Shadow Mode**.
+

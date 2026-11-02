@@ -1,5 +1,5 @@
-# PHASE 3 RUNTIME SHADOW VALIDATION REPORT
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# PHASE 3 RUNTIME SHADOW VALIDATION REPORT
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 **Overall Verification Classification:** `VERIFIED FOR LEVEL 1 & LEVEL 2 (SHADOW MODE INTEGRATION)` / `LEVEL 3 RUNTIME VERIFICATION UNAVAILABLE`
 
@@ -9,10 +9,10 @@
 
 | Verification Level | Scope & Definition | Status Label | Executable Evidence |
 | :--- | :--- | :--- | :--- |
-| **LEVEL 1 — UNIT VERIFICATION** | Individual function logic, formulas, and schema validity. | `IMPLEMENTED AND VERIFIED` | 39/39 pytest unit and parity tests passing cleanly. |
-| **LEVEL 2 — INTEGRATION VERIFICATION**| Module compilation, file bridge formats, and include dependencies. | `IMPLEMENTED AND VERIFIED` | `AMIGO.mq5` compiles cleanly with 0 errors via `metaeditor64.exe`. |
-| **LEVEL 3 — RUNTIME SHADOW VERIFICATION**| Live MT5 terminal tick ingestion and continuous runtime execution. | `UNVERIFIED — RUNTIME VERIFICATION UNAVAILABLE` | Live MT5 GUI execution requires manual terminal session launch. |
-| **LEVEL 4 — LIVE TRADING VALIDATION**| Live order routing, broker fills, and real-money trade execution. | `NOT AUTHORIZED` | Live trading blocked; MQL5 hard risk controls active. |
+| **LEVEL 1 â€” UNIT VERIFICATION** | Individual function logic, formulas, and schema validity. | `IMPLEMENTED AND VERIFIED` | 39/39 pytest unit and parity tests passing cleanly. |
+| **LEVEL 2 â€” INTEGRATION VERIFICATION**| Module compilation, file bridge formats, and include dependencies. | `IMPLEMENTED AND VERIFIED` | `AMIGO.mq5` compiles cleanly with 0 errors via `metaeditor64.exe`. |
+| **LEVEL 3 â€” RUNTIME SHADOW VERIFICATION**| Live MT5 terminal tick ingestion and continuous runtime execution. | `UNVERIFIED â€” RUNTIME VERIFICATION UNAVAILABLE` | Live MT5 GUI execution requires manual terminal session launch. |
+| **LEVEL 4 â€” LIVE TRADING VALIDATION**| Live order routing, broker fills, and real-money trade execution. | `NOT AUTHORIZED` | Live trading blocked; MQL5 hard risk controls active. |
 
 ---
 
@@ -34,3 +34,4 @@
 
 ## 3. Governance Conclusion
 No live trading authorization is granted. All newly introduced footprint-derived delta, cumulative delta, and news reaction metrics remain in **Shadow Mode**.
+

@@ -1,7 +1,7 @@
-# AlgoMind / ASAP
+﻿# Amigo / ASAP
 # GAP-01 / GAP-02 Candidate Evaluation & Selection Audit
 
-**Project:** AlgoMind / ASAP Retail Order-Flow System  
+**Project:** Amigo / ASAP Retail Order-Flow System  
 **Symbol / Timeframe:** `XAUUSD` / `M5`  
 **Execution Environment:** Windows 10, MetaTrader 5 (PID 7964), Exness Demo (`Exness-MT5Trial`)  
 **Operating Mode:** SHADOW MODE (`InpShadowOnly = true`)  
@@ -42,7 +42,7 @@ This report presents a rigorous, evidence-gated research audit evaluating the ca
 
 ## 3. GAP-01 CANDIDATE EVALUATIONS (MEAN-REVERSION DELTA DIVERGENCE)
 
-### Candidate A — Swing-to-Swing Peak/Trough Divergence
+### Candidate A â€” Swing-to-Swing Peak/Trough Divergence
 - **Definition:** Compare price swing points ($P_1, P_2$) against cumulative proxy delta ($D_1, D_2$).
 - **Data Availability:** `VERIFIED` (Uses $k$-swings from `Structure Engine.mqh` + cumulative proxy delta).
 - **Look-Ahead Safety:** `PARTIALLY VERIFIED` (Requires $k=2$ bar confirmation delay for swing highs/lows).
@@ -50,7 +50,7 @@ This report presents a rigorous, evidence-gated research audit evaluating the ca
 - **Proxy Delta Compatibility:** `PARTIALLY VERIFIED` (Cumulative proxy delta drift over multi-bar swing spans introduces distortion).
 - **Feature Overlap:** `MODERATE OVERLAP` (Overlaps with `sweep_reject` and `structure_dir`).
 
-### Candidate B — Rolling Slope Divergence
+### Candidate B â€” Rolling Slope Divergence
 - **Definition:** Compare rolling 10-bar linear regression slope of price ($\hat{S}_P$) vs cumulative proxy delta ($\hat{S}_D$).
 - **Data Availability:** `VERIFIED` (OHLC + cumulative proxy delta over 10 bars).
 - **Look-Ahead Safety:** `VERIFIED` (Zero confirmation lag beyond bar close).
@@ -58,19 +58,19 @@ This report presents a rigorous, evidence-gated research audit evaluating the ca
 - **Proxy Delta Compatibility:** `UNVERIFIED` (Short-window slopes on proxy delta are volatile across broker feeds).
 - **Feature Overlap:** `HIGH OVERLAP` (Overlaps heavily with `fusion` and `pressure_state`).
 
-### Candidate C — Value Extension vs Order-Flow Fusion Confirmation
+### Candidate C â€” Value Extension vs Order-Flow Fusion Confirmation
 - **Definition:** Compare VWAP stretch ($Z_{\text{vwap}} = |P - \text{VWAP}| / \text{ATR}_{14}$) against directional order-flow fusion ($F_{\text{dir}} = \text{dir} \times \text{fusion}$).
 - **Data Availability:** `VERIFIED` (Uses existing `dev_vwap_atr` + `fusion`).
 - **Look-Ahead Safety:** `VERIFIED` (Causal point-in-time calculation at bar close).
 - **M5 Noise Sensitivity:** `VERIFIED STATIC ONLY` (Low noise sensitivity due to ATR/VWAP smoothing).
-- **Proxy Delta Compatibility:** `VERIFIED STATIC ONLY` (Designed specifically for AlgoMind's proxy `fusion` metric).
+- **Proxy Delta Compatibility:** `VERIFIED STATIC ONLY` (Designed specifically for Amigo's proxy `fusion` metric).
 - **Feature Overlap:** `LOW OVERLAP` (Uniquely couples price value stretch with order-flow exhaustion).
 
 ---
 
 ## 4. GAP-02 CANDIDATE EVALUATIONS (CONTINUATION DISPLACEMENT)
 
-### Candidate A — ATR-Normalized Structural Break Distance
+### Candidate A â€” ATR-Normalized Structural Break Distance
 - **Definition:** Measure $|P_{\text{close}} - P_{\text{BOS}}| / \text{ATR}_{14}$ upon a confirmed BOS.
 - **Data Availability:** `VERIFIED` (Uses `Structure Engine.mqh` BOS level + ATR14).
 - **Look-Ahead Safety:** `VERIFIED` (Point-in-time calculation on bar close).
@@ -78,7 +78,7 @@ This report presents a rigorous, evidence-gated research audit evaluating the ca
 - **Proxy Delta Compatibility:** `VERIFIED` (Independent of delta data).
 - **Feature Overlap:** `LOW OVERLAP` (Measures post-break extension magnitude; strictly additive to `structure_dir`).
 
-### Candidate B — Directional Candle Body Ratio
+### Candidate B â€” Directional Candle Body Ratio
 - **Definition:** Combine directional body ratio ($|P_{\text{close}} - P_{\text{open}}| / \text{Range}$) and body size relative to ATR ($|P_{\text{close}} - P_{\text{open}}| / \text{ATR}_{14}$).
 - **Data Availability:** `VERIFIED` (OHLC bar data).
 - **Look-Ahead Safety:** `VERIFIED` (Immediate on bar close).
@@ -86,7 +86,7 @@ This report presents a rigorous, evidence-gated research audit evaluating the ca
 - **Proxy Delta Compatibility:** `VERIFIED` (Independent of delta).
 - **Feature Overlap:** `HIGH OVERLAP` (Measures candle momentum rather than structural displacement; overlaps with `range_ratio` and `surge`).
 
-### Candidate C — Multi-Bar Post-BOS Acceptance
+### Candidate C â€” Multi-Bar Post-BOS Acceptance
 - **Definition:** Measure cumulative directional progress over 3 bars following BOS relative to ATR14.
 - **Data Availability:** `VERIFIED` (Requires 3-bar post-BOS history).
 - **Look-Ahead Safety:** `PARTIALLY VERIFIED` (Requires 3-bar execution delay after BOS event).
@@ -137,8 +137,8 @@ $$\text{Information Gain} = I(\text{Future M5 Direction}; \text{Incremental Feat
 ```text
 Bar Index:       t-2         t-1         t0 (Decision Point)
 Price Event:     Swing High  Candle 1    Bar Close (t0)
-                 │           │           │
-                 └── 2-Bar Confirmation ─┘
+                 â”‚           â”‚           â”‚
+                 â””â”€â”€ 2-Bar Confirmation â”€â”˜
                      (Candidate A Signal Available at t0)
 ```
 - **Candidate A (Swings):** 2-bar confirmation lag inherent to $k=2$ swing identification. Must evaluate signal at $t_0$ using confirmed swing from $t-2$.
@@ -178,7 +178,7 @@ $$\text{Candidate Output}(\text{Market Snapshot}, \text{Equity}_1) \equiv \text{
 - **Training / Calibration Period:** `2024-01-01` to `2025-06-30`
 - **Validation Period:** `2025-07-01` to `2025-12-31`
 - **Out-of-Sample Period:** `2026-01-01` to `2026-09-24`
-- **Status:** `OOS VALIDATION — NOT CURRENTLY EXECUTABLE` (Execution requires owner selection of candidate formulas).
+- **Status:** `OOS VALIDATION â€” NOT CURRENTLY EXECUTABLE` (Execution requires owner selection of candidate formulas).
 
 ---
 
@@ -206,12 +206,12 @@ Based on minimal double-counting overlap, causal look-ahead safety, and proxy de
 ## 15. OWNER DECISION PACKET
 
 ### Decision Item 1: GAP-01 Divergence Formula Selection (DEC-GAP-01A)
-- **Question:** Which divergence formula should AlgoMind adopt for `div_score`?
+- **Question:** Which divergence formula should Amigo adopt for `div_score`?
 - **Options:** Candidate A (Swing-to-Swing), Candidate B (Rolling Slope), Candidate C (VWAP Stretch vs Fusion).
 - **Default Action if Undecided:** `IMPLEMENTATION BLOCKED`.
 
 ### Decision Item 2: GAP-02 Displacement Formula Selection (DEC-GAP-02A)
-- **Question:** Which displacement formula should AlgoMind adopt for `disp`?
+- **Question:** Which displacement formula should Amigo adopt for `disp`?
 - **Options:** Candidate A (ATR Break Distance), Candidate B (Body Ratio), Candidate C (Multi-Bar Acceptance).
 - **Default Action if Undecided:** `IMPLEMENTATION BLOCKED`.
 
@@ -236,10 +236,10 @@ Contracts header.mqh     UNCHANGED
 
 ```text
 GAP-01:
-CANDIDATE EVALUATION COMPLETE — OWNER SELECTION REQUIRED
+CANDIDATE EVALUATION COMPLETE â€” OWNER SELECTION REQUIRED
 
 GAP-02:
-CANDIDATE EVALUATION COMPLETE — OWNER SELECTION REQUIRED
+CANDIDATE EVALUATION COMPLETE â€” OWNER SELECTION REQUIRED
 
 SPECIFICATION:
 NOT FROZEN
@@ -251,7 +251,7 @@ CALIBRATION:
 NOT PERFORMED
 
 OOS VALIDATION:
-OOS VALIDATION — NOT CURRENTLY EXECUTABLE
+OOS VALIDATION â€” NOT CURRENTLY EXECUTABLE
 
 PRODUCTION CODE:
 UNCHANGED
@@ -274,3 +274,4 @@ NOT APPROVED
 GIT PUSH:
 NOT APPROVED
 ```
+

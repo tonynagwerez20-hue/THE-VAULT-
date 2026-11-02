@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //| ExternalContext.mqh - read external context, write market state  |
 //+------------------------------------------------------------------+
 #property strict
@@ -88,7 +88,7 @@ bool ReadExternalContext(string path, ExternalContext &ctx, string &err)
    FileClose(h);
 
    //--- Validate schema version
-   if(ctx.schema_version != ALGOMIND_SCHEMA_VERSION)
+   if(ctx.schema_version != Amigo_SCHEMA_VERSION)
    {
       ctx.data_quality |= DQ_SCHEMA_MISMATCH;
    }
@@ -136,7 +136,7 @@ void WriteSnapshotForExternal(string path, const MarketSnapshot &s,
    FileWriteString(h, StringFormat("close=%.5f\n",       iClose(s.symbol, g_cfg.tf_exec, 1)));
    FileWriteString(h, StringFormat("equity=%.2f\n",      AccountInfoDouble(ACCOUNT_EQUITY)));
    FileWriteString(h, StringFormat("session_state=%d\n", s.session_state));
-   FileWriteString(h, StringFormat("schema_version=%d\n", ALGOMIND_SCHEMA_VERSION));
+   FileWriteString(h, StringFormat("schema_version=%d\n", Amigo_SCHEMA_VERSION));
 
    FileClose(h);
 }

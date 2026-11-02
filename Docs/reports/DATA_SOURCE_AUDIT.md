@@ -1,9 +1,9 @@
-# DATA SOURCE AUDIT REPORT
-**AlgoMind / ASAP Retail Order-Flow Project**
+﻿# DATA SOURCE AUDIT REPORT
+**Amigo / ASAP Retail Order-Flow Project**
 **Date:** September 23, 2026
 
 ## 1. Executive Summary
-This document provides a factual audit of all available zero-cost reference and retail data sources evaluated for the AlgoMind Retail Order-Flow engine.
+This document provides a factual audit of all available zero-cost reference and retail data sources evaluated for the Amigo Retail Order-Flow engine.
 
 ---
 
@@ -19,7 +19,7 @@ This document provides a factual audit of all available zero-cost reference and 
 | **EV Trading Labs** | Yes | Yes (Sample)| No | Retail XAUUSD | Aggregated Activity | Estimated | Free Sample Download | `PROXY` |
 | **FirstRateData** | Yes | Sample | No | Futures GC | Daily / Minute OHLC | No | Free Sample Download | `LIMITED` |
 | **MarketParquet** | Yes | Sample | No | Futures GC | Parquet Sample | No | Free Sample Download | `LIMITED` |
-| **Databento / Sierra**| **No** | N/A | N/A | CME / Paid Feeds | Paid Tick / MBO | N/A | `PAID — NOT USED` | `EXCLUDED` |
+| **Databento / Sierra**| **No** | N/A | N/A | CME / Paid Feeds | Paid Tick / MBO | N/A | `PAID â€” NOT USED` | `EXCLUDED` |
 
 ---
 
@@ -27,3 +27,4 @@ This document provides a factual audit of all available zero-cost reference and 
 1. **Exchange OHLCV (`TRUE`)**: Useful for reference VWAP and high-level regime context, but explicitly tagged `footprint_available = false` because OHLCV lacks sub-bar aggressor classification.
 2. **MT5 Ticks (`PROXY`)**: Retail tick data provides timestamp, price, volume, bid, and ask. Buy/sell classification uses the **Tick Rule** ($P_t > P_{t-1} \rightarrow \text{BUY}$, $P_t < P_{t-1} \rightarrow \text{SELL}$).
 3. **Crypto Gold Perps (`PROXY`)**: Hyperliquid `GOLD-PERP` serves as an independent order-flow benchmark. Note: `GOLD-PERP` $\neq$ COMEX GC $\neq$ Retail XAUUSD CFD.
+

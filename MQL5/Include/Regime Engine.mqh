@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //| RegimeEngine.mqh - market state machine                          |
 //+------------------------------------------------------------------+
 #property strict
@@ -64,7 +64,7 @@ double ScoreExhaustion(const FeatureSnapshot &f)
    return 0.40*div + 0.30*rej + 0.30*decay;
 }
 
-RegimeState EvaluateRegime(const FeatureSnapshot &f, const AlgoMindConfig &cfg)
+RegimeState EvaluateRegime(const FeatureSnapshot &f, const AmigoConfig &cfg)
 {
    RegimeState rs;
    rs.timestamp = f.timestamp;

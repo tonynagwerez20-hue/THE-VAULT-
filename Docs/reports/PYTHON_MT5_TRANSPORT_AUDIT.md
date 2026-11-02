@@ -1,5 +1,5 @@
-# PYTHON ↔ MT5 TRANSPORT AND STATE DELIVERY AUDIT
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# PYTHON â†” MT5 TRANSPORT AND STATE DELIVERY AUDIT
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 **Status:** Audit & Integration Verification
 
@@ -9,8 +9,8 @@
 - **Transport Mechanism**: Atomic Key-Value ANSI File Exchange (per D4 REQ-030 / P-10).
 - **ZeroMQ / Sockets**: Deferred (Not active in live code).
 - **Files Utilized**:
-  - `algomind_ext_in.txt`: External Context file written atomically by Python (`_atomic_write` using `.tmp` and `os.replace`), read by MQL5 (`ReadExternalContext`).
-  - `algomind_mkt_out.txt`: Market Snapshot written by MQL5 (`WriteSnapshotForExternal`), read by Python (`read_market_snapshot`).
+  - `Amigo_ext_in.txt`: External Context file written atomically by Python (`_atomic_write` using `.tmp` and `os.replace`), read by MQL5 (`ReadExternalContext`).
+  - `Amigo_mkt_out.txt`: Market Snapshot written by MQL5 (`WriteSnapshotForExternal`), read by Python (`read_market_snapshot`).
 
 ---
 
@@ -18,23 +18,23 @@
 
 ```text
 External Data Sources (CFTC, GLD Options, Economic Calendars)
-                        │
-                        ▼
+                        â”‚
+                        â–¼
    Python `ExternalContext` Serializer (`to_kv_lines()`)
-                        │
-                        ▼
-  Atomic File Handoff (`algomind_ext_in.txt.tmp` ➔ `algomind_ext_in.txt`)
-                        │
-                        ▼
+                        â”‚
+                        â–¼
+  Atomic File Handoff (`Amigo_ext_in.txt.tmp` âž” `Amigo_ext_in.txt`)
+                        â”‚
+                        â–¼
    MQL5 `ReadExternalContext()` Parser (Shared-read, ANSI Text)
-                        │
-                        ▼
-   Schema & Freshness Validation (`ALGOMIND_SCHEMA_VERSION = 100`, Age ≤ 120s)
-                        │
-                        ▼
+                        â”‚
+                        â–¼
+   Schema & Freshness Validation (`Amigo_SCHEMA_VERSION = 100`, Age â‰¤ 120s)
+                        â”‚
+                        â–¼
    MQL5 Strategy & Regime Scoring Engine (`EvaluateRegime`, `ScoreStrategies`)
-                        │
-                        ▼
+                        â”‚
+                        â–¼
    Hard Risk Veto & Execution Authority Gate (`Decide`, `CheckRiskLimits`)
 ```
 
@@ -50,3 +50,4 @@ External Data Sources (CFTC, GLD Options, Economic Calendars)
 | **Future Timestamp** | Python timestamps ISO-8601 UTC. | MQL5 checks `ctx.timestamp > TimeCurrent()` $\rightarrow$ sets `DQ_STALE_EXTERNAL`. | `IMPLEMENTED AND VERIFIED` |
 | **Corrupted Payload / Malformed KV** | Ignored by line splitter. | Unrecognized key lines skipped; default field values maintained safely. | `IMPLEMENTED AND VERIFIED` |
 | **ZeroMQ / Socket Transport** | N/A | Not implemented. File IPC is sole transport. | `NOT IMPLEMENTED` |
+

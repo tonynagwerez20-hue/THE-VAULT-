@@ -1,7 +1,7 @@
-# SMALL ACCOUNT PARITY INSPECTION REPORT
+﻿# SMALL ACCOUNT PARITY INSPECTION REPORT
 
 ## A. Validated Strategy Identification
-- **Strategy Name / EA**: AMIGO (AlgoMind Mean-reversion & Order-flow Architecture)
+- **Strategy Name / EA**: AMIGO (Amigo Mean-reversion & Order-flow Architecture)
 - **Symbol**: XAUUSDm (Gold / USD Micro contract)
 - **Timeframe**: M5 (5-Minute)
 - **Period Tested**: 2025-10-01 to 2026-08-28 (759 closed positions ground truth)
@@ -23,3 +23,4 @@ The **OOS-to-Live Parity Layer** sits between the signal generator and execution
 2. Applies broker symbol constraints (Min Lot 0.01, Lot Step 0.01, Contract Size 100).
 3. Evaluates margin requirements, spread ceilings, and minimum-lot risk distortion.
 4. Generates execution audit logs and rejection classifications without altering signal generation.
+

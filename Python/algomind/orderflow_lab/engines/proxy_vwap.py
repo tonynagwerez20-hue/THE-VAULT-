@@ -1,4 +1,4 @@
-"""Proxy VWAP Engine (spec §16).
+﻿"""Proxy VWAP Engine (spec §16).
 
 Implements three weighting alternatives:
   1. TICK_PRICE   — tick-level price × activity weighting (default)
@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import Dict, List, Optional
 from enum import Enum
 
-from algomind.orderflow_lab.schema import (
+from Amigo.orderflow_lab.schema import (
     FootprintBin, ProxyVWAPSnapshot, DataQualityTag
 )
 
@@ -113,3 +113,4 @@ class ProxyVWAPEngine:
             cum_activity=self._cum_activity,
             quality_tag=DataQualityTag.PROXY,
         )
+

@@ -1,5 +1,5 @@
-"""
-ALGOMIND MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
+﻿"""
+Amigo MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
 ==================================================================
 CFTC Positioning & Proxy Options Engine (v1.0)
 Calculates Managed Money COT bands, Realized Vol Ratios, Options OI Concentration,
@@ -11,7 +11,7 @@ from __future__ import annotations
 import math
 import numpy as np
 from typing import List, Dict, Any, Optional
-from algomind.mgle.schema import DataQualityTag, OptionsProxyLevel
+from Amigo.mgle.schema import DataQualityTag, OptionsProxyLevel
 
 def norm_cdf(x: float) -> float:
     """Cumulative distribution function for standard normal distribution."""
@@ -155,3 +155,4 @@ class OptionsProxyEngine:
             "options_levels": options_levels,
             "quality": DataQualityTag.PROXY
         }
+

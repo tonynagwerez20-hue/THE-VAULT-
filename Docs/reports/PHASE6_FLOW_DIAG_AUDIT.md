@@ -1,14 +1,14 @@
-# PHASE 6 — FLOW_DIAG TELEMETRY AUDIT REPORT
+﻿# PHASE 6 â€” FLOW_DIAG TELEMETRY AUDIT REPORT
 
 **Document Status**: Authoritative Engineering Audit  
 **Date**: 24 September 2026  
-**System**: AlgoMind / ASAP Retail Order-Flow System  
+**System**: Amigo / ASAP Retail Order-Flow System  
 
 ---
 
 ## 1. `FLOW_DIAG` Telemetry Code Audit
 
-The `FLOW_DIAG` logging statement in `AMIGO.mq5` (lines 315–319) was audited against all contract specifications:
+The `FLOW_DIAG` logging statement in `AMIGO.mq5` (lines 315â€“319) was audited against all contract specifications:
 
 ```cpp
 // AMIGO.mq5 lines 315-319
@@ -40,3 +40,4 @@ LogMsg(LOG_INFO, "FLOW_DIAG", StringFormat("ts=%s vwap=%.5f dev=%.2f poc=%.5f va
 ## 3. Disconnection Guarantee
 
 None of the fields in `FLOW_DIAG` (`vwap`, `poc`, `vah`, `val`, `cd`, `fp_press`) feed into `Strategy Engine.mqh` scoring functions (`MR_Evidence` or `ContinuationEvidence`). They are published purely as shadow telemetry.
+

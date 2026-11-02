@@ -1,4 +1,4 @@
-"""Flow Pipeline Orchestrator.
+﻿"""Flow Pipeline Orchestrator.
 
 Wires together all engines into a single pipeline that processes
 a list of OrderFlowTick objects (one bar's worth) and produces
@@ -11,17 +11,17 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from algomind.orderflow_lab.schema import (
+from Amigo.orderflow_lab.schema import (
     OrderFlowTick, FootprintBin, DataQualityTag, PressureState,
     ProxyFootprintSnapshot, ProxyVWAPSnapshot, ProxyProfileSnapshot,
     ProxyDOMSnapshot, FlowShadowLogEntry,
 )
-from algomind.orderflow_lab.engines.price_bin_engine import PriceBinEngine
-from algomind.orderflow_lab.engines.proxy_vwap import ProxyVWAPEngine, VWAPMethod
-from algomind.orderflow_lab.engines.proxy_profile import ProxyProfileEngine
-from algomind.orderflow_lab.engines.proxy_footprint import ProxyFootprintEngine
-from algomind.orderflow_lab.engines.event_engine import EventEngine, FlowEvent
-from algomind.orderflow_lab.engines.proxy_dom import ProxyDOMEngine
+from Amigo.orderflow_lab.engines.price_bin_engine import PriceBinEngine
+from Amigo.orderflow_lab.engines.proxy_vwap import ProxyVWAPEngine, VWAPMethod
+from Amigo.orderflow_lab.engines.proxy_profile import ProxyProfileEngine
+from Amigo.orderflow_lab.engines.proxy_footprint import ProxyFootprintEngine
+from Amigo.orderflow_lab.engines.event_engine import EventEngine, FlowEvent
+from Amigo.orderflow_lab.engines.proxy_dom import ProxyDOMEngine
 
 
 @dataclass
@@ -186,3 +186,4 @@ class FlowPipeline:
     @property
     def latest(self) -> Optional[BarResult]:
         return self._results[-1] if self._results else None
+

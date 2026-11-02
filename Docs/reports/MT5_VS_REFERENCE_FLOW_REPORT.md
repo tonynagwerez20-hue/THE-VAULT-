@@ -1,5 +1,5 @@
-# MT5 RETAIL VS. REFERENCE ORDER-FLOW REPORT
-**AlgoMind / ASAP Retail Order-Flow Project**
+﻿# MT5 RETAIL VS. REFERENCE ORDER-FLOW REPORT
+**Amigo / ASAP Retail Order-Flow Project**
 
 ## 1. Cross-Venue Metric Comparison
 
@@ -13,3 +13,4 @@
 ## 2. Session Variations
 - **London / New York Overlap (13:00 - 17:00 UTC)**: Highest correlation ($> 0.85$) due to dense retail tick feed matching institutional order flow.
 - **Asian Session (00:00 - 08:00 UTC)**: Lower tick volume causes increased noise in retail delta estimates.
+

@@ -1,5 +1,5 @@
-"""
-ALGOMIND MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
+﻿"""
+Amigo MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
 ==================================================================
 Autonomous External Service Script (v1.0)
 Runs continuously on a 5-second loop, computing MGLE Shadow Snapshots
@@ -14,12 +14,12 @@ import argparse
 from datetime import datetime, timezone
 import numpy as np
 
-from algomind.mgle.schema import MGLESnapshot, DataQualityTag, DataQualityBitmask, MacroLevel
-from algomind.mgle.db import MGLEDatabase
-from algomind.mgle.macro_engines import MacroEngines, GeoEngine
-from algomind.mgle.cftc_engine import CFTCEngine
-from algomind.mgle.options_engine import OptionsProxyEngine
-from algomind.mgle.level_engine import MacroLevelEngine
+from Amigo.mgle.schema import MGLESnapshot, DataQualityTag, DataQualityBitmask, MacroLevel
+from Amigo.mgle.db import MGLEDatabase
+from Amigo.mgle.macro_engines import MacroEngines, GeoEngine
+from Amigo.mgle.cftc_engine import CFTCEngine
+from Amigo.mgle.options_engine import OptionsProxyEngine
+from Amigo.mgle.level_engine import MacroLevelEngine
 
 def build_mgle_snapshot(now_dt: datetime, mkt_path: str, db: MGLEDatabase) -> MGLESnapshot:
     """Computes master MGLE Snapshot in SHADOW MODE."""
@@ -141,8 +141,8 @@ def write_mgle_bridge_file(out_path: str, snap: MGLESnapshot):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mkt", default="C:/Users/USER/AppData/Roaming/MetaQuotes/Terminal/D0E8209F77C8CF37AD8BF550E51FF075/MQL5/Files/algomind_mkt_out.txt")
-    ap.add_argument("--out", default="C:/Users/USER/AppData/Roaming/MetaQuotes/Terminal/D0E8209F77C8CF37AD8BF550E51FF075/MQL5/Files/algomind_mgle_in.txt")
+    ap.add_argument("--mkt", default="C:/Users/USER/AppData/Roaming/MetaQuotes/Terminal/D0E8209F77C8CF37AD8BF550E51FF075/MQL5/Files/Amigo_mkt_out.txt")
+    ap.add_argument("--out", default="C:/Users/USER/AppData/Roaming/MetaQuotes/Terminal/D0E8209F77C8CF37AD8BF550E51FF075/MQL5/Files/Amigo_mgle_in.txt")
     ap.add_argument("--out2", default=None, help="Optional secondary path to write MGLE file (e.g. Account B)")
     ap.add_argument("--interval", type=float, default=5.0)
     args = ap.parse_args()
@@ -176,3 +176,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "algomind/external_context_v1",
+  "title": "AlgoMind ExternalContext v1",
+  "description": "Canonical external-context payload written by Python for MQL5.",
+  "type": "object",
+  "properties": {
+    "timestamp":         { "type": "integer", "description": "Unix seconds at context creation" },
+    "data_quality":      { "type": "integer", "description": "Bitmask of DQ_* flags" },
+
+    "cftc_valid":        { "type": "boolean" },
+    "cftc_pub_ts":       { "type": "integer", "description": "CFTC publication timestamp (UTC, Unix seconds)" },
+    "cftc_net":          { "type": "number",  "description": "Net position = long - short" },
+    "cftc_net_chg":      { "type": "number",  "description": "Week-over-week net change" },
+    "cftc_pct":          { "type": "number",  "minimum": 0, "maximum": 100, "description": "Rolling percentile over previous 156 releases" },
+    "cftc_extreme":      { "type": "boolean", "description": "True when percentile <= 10 or >= 90" },
+
+    "options_valid":     { "type": "boolean" },
+    "options_obs_ts":    { "type": "integer", "description": "Unix seconds of the observation" },
+    "options_basis":     { "type": "number",  "description": "GC futures minus spot (0 if unavailable)" },
+    "options_oi_conc":   { "type": "number",  "minimum": 0, "maximum": 1, "description": "Max strike OI / total OI" },
+    "options_sd_atr":    { "type": "number",  "description": "Distance to nearest notable strike, in ATR units" },
+    "options_gamma":     { "type": "integer", "enum": [-1, 0, 1], "description": "Heuristic gamma regime; 0 when source has no Greeks" },
+    "options_source":    { "type": "string",  "enum": ["PROXY_GLD_CBOE", "PROXY_GLD_YF", "NONE"], "description": "Data provenance label" },
+
+    "news_valid":        { "type": "boolean" },
+    "news_ts":           { "type": "integer", "description": "Scheduled release timestamp" },
+    "news_active":       { "type": "boolean", "description": "True inside buffer/reaction window" },
+    "news_surprise":     { "type": "number",  "description": "actual - forecast (raw units)" },
+    "news_rel_surprise": { "type": "number",  "description": "(actual - forecast) / |forecast|" }
+  },
+  "additionalProperties": false
+}

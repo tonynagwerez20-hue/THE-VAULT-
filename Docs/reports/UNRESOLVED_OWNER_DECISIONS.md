@@ -1,5 +1,5 @@
-# UNRESOLVED OWNER DECISION REGISTER
-**AlgoMind / ASAP Retail Order-Flow System**
+﻿# UNRESOLVED OWNER DECISION REGISTER
+**Amigo / ASAP Retail Order-Flow System**
 **Date:** September 23, 2026
 
 ## Decision Register Matrix
@@ -16,3 +16,4 @@
 | **DEC-005** | **Cumulative Delta Integration**| A) Keep Cumulative Delta in shadow mode.<br>B) Connect Cumulative Delta divergence to Mean Reversion scoring gate. | Shadow Mode Only | Live strategy signal generation | `REQUIRES OWNER DECISION` |
 | **DEC-006** | **Micro-Account Minimum Vol Risk**| A) Reject trade if min volume ($0.01$) exceeds allowed risk % (`NO_TRADE`).<br>B) Execute min volume anyway.<br>C) Scale stop distance. | Reject (`NO_TRADE`) | Micro-account trade frequency | `REQUIRES OWNER DECISION` |
 | **DEC-007** | **Live Promotion Authorization**| A) Authorize live trial execution.<br>B) Maintain Shadow Mode indefinitely until OOS walk-forward validation. | Shadow Mode Indefinitely | Live trade order submission | `REQUIRES OWNER DECISION` |
+

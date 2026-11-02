@@ -1,8 +1,8 @@
-# PHASE 6 — UNRESOLVED OWNER DECISIONS
+﻿# PHASE 6 â€” UNRESOLVED OWNER DECISIONS
 
 **Document Status**: Authoritative Governance Register  
 **Date**: 24 September 2026  
-**System**: AlgoMind / ASAP Retail Order-Flow System  
+**System**: Amigo / ASAP Retail Order-Flow System  
 
 ---
 
@@ -25,3 +25,4 @@ The following quantitative, architectural, and operational decisions remain open
 ## 2. Policy Enforcement
 
 All open decisions remain locked at their **Default Baseline**. No strategy thresholds or scoring formulas have been modified during Phase 6.
+

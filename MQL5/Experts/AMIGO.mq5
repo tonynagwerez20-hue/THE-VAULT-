@@ -181,6 +181,9 @@ int OnInit()
 
    //--- Start the position-manager / reconciliation timer.
    //--- Without this, OnTimer never fires and partials/trailing never run.
+   //--- Reconcile and Recover Persistent Position State (Workstream C)
+   PositionReconcileState(g_cfg);
+
    EventSetTimer(5);
 
    LogMsg(LOG_INFO, "INIT", StringFormat("Amigo started on %s tf=%d ML=%s",
@@ -430,8 +433,8 @@ void OnClosedBar()
    //--- 3) Publish snapshot for Python (external context)
    WriteSnapshotForExternal(g_cfg.bridge_outbox, g_snap, g_feat);
 
-   //--- 4) Regime
-   RegimeState rs = EvaluateRegime(g_feat, g_cfg);
+   //--- 4) Multi-Timeframe Regime
+   RegimeState rs = EvaluateRegime(g_feat, td, g_cfg);
 
    //--- 5) Strategy scores
    StrategyScores ss = ScoreStrategies(g_feat, g_ext, g_cfg);
@@ -463,6 +466,17 @@ void OnClosedBar()
 
    if(dr.action != ACTION_TRADE) return;
 
+   //--- M1 Microstructure Execution Filter (Workstream B):
+   // For SCALPING horizon (or M1/M5 execution), check M1 structure for immediate adverse impulse.
+   if(g_cfg.tf_exec == PERIOD_M1 || (g_cfg.tf_exec == PERIOD_M5 && td.m1_dir != 0 && td.m1_dir != dr.direction))
+   {
+      if(td.m1_dir != 0 && td.m1_dir != dr.direction)
+      {
+         LogMsg(LOG_INFO, "EXEC_M1_VETO", StringFormat("M1 adverse microstructure veto: m1_dir=%d trade_dir=%d", td.m1_dir, dr.direction));
+         return;
+      }
+   }
+
    //--- 8) Risk gate
    string risk_reason;
    if(!RiskAllows(g_cfg, risk_reason))
@@ -471,16 +485,27 @@ void OnClosedBar()
       return;
    }
 
-   //--- 9) Entry geometry
+   //--- 9) Horizon Determination & Entry Geometry
+   ENUM_HORIZON selected_horizon = HORIZON_INTRADAY;
+   if(g_cfg.tf_exec == PERIOD_M1) selected_horizon = HORIZON_SCALPING;
+   else if(g_cfg.tf_exec == PERIOD_H1 || g_cfg.tf_exec == PERIOD_H4) selected_horizon = HORIZON_SWING;
+   else if(td.aligned && (td.h4_dir == dr.direction || td.h1_dir == dr.direction)) selected_horizon = HORIZON_INTRADAY;
+
    double ask = SymbolInfoDouble(g_symbol, SYMBOL_ASK);
    double bid = SymbolInfoDouble(g_symbol, SYMBOL_BID);
    double entry = (dr.direction == +1) ? ask : bid;
    double atr = g_feat.atr14;
    if(atr <= 0.0) return;
 
+   // Horizon-specific structural invalidation timeframe
+   ENUM_TIMEFRAMES stop_tf = g_cfg.tf_exec;
+   if(selected_horizon == HORIZON_SCALPING) stop_tf = (g_cfg.tf_exec == PERIOD_M1) ? PERIOD_M1 : PERIOD_M5;
+   else if(selected_horizon == HORIZON_SWING) stop_tf = (g_cfg.tf_h4 != 0) ? g_cfg.tf_h4 : PERIOD_H4;
+   else stop_tf = (g_cfg.tf_context != 0) ? g_cfg.tf_context : PERIOD_M15;
+
    double structural_invalid = 0.0;
    MqlRates r[];
-   int got = CopyRates(g_symbol, g_cfg.tf_exec, 1, 200, r);
+   int got = CopyRates(g_symbol, stop_tf, 1, 200, r);
    if(got > 20)
    {
       double sp; datetime ts;
@@ -510,7 +535,11 @@ void OnClosedBar()
       return;
    }
 
-   double effective_risk_pct = risk_auto.effective_risk_percent;
+   //--- Apply Authoritative Regime Risk Modifier (Workstream A Integration)
+   double reg_mod = rs.risk_modifier;
+   if(reg_mod < 0.10 || reg_mod > 1.00 || !MathIsValidNumber(reg_mod))
+      reg_mod = 1.00; // Fail-safe default
+   double effective_risk_pct = risk_auto.effective_risk_percent * reg_mod;
 
    AdaptiveSLResult adapt_res = EvaluateAdaptiveStop(
       g_symbol, dr.direction, entry, original_sl, tp, structural_invalid, atr, effective_risk_pct, g_cfg
@@ -534,6 +563,17 @@ void OnClosedBar()
    {
       LogMsg(LOG_WARN, "EXEC", "spread too large relative to stop");
       return;
+   }
+
+   //--- Netting Account Single-Active-Horizon Invariant Gate
+   ENUM_ACCOUNT_MARGIN_MODE margin_mode = (ENUM_ACCOUNT_MARGIN_MODE)AccountInfoInteger(ACCOUNT_MARGIN_MODE);
+   if(margin_mode == ACCOUNT_MARGIN_MODE_RETAIL_NETTING && !g_cfg.shadow_only)
+   {
+      if(PositionsTotal() > 0 && PositionSelect(g_symbol))
+      {
+         LogMsg(LOG_WARN, "NETTING_GATE", "NETTING_CONCURRENT_POSITION_BLOCKED: Symbol already has active position");
+         return;
+      }
    }
 
    //--- 10) Account-Aware Execution Evaluation & Risk Sizing
@@ -578,8 +618,10 @@ void OnClosedBar()
    ti.confidence       = dr.confidence;
    ti.regime           = rs.regime;
    ti.hypothesis       = dr.hypothesis;
+   ti.horizon          = selected_horizon;
    ti.reason_codes     = dr.reason;
    ti.risk_allocation  = g_cfg.risk_per_trade_pct;
+   ti.risk_modifier    = reg_mod;
    ti.data_quality     = g_ext.data_quality | g_snap.data_quality;
 
    string vreason;
@@ -609,13 +651,13 @@ void OnClosedBar()
    if(er.position_id != 0)
    {
       PositionManagerRegister(er.position_id, entry, sl, tp, dr.direction,
-                              atr, g_cfg);
+                              atr, g_cfg, selected_horizon);
    }
    else if(g_cfg.shadow_only)
    {
       // In Shadow Mode, register synthetic position ticket (decision_id) to run post-entry shadow position management
       PositionManagerRegister((ulong)decision_id, entry, sl, tp, dr.direction,
-                              atr, g_cfg);
+                              atr, g_cfg, selected_horizon);
    }
 }
 

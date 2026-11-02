@@ -136,7 +136,7 @@ void OnStart()
 
    // Test Shadow Position Registration & 50% BE / 25% Trailing Sequence
    // Entry = 2000.00, SL = 1990.00, TP = 2040.00 (TPDistance = 40.00, BE Trigger = 2020.00)
-   PositionManagerRegister(9001, 2000.00, 1990.00, 2040.00, +1, 2.00, g_cfg);
+   PositionManagerRegister(9001, 2000.00, 1990.00, 2040.00, +1, 2.00, g_cfg, HORIZON_INTRADAY);
 
    // Tick 1: Price = 2010.00 (Below 50% progress to TP)
    // We simulate tick in PositionManagerTick logic directly

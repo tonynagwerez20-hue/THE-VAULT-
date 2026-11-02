@@ -206,6 +206,14 @@ TopDownContext EvaluateTopDownContext(const string symbol, double m5_atr)
    else
       htf_bias = td.h4_dir;
 
+   // D1 Macro Context Integration (Workstream B):
+   // D1 serves as macro authority constraint. If D1 strongly opposes the H4/H1 bias,
+   // HTF bias is neutralized to avoid trend continuation against macro market structure.
+   if(htf_bias != 0 && td.d1_dir != 0 && htf_bias != td.d1_dir)
+   {
+      htf_bias = 0; // Macro conflict neutralizes higher-timeframe continuation authority
+   }
+
    int ltf_bias = 0;
    if(td.m15_dir != 0)
       ltf_bias = td.m15_dir;

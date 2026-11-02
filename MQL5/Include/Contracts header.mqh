@@ -1,4 +1,4 @@
-﻿//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 //| Contract.mqh - Canonical data contracts (frozen Phase-0 schema)  |
 //+------------------------------------------------------------------+
 #property copyright "Amigo"
@@ -204,8 +204,10 @@ struct TradeIntent
    double          confidence;
    ENUM_REGIME     regime;
    ENUM_HYPOTHESIS hypothesis;
+   ENUM_HORIZON    horizon;         // Section 1 Three-Horizon Architecture
    string          reason_codes;
    double          risk_allocation;
+   double          risk_modifier;   // Authoritative regime risk modifier [0.10, 1.00]
    uint            data_quality;
 };
 

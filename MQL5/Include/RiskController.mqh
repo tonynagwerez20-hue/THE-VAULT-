@@ -12,7 +12,7 @@
 
 //--- Absolute Safety Ceilings (Hard Guardrails - Section 4 & 14)
 #define ABSOLUTE_MAX_RISK_PERCENT 2.00
-#define ABSOLUTE_MAX_DISTORTION   10.00
+#define ABSOLUTE_MAX_DISTORTION   5.00
 
 //--- Spline Anchor Structure
 struct RiskControlPoint
@@ -46,42 +46,75 @@ struct AdaptiveRiskState
 };
 
 static AdaptiveRiskState g_adaptive_risk;
+static datetime g_last_equity_persist_bar=0;
 
 //+------------------------------------------------------------------+
 //| Initialize Risk Controller State                                 |
 //+------------------------------------------------------------------+
-void RiskControllerInit(double equity = 0.0)
+bool RiskControllerInit(double equity = 0.0)
 {
-   if(equity <= 0.0) equity = AccountInfoDouble(ACCOUNT_EQUITY);
-   if(equity <= 0.0) equity = AccountInfoDouble(ACCOUNT_BALANCE);
-
-   g_adaptive_risk.initial_equity    = equity;
-   g_adaptive_risk.high_water_equity = equity;
-   g_adaptive_risk.last_equity       = equity;
-   g_adaptive_risk.initialized       = (equity > 0.0);
+   // The risk ledger is the sole baseline authority. Do not reset high-water
+   // or initial equity from the current account value after a restart.
+   if(!g_risk.initialized || !g_risk.persistence_ok) return false;
+   g_adaptive_risk.initial_equity    = g_risk.initial_equity;
+   g_adaptive_risk.high_water_equity = g_risk.adaptive_high_water;
+   g_adaptive_risk.last_equity       = g_risk.adaptive_last_equity;
+   g_adaptive_risk.initialized       = (g_adaptive_risk.initial_equity>0.0 &&
+                                       g_adaptive_risk.high_water_equity>0.0 &&
+                                       g_adaptive_risk.last_equity>0.0);
+   return g_adaptive_risk.initialized;
 }
 
 //+------------------------------------------------------------------+
 //| Update Risk Controller on Every Tick / Bar                       |
 //+------------------------------------------------------------------+
-void RiskControllerUpdate(double equity = 0.0)
+bool RiskControllerUpdate()
 {
-   if(equity <= 0.0) equity = AccountInfoDouble(ACCOUNT_EQUITY);
-   if(equity <= 0.0) equity = AccountInfoDouble(ACCOUNT_BALANCE);
-
-   if(!g_adaptive_risk.initialized && equity > 0.0)
+   if(!g_adaptive_risk.initialized || !g_risk.initialized) return false;
+   bool acquired_here=!g_risk_lock_owned;
+   if(!RiskAcquireAccountLock()) return false;
+   if(!RiskAccountRefresh())
    {
-      RiskControllerInit(equity);
-      return;
+      g_risk.persistence_ok=false;
+      if(acquired_here) RiskReleaseAccountLock();
+      return false;
+   }
+   g_adaptive_risk.initial_equity=g_risk.initial_equity;
+   g_adaptive_risk.high_water_equity=MathMax(g_adaptive_risk.high_water_equity,
+                                             g_risk.adaptive_high_water);
+   // Read after acquiring the account-wide lock. A caller-provided snapshot
+   // may have gone stale while waiting behind another chart's ledger update.
+   double equity=AccountInfoDouble(ACCOUNT_EQUITY);
+   if(!MathIsValidNumber(equity) || equity<=0.0)
+   {
+      if(acquired_here) RiskReleaseAccountLock();
+      return false;
    }
 
-   g_adaptive_risk.last_equity = equity;
-
-   // Monotonic non-decreasing high-water equity tracking
-   if(equity > g_adaptive_risk.high_water_equity)
+   // Maintain the most recent equity observation for conservative daily
+   // rollover. Persist at most once per execution bar (except a new high
+   // water mark), avoiding a global-variable flush on every market tick.
+   datetime observation_bar=iTime(g_cfg.symbol,g_cfg.tf_exec,0);
+   bool observation_bar_due=(observation_bar>0 && observation_bar>g_last_equity_persist_bar);
+   bool high_water_changed=(equity>g_adaptive_risk.high_water_equity);
+   if(high_water_changed)
    {
-      g_adaptive_risk.high_water_equity = equity;
+      g_adaptive_risk.high_water_equity=equity;
+      g_risk.initial_equity=g_adaptive_risk.initial_equity;
+      g_risk.adaptive_high_water=equity;
    }
+   g_adaptive_risk.last_equity=equity;
+   g_risk.adaptive_last_equity=equity;
+   bool ok=g_risk.persistence_ok;
+   if(high_water_changed || observation_bar_due)
+   {
+      ok=RiskPersist(false);
+      if(ok && observation_bar_due)
+         g_last_equity_persist_bar=observation_bar;
+   }
+   bool released=true;
+   if(acquired_here) released=RiskReleaseAccountLock();
+   return ok && released;
 }
 
 //+------------------------------------------------------------------+
@@ -169,10 +202,29 @@ AdaptiveRiskResult RiskControllerEvaluate(
    AdaptiveRiskResult res;
    ZeroMemory(res);
 
-   double cur_eq  = AccountInfoDouble(ACCOUNT_EQUITY);
-   double cur_bal = AccountInfoDouble(ACCOUNT_BALANCE);
+   double cur_eq=AccountInfoDouble(ACCOUNT_EQUITY);
+   double cur_bal=AccountInfoDouble(ACCOUNT_BALANCE);
 
-   RiskControllerUpdate(cur_eq);
+   if(!g_adaptive_risk.initialized || !RiskControllerUpdate())
+   {
+      res.trade_allowed=false;
+      res.risk_state=RISK_STATE_UNSAFE;
+      res.reason="RISK_LEDGER_UNAVAILABLE";
+      return res;
+   }
+
+   // Synchronize the policy inputs with the post-lock account observation;
+   // do not size from the equity snapshot captured before the ledger update.
+   cur_eq=AccountInfoDouble(ACCOUNT_EQUITY);
+   cur_bal=AccountInfoDouble(ACCOUNT_BALANCE);
+   if(!MathIsValidNumber(cur_eq) || cur_eq<=0.0 ||
+      !MathIsValidNumber(cur_bal) || cur_bal<0.0)
+   {
+      res.trade_allowed=false;
+      res.risk_state=RISK_STATE_UNSAFE;
+      res.reason="INVALID_ACCOUNT_EQUITY_OR_BALANCE";
+      return res;
+   }
 
    res.equity            = cur_eq;
    res.balance           = cur_bal;
@@ -206,10 +258,33 @@ AdaptiveRiskResult RiskControllerEvaluate(
 
    // 2. Broker symbol specifications for minimum lot risk and distortion
    double vol_min = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN);
+   double vol_max = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MAX);
+   double vol_step = SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP);
    double tick_sz = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_SIZE);
-   double tick_vl = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_VALUE);
-   if(vol_min <= 0.0) vol_min = 0.01;
-   res.minimum_lot = vol_min;
+   double tick_vl = AccountSymbolLossTickValue(symbol);
+   if(!MathIsValidNumber(vol_min) || vol_min<=0.0 ||
+      !MathIsValidNumber(vol_max) || vol_max<vol_min ||
+      !MathIsValidNumber(vol_step) || vol_step<=0.0 ||
+      !MathIsValidNumber(tick_sz) || tick_sz<=0.0 ||
+      !MathIsValidNumber(tick_vl) || tick_vl<=0.0 ||
+      !MathIsValidNumber(cur_eq) || cur_eq<=0.0)
+   {
+      res.risk_state=RISK_STATE_UNSAFE;
+      res.trade_allowed=false;
+      res.reason="INVALID_BROKER_RISK_METADATA";
+      return res;
+   }
+   double minimum_valid_volume=AccountVolumeCeilToStep(vol_min,vol_step);
+   double maximum_valid_volume=AccountVolumeFloorToStep(vol_max,vol_step);
+   if(minimum_valid_volume<=0.0 || minimum_valid_volume<vol_min ||
+      maximum_valid_volume<minimum_valid_volume)
+   {
+      res.risk_state=RISK_STATE_UNSAFE;
+      res.trade_allowed=false;
+      res.reason="INVALID_BROKER_VOLUME_GRID";
+      return res;
+   }
+   res.minimum_lot = minimum_valid_volume;
 
    double stop_dist = MathAbs(entry - stop);
    double risk_per_lot = 0.0;
@@ -217,7 +292,7 @@ AdaptiveRiskResult RiskControllerEvaluate(
    {
       risk_per_lot = (stop_dist / tick_sz) * tick_vl;
    }
-   res.minimum_lot_loss = vol_min * risk_per_lot;
+   res.minimum_lot_loss = minimum_valid_volume * risk_per_lot;
 
    // Diagnostics: Required Risk % and Minimum Viable Equity
    res.required_risk_percent = RiskControllerGetRequiredRiskPercent(res.minimum_lot_loss, cur_eq, res.max_allowed_distortion);
@@ -289,6 +364,17 @@ AdaptiveRiskResult RiskControllerEvaluate(
       res.risk_state    = RISK_STATE_UNSAFE;
       res.trade_allowed = false;
       res.reason        = "MIN_LOT_UNSAFE";
+      return res;
+   }
+
+   // 8. Absolute Risk Cap enforcement (Prompt §4)
+   // The distortion policy must not override the absolute 2% exposure ceiling.
+   double actual_risk_pct = (res.equity > 0.0) ? (res.minimum_lot_loss / res.equity * 100.0) : 0.0;
+   if(actual_risk_pct > (ABSOLUTE_MAX_RISK_PERCENT + 0.00001))
+   {
+      res.risk_state    = RISK_STATE_UNSAFE;
+      res.trade_allowed = false;
+      res.reason        = "ESTIMATED_STOP_RISK_ABOVE_2PCT";
       return res;
    }
 

@@ -18,6 +18,7 @@
 #include <FVG Engine.mqh>
 #include <Auction.mqh>
 #include <FeatureVector.mqh>
+#include <Chronology Validation.mqh>
 #include <Regime Engine.mqh>
 #include <Strategy Engine.mqh>
 #include <Risk Engine.mqh>
@@ -41,15 +42,18 @@
 //--- Inputs
 input group "=== Execution Mode Safety ==="
 input bool   InpShadowOnly        = true;         // true = SHADOW MODE (blocks live OrderSend)
+   input bool   InpEnableTickPressure = false;      // Experimental proxy scoring; disabled by default
+input bool   InpInitializeRiskLedger = false;     // Explicit baseline only if no persistent ledger exists
 
 input group "=== Symbol & Timeframes ==="
 input string InpSymbol            = "";           // empty = current symbol
-input ENUM_TIMEFRAMES InpTFExec   = PERIOD_M5;
-input ENUM_TIMEFRAMES InpTFContext= PERIOD_M15;
-input ENUM_TIMEFRAMES InpTFHTF    = PERIOD_H1;
-input ENUM_TIMEFRAMES InpTFM1      = PERIOD_M1;
-input ENUM_TIMEFRAMES InpTFM30     = PERIOD_M30;
-input ENUM_TIMEFRAMES InpTFH4      = PERIOD_H4;
+input ENUM_TIMEFRAMES InpTFD1     = PERIOD_D1;  // D1 macro context
+input ENUM_TIMEFRAMES InpTFH4     = PERIOD_H4;  // H4 swing context
+input ENUM_TIMEFRAMES InpTFHTF    = PERIOD_H1;  // H1 directional context
+input ENUM_TIMEFRAMES InpTFM30    = PERIOD_M30; // M30 structure
+input ENUM_TIMEFRAMES InpTFContext= PERIOD_M15; // M15 local context
+input ENUM_TIMEFRAMES InpTFM5     = PERIOD_M5;  // M5 setup structure
+input ENUM_TIMEFRAMES InpTFExec   = PERIOD_M1;  // M1 execution and microstructure
 
 input group "=== Risk (starting research params) ==="
 input double InpRiskPerTrade      = 0.5;     // % per trade
@@ -73,8 +77,8 @@ input int    InpSessionStartHour  = 0;
 input int    InpSessionEndHour    = 24;
 
 input group "=== News ==="
-input int    InpNewsMode          = 0;       // 0=OFF 1=FILTER 2=TRADE 3=HYBRID
-input int    InpNewsBufferMins    = 30;
+input int    InpNewsMode          = 0;       // 0=OFF 1=FILTER 2=POST-RELEASE TRADE 3=HYBRID (experimental)
+input int    InpNewsBufferMins    = AMIGO_NEWS_BUFFER_MINUTES;
 
 input group "=== External influence caps ==="
 input double InpCFTCMaxInfluence  = 0.05;
@@ -107,6 +111,7 @@ datetime        g_last_ext_read = 0;
 ExternalContext g_ext;
 MarketSnapshot  g_snap;
 FeatureSnapshot g_feat;
+bool            g_risk_admission_ready = false;
 
 //--- Order-Flow Engine Instances
 CAM_ProxyVWAP       g_vwap_engine;
@@ -114,12 +119,112 @@ CAM_Footprint       g_footprint_engine;
 CAM_ActivityProfile g_profile_engine;
 CAM_FlowPressure    g_pressure_engine;
 CAM_FlowEvents      g_events_engine;
+bool                g_flow_session_initialized = false;
+bool                g_flow_was_in_session = false;
+int                 g_flow_last_session_open_epoch = -1;
+
+bool AMIGOScoreInputsValid(const double score_threshold,const double score_margin)
+{
+   return MathIsValidNumber(score_threshold) && score_threshold>0.0 && score_threshold<=1.0 &&
+          MathIsValidNumber(score_margin) && score_margin>0.0 && score_margin<=1.0;
+}
+
+bool AMIGOPartialInputsValid(const double partial_rr,const double partial_fraction)
+{
+   return MathIsValidNumber(partial_rr) && partial_rr>0.0 &&
+          MathIsValidNumber(partial_fraction) && partial_fraction>0.0 && partial_fraction<1.0;
+}
+
+bool AMIGOTrailingInputsValid(const ENUM_TRAILING_MODE mode,const double atr_mult,
+                              const double activate_r)
+{
+   if(mode!=TRAIL_OFF && mode!=TRAIL_DYNAMIC_25_PERCENT && mode!=TRAIL_ATR)
+      return false;
+   if(mode==TRAIL_ATR &&
+      (!MathIsValidNumber(atr_mult) || atr_mult<=0.0 ||
+       !MathIsValidNumber(activate_r) || activate_r<=0.0))
+      return false;
+   return true;
+}
+
+// Diagnostic bar-state is advanced only after a complete opportunity has
+// reached an accepted outcome. It is never used as strategy authority.
+void CommitFlowOpportunityDiagnostics(const MqlRates &closed_rate[],
+                                      const datetime decision_boundary,
+                                      const double atr)
+{
+   if(!InpEnableTickPressure) return;
+   if(ArraySize(closed_rate)<=0 || closed_rate[0].time<=0 ||
+      !MathIsValidNumber(closed_rate[0].high) || !MathIsValidNumber(closed_rate[0].low) ||
+      closed_rate[0].high<closed_rate[0].low) return;
+
+   double fp_pressure=g_footprint_engine.CalculateFootprintPressure();
+   MQL_FootprintBin bins[];
+   g_footprint_engine.GetBins(bins);
+   g_profile_engine.Compute(bins,ArraySize(bins));
+   ENUM_PRESSURE_STATE p_state=g_pressure_engine.ClassifyState(fp_pressure);
+   double total_activity=g_footprint_engine.GetTotalActivity();
+   g_pressure_engine.UpdateState(fp_pressure,total_activity,p_state);
+   g_events_engine.AddBar(decision_boundary,fp_pressure,p_state,
+                          closed_rate[0].high,closed_rate[0].low,total_activity);
+
+   double current_price=SymbolInfoDouble(g_symbol,SYMBOL_BID);
+   LogMsg(LOG_INFO,"FLOW_DIAG",StringFormat("ts=%s vwap=%.5f dev=%.2f poc=%.5f vah=%.5f val=%.5f cd=%.2f fp_press=%.4f state=%d shadow=%s",
+      TimeToString(TimeCurrent(),TIME_DATE|TIME_MINUTES),g_vwap_engine.GetVWAP(),
+      g_vwap_engine.GetDeviation(current_price,atr),g_profile_engine.GetPOC(),
+      g_profile_engine.GetVAH(),g_profile_engine.GetVAL(),g_footprint_engine.GetCumulativeDelta(),
+      fp_pressure,(int)p_state,g_cfg.shadow_only?"TRUE":"FALSE"));
+}
 CAM_ProxyDOM        g_dom_engine;
 
 //+------------------------------------------------------------------+
 int OnInit()
 {
    LogInit(InpLogLevel);
+   if(InpTFExec!=PERIOD_M1 || InpTFM5!=PERIOD_M5 || InpTFContext!=PERIOD_M15 ||
+      InpTFM30!=PERIOD_M30 || InpTFHTF!=PERIOD_H1 || InpTFH4!=PERIOD_H4 || InpTFD1!=PERIOD_D1)
+   {
+      Print("[TIMEFRAME_CONFIG_ERROR] Required analysis ladder: D1,H4,H1,M30,M15,M5,M1; all entries execute on M1.");
+      return INIT_PARAMETERS_INCORRECT;
+   }
+
+
+   if(!AMIGOScoreInputsValid(InpScoreThreshold,InpScoreMargin))
+   {
+      PrintFormat("[STRATEGY_CONFIG_ERROR] Score threshold and margin must be finite fractions in (0,1]. threshold=%.8f margin=%.8f. INIT_PARAMETERS_INCORRECT.",
+                  InpScoreThreshold,InpScoreMargin);
+      return INIT_PARAMETERS_INCORRECT;
+   }
+   if(!AMIGOPartialInputsValid(InpPartialRR,InpPartialFraction))
+   {
+      PrintFormat("[POSITION_CONFIG_ERROR] Partial RR must be finite and positive; partial fraction must be finite and strictly between zero and one. rr=%.8f fraction=%.8f. INIT_PARAMETERS_INCORRECT.",
+                  InpPartialRR,InpPartialFraction);
+      return INIT_PARAMETERS_INCORRECT;
+   }
+   if(!AMIGOTrailingInputsValid(InpTrailMode,InpTrailATRMult,InpTrailActivateR))
+   {
+      PrintFormat("[POSITION_CONFIG_ERROR] Trailing mode is unsupported or its ATR parameters are invalid. mode=%d atr_mult=%.8f activate_r=%.8f. INIT_PARAMETERS_INCORRECT.",
+                  (int)InpTrailMode,InpTrailATRMult,InpTrailActivateR);
+      return INIT_PARAMETERS_INCORRECT;
+   }
+
+   if(InpNewsMode<0 || InpNewsMode>3)
+   {
+      PrintFormat("[NEWS_CONFIG_ERROR] Unsupported InpNewsMode=%d; supported values are OFF(0), FILTER(1), post-release TRADE(2), HYBRID(3). INIT_PARAMETERS_INCORRECT.",InpNewsMode);
+      return INIT_PARAMETERS_INCORRECT;
+   }
+   // Today's bridge file is not historical news evidence. Tester TimeGMT()
+   // is simulated server time, not a verified historical UTC conversion.
+   if((MQLInfoInteger(MQL_TESTER) || MQLInfoInteger(MQL_OPTIMIZATION)) && InpNewsMode!=0)
+   {
+      Print("[NEWS_REPLAY_REQUIRED] Historical news replay and broker-to-UTC mapping are not implemented. News-enabled testing rejected; no live-feed fallback.");
+      return INIT_PARAMETERS_INCORRECT;
+   }
+   if(InpNewsBufferMins!=AMIGO_NEWS_BUFFER_MINUTES)
+   {
+      PrintFormat("[NEWS_CONFIG_ERROR] News buffer is fixed at %d minutes until bridge propagation is implemented. INIT_PARAMETERS_INCORRECT.",AMIGO_NEWS_BUFFER_MINUTES);
+      return INIT_PARAMETERS_INCORRECT;
+   }
 
    if(InpExpectedLogin > 0 && AccountInfoInteger(ACCOUNT_LOGIN) != InpExpectedLogin)
    {
@@ -137,7 +242,7 @@ int OnInit()
    g_cfg.tf_exec             = InpTFExec;
    g_cfg.tf_context          = InpTFContext;
    g_cfg.tf_htf              = InpTFHTF;
-   g_cfg.tf_m1               = InpTFM1;
+   g_cfg.tf_m1               = InpTFExec; // same M1 boundary, not a second input
    g_cfg.tf_m30              = InpTFM30;
    g_cfg.tf_h4               = InpTFH4;
    g_cfg.atr_period          = 14;
@@ -166,25 +271,77 @@ int OnInit()
    g_cfg.session_start_hour  = InpSessionStartHour;
    g_cfg.session_end_hour    = InpSessionEndHour;
    g_cfg.news_mode           = InpNewsMode;
-   g_cfg.news_buffer_mins    = InpNewsBufferMins;
+   g_cfg.news_buffer_mins    = AMIGO_NEWS_BUFFER_MINUTES;
    g_cfg.cftc_max_influence  = InpCFTCMaxInfluence;
    g_cfg.options_max_influence = InpOptionsMaxInfl;
    g_cfg.ml_enabled          = InpMLEnabled;
    g_cfg.ml_model_path       = InpMLModelPath;
+   g_cfg.tick_pressure_enabled = InpEnableTickPressure;
    g_cfg.bridge_inbox        = InpBridgeInbox;
    g_cfg.bridge_outbox       = InpBridgeOutbox;
    g_cfg.stale_threshold_s   = InpStaleThresholdSec;
 
-   RiskInit();
-   RiskControllerInit();
+   if(!g_cfg.shadow_only && AMIGO_LIVE_EXECUTION_READY==0)
+   {
+      Print("[LIVE_EXECUTION_BLOCKED] Durable order/deal reconciliation is not verified. Use shadow mode only.");
+      return INIT_FAILED;
+   }
+
+   if(!PositionStateOwnerAcquire(g_cfg))
+   {
+      Print("[POSITION_OWNER] State namespace unavailable or owned by another instance; initialization blocked.");
+      return INIT_FAILED;
+   }
+   bool risk_state_ready=RiskInit(InpInitializeRiskLedger);
+   if(!risk_state_ready)
+   {
+      Print("[RISK_LEDGER] Persistent risk state missing, invalid or ambiguous; initialize explicitly before admission.");
+   }
+   else if(!RiskControllerInit())
+   {
+      Print("[RISK_LEDGER] Adaptive risk state could not be restored; new risk admission remains blocked.");
+   }
+   else g_risk_admission_ready=true;
+   if(!ReconJournalInit(g_cfg))
+   {
+      g_risk_admission_ready=false;
+      PositionManagerLatchStateFault("execution journal contains unresolved or unreadable evidence");
+   }
+   if(!ReconValidateRiskRecovery(g_cfg,g_risk_admission_ready,
+                                 g_risk.last_opportunity_id,g_risk.last_opportunity_outcome))
+   {
+      g_risk_admission_ready=false;
+      PositionManagerLatchStateFault("risk ledger and execution journal disagree or recovery is incomplete");
+   }
    ZeroMemory(g_ext);
 
    //--- Start the position-manager / reconciliation timer.
    //--- Without this, OnTimer never fires and partials/trailing never run.
    //--- Reconcile and Recover Persistent Position State (Workstream C)
-   PositionReconcileState(g_cfg);
+   int recovery_status=PositionReconcileState(g_cfg);
+   if(recovery_status<0 && PositionRecoverMissingFileFromJournal(g_cfg))
+      recovery_status=ArraySize(g_positions);
+   if(recovery_status<0)
+   {
+      Print("[PERSIST_LOAD] Recovery state is ambiguous or invalid; EA initialization blocked.");
+      return INIT_FAILED;
+   }
+   if(g_position_protection_repair_required)
+   {
+      Print("[POSITION_STOP_RECOVERY] Entry admission quarantined before ticks; timer-driven stop repair must be confirmed before the gate clears.");
+   }
+   if(ExecutionHasManagedWorkingOrder(g_cfg))
+   {
+      PositionManagerLatchStateFault("managed order exists or order enumeration is incomplete; manual reconciliation required");
+      Print("[EXEC_RECOVERY] Managed working order found; new admission quarantined.");
+   }
 
-   EventSetTimer(5);
+   if(!EventSetTimer(5))
+   {
+      g_risk_admission_ready=false;
+      PrintFormat("[LIFECYCLE_TIMER_FAILED] Cannot start position management timer (err=%d); initialization blocked.",GetLastError());
+      return INIT_FAILED;
+   }
 
    LogMsg(LOG_INFO, "INIT", StringFormat("Amigo started on %s tf=%d ML=%s",
           g_symbol, (int)InpTFExec, InpMLEnabled?"ON":"OFF"));
@@ -198,6 +355,8 @@ int OnInit()
    double v_min = SymbolInfoDouble(g_symbol, SYMBOL_VOLUME_MIN);
    double v_step = SymbolInfoDouble(g_symbol, SYMBOL_VOLUME_STEP);
    double v_max = SymbolInfoDouble(g_symbol, SYMBOL_VOLUME_MAX);
+   double v_min_valid = AccountVolumeCeilToStep(v_min,v_step);
+   double tv_loss_risk = AccountSymbolLossTickValue(g_symbol);
    double pt = SymbolInfoDouble(g_symbol, SYMBOL_POINT);
    long   dg = SymbolInfoInteger(g_symbol, SYMBOL_DIGITS);
 
@@ -209,6 +368,9 @@ int OnInit()
    double p_b_01_0001=0, p_b_01_0010=0, p_b_01_1000=0;
    double p_b_001_0001=0, p_b_001_0010=0, p_b_001_1000=0;
    bool ocp_ok = true;
+   if(!MathIsValidNumber(v_min_valid) || v_min_valid<=0.0 ||
+      !MathIsValidNumber(tv_loss_risk) || tv_loss_risk<=0.0)
+      ocp_ok=false;
    ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 1.00, 2000.000, 2000.001, p_b_1_0001);
    ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 1.00, 2000.000, 2000.010, p_b_1_0010);
    ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 1.00, 2000.000, 2001.000, p_b_1_1000);
@@ -237,19 +399,23 @@ int OnInit()
    {
       double st_d = test_stops[k];
       double act_risk = 0.0; string err = "";
-      double raw_l = (2.50) / ((st_d / ts) * tv);
+      double raw_l = (ts>0.0 && tv_loss_risk>0.0) ? (2.50) / ((st_d / ts) * tv_loss_risk) : 0.0;
       double calc_lots = ComputeLotSize(g_symbol, 2000.0, 2000.0 - st_d, 0.5, act_risk, err);
       double ocp_min_loss = 0.0;
-      if(!OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, v_min, 2000.0, 2000.0 - st_d, ocp_min_loss))
+      if(v_min_valid<=0.0 || !OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, v_min_valid, 2000.0, 2000.0 - st_d, ocp_min_loss))
       {
          ocp_ok = false;
       }
-      PrintFormat("[P22_AUDIT][TASK4] stop=%.2f risk_b=2.50 raw=%.5f norm=%.2f min_loss=%.2f ocp_min_loss=%.2f dec=%s",
-                  st_d, raw_l, calc_lots, MathAbs(ocp_min_loss), MathAbs(ocp_min_loss), (calc_lots>0)?"APPROVED":"REJECTED");
+      double estimate_min_loss=(ts>0.0 && tv_loss_risk>0.0 && v_min_valid>0.0) ?
+                               (st_d/ts)*tv_loss_risk*v_min_valid : 0.0;
+      PrintFormat("[P22_AUDIT][TASK4] stop=%.2f risk_b=2.50 raw=%.5f norm=%.2f min_volume=%.5f estimated_min_loss=%.2f ocp_min_loss=%.2f dec=%s",
+                  st_d, raw_l, calc_lots, v_min_valid, estimate_min_loss,
+                  MathAbs(ocp_min_loss), (calc_lots>0)?"APPROVED":"REJECTED");
    }
    if(!ocp_ok)
    {
-      LogMsg(LOG_WARN, "INIT", "OrderCalcProfit audit experienced call failures");
+      LogMsg(LOG_ERROR, "INIT", "OrderCalcProfit audit experienced call failures; EA initialization blocked.");
+      return INIT_FAILED;
    }
 
    return INIT_SUCCEEDED;
@@ -259,12 +425,22 @@ int OnInit()
 void OnDeinit(const int reason)
 {
    EventKillTimer();
+   ReconJournalClose();
+   PositionStateOwnerClose();
    LogMsg(LOG_INFO, "DEINIT", StringFormat("reason=%d", reason));
 }
 
 //+------------------------------------------------------------------+
 void OnTick()
 {
+   if(!PositionStateOwnerMatches(g_cfg)) return;
+   // Lifecycle/persistence ambiguity blocks new opportunities. Timer-driven
+   // management continues so existing positions can still be reconciled.
+   if(!PositionManagerAdmissionAllowed()) return;
+   // Position recovery and timer-driven management can still operate when
+   // the account risk ledger is unavailable, but no entry analysis may run.
+   if(!g_risk_admission_ready) return;
+
    //--- Diagnostic Point 1: Throttled OnTick Heartbeat (every 60 seconds)
    static datetime s_last_tick_diag = 0;
    if(TimeCurrent() - s_last_tick_diag >= 60)
@@ -281,8 +457,17 @@ void OnTick()
    }
 
    //--- Risk update every tick
-   RiskTick();
-   RiskControllerUpdate();
+   bool risk_update_ok=RiskTick();
+   if(!risk_update_ok && RiskAccountLockWasContended())
+      return; // another chart currently owns account serialization; retry on a later tick
+   if(risk_update_ok) risk_update_ok=RiskControllerUpdate();
+   if(!risk_update_ok && RiskAccountLockWasContended())
+      return; // transient account-wide contention is not ledger corruption
+   if(!risk_update_ok)
+   {
+      PositionManagerLatchStateFault("risk ledger update failed; new admission blocked");
+      return;
+   }
 
    //--- Feed live tick observation into native order-flow engines
    double last_bid = SymbolInfoDouble(g_symbol, SYMBOL_BID);
@@ -290,8 +475,29 @@ void OnTick()
    double last_price = (last_bid > 0.0) ? last_bid : _Point;
    long last_vol = SymbolInfoInteger(g_symbol, SYMBOL_VOLUME);
    double tick_vol = (last_vol > 0) ? (double)last_vol : 1.0;
-   g_footprint_engine.AddTick(last_price, tick_vol, 0);
-   g_vwap_engine.AddObservation(last_price, tick_vol);
+   if(InpEnableTickPressure)
+   {
+      MqlDateTime tick_dt;
+      TimeToStruct(TimeCurrent(),tick_dt);
+      bool tick_in_session=(tick_dt.hour>=g_cfg.session_start_hour &&
+                            tick_dt.hour<g_cfg.session_end_hour);
+      int tick_session_tag=(int)((TimeCurrent()-g_cfg.session_start_hour*3600)/86400);
+      bool tick_session_started=tick_in_session &&
+         (!g_flow_session_initialized || !g_flow_was_in_session ||
+          g_flow_last_session_open_epoch!=tick_session_tag);
+      if(tick_session_started)
+      {
+         // These are streaming diagnostic accumulators, partitioned at the
+         // observed session boundary before the first tick is ingested.
+         g_footprint_engine.Reset();
+         g_vwap_engine.Reset();
+         g_flow_last_session_open_epoch=tick_session_tag;
+      }
+      g_flow_session_initialized=true;
+      g_flow_was_in_session=tick_in_session;
+      g_footprint_engine.AddTick(last_price, tick_vol, 0);
+      g_vwap_engine.AddObservation(last_price, tick_vol);
+   }
 
    //--- External context refresh (throttled to one read every 5 seconds)
    if(TimeCurrent() - g_last_ext_read >= 5)
@@ -299,24 +505,41 @@ void OnTick()
       string err;
       ExternalContext tmp;
       ZeroMemory(tmp);
-      if(ReadExternalContext(g_cfg.bridge_inbox, tmp, err))
+      if(ReadExternalContext(g_cfg.bridge_inbox, tmp, err,g_cfg.stale_threshold_s))
       {
          g_ext = tmp;
          g_last_ext_read = TimeCurrent();
-
-         //--- Freshness gate: file-level staleness is measured against
-         //--- the time we read it, not against g_ext.timestamp itself.
-         //--- A context whose producer stopped writing is stale.
-         if(g_ext.timestamp > 0 &&
-            (TimeCurrent() - g_ext.timestamp) > g_cfg.stale_threshold_s)
-         {
-            g_ext.data_quality |= DQ_STALE_EXTERNAL;
-         }
       }
+      else
+      {
+         // Preserve non-news context for diagnostics, but never preserve a
+         // prior news-clear state after a failed current read.
+         g_ext.news_valid=false;
+         g_ext.data_quality |= DQ_STALE_EXTERNAL;
+         // Bound repeated file-open attempts when the bridge is unavailable.
+         // The news filter remains fail-closed until a later read succeeds.
+         g_last_ext_read = TimeCurrent();
+      }
+   }
+   // Re-evaluate the retained snapshot on every tick. Read failures and
+   // expiry both make NEWS FILTER unavailable instead of silently quiet.
+   // ExternalContext.timestamp and news_observed_ts are UTC epoch values
+   // produced by Python datetime.now(timezone.utc); compare them in UTC.
+   datetime ext_now=TimeGMT();
+   if(g_ext.timestamp<=0 || ext_now<g_ext.timestamp ||
+      (ext_now-g_ext.timestamp)>g_cfg.stale_threshold_s)
+   {
+      g_ext.news_valid=false;
+      g_ext.data_quality |= DQ_STALE_EXTERNAL;
    }
 
    //--- Decision only on new closed bar
    datetime bar_time = iTime(g_symbol, g_cfg.tf_exec, 0);
+   datetime closed_bar_time = iTime(g_symbol, g_cfg.tf_exec, 1);
+   // Reject unavailable/inconsistent boundaries. A durable scoped reservation
+   // is written before analysis; repeated and backward opportunities fail closed.
+   if(bar_time<=0 || closed_bar_time<=0 || closed_bar_time>=bar_time ||
+      (g_last_bar_time>0 && bar_time<g_last_bar_time)) return;
    if(bar_time != g_last_bar_time)
    {
       PrintFormat("[RUNTIME_DIAG][NEW_BAR] server_time=%s bar_time=%s prev_last_bar=%s iTime_ok=%s",
@@ -326,14 +549,31 @@ void OnTick()
                   (bar_time > 0) ? "YES" : "NO");
    }
    if(bar_time == g_last_bar_time) return;
+   long opportunity_id=0;
+   if(!RiskBeginOpportunity(bar_time,opportunity_id))
+   {
+      LogMsg(LOG_WARN,"OPPORTUNITY","Duplicate, stale or ambiguous opportunity identity; admission blocked.");
+      return;
+   }
    g_last_bar_time = bar_time;
 
-   OnClosedBar();
+   int outcome=OnClosedBar(opportunity_id);
+   // Verify journal completion while the account admission lock remains held.
+   // Failure leaves the persisted opportunity RESERVED for reconciliation.
+   if(!ReconFinishOpportunity(opportunity_id,outcome,g_cfg))
+      PositionManagerLatchStateFault("execution journal cannot retire this opportunity");
+   else if(!RiskCompleteOpportunity(outcome))
+      PositionManagerLatchStateFault("opportunity outcome could not be durably committed");
 }
 
 //+------------------------------------------------------------------+
-void OnClosedBar()
+int OnClosedBar(const long opportunity_id)
 {
+   datetime decision_boundary=iTime(g_symbol,g_cfg.tf_exec,0);
+   datetime closed_bar_time=iTime(g_symbol,g_cfg.tf_exec,1);
+   if(opportunity_id<=0 || decision_boundary<=0 || closed_bar_time<=0 ||
+      decision_boundary!=g_last_bar_time || closed_bar_time>=decision_boundary)
+      return RISK_OP_REJECTED;
    //--- Diagnostic Point 3: OnClosedBar Entry & Session Audit
    MqlDateTime dt;
    TimeToStruct(TimeCurrent(), dt);
@@ -348,123 +588,154 @@ void OnClosedBar()
    //--- 0) Session hour gate
    if(dt.hour < g_cfg.session_start_hour || dt.hour >= g_cfg.session_end_hour)
    {
-      return;
+      return RISK_OP_REJECTED;
    }
 
-   //--- Session boundary reset (Section 8 & 9 Footprint and Profile Semantics)
-   // Footprint/VWAP are intraday auction tools representing the active trading session.
-   // To support overnight sessions (e.g. 22:00 to 06:00) without destroying profile state at midnight,
-   // reset occurs strictly upon entering a new session (session open transition).
-   static bool s_was_in_session = false;
-   static int  s_last_session_open_epoch = -1;
-
-   datetime now_t = TimeCurrent();
-   int session_open_date_tag = (int)((now_t - g_cfg.session_start_hour * 3600) / 86400);
-
-   bool session_just_started = (!s_was_in_session && session_pass);
-   if(session_just_started || (session_pass && s_last_session_open_epoch != session_open_date_tag))
+   // NEWS FILTER is admission-only and runs before any session/profile,
+   // feature, regime, or strategy state mutation. A failed or stale provider
+   // observation is not equivalent to a quiet calendar.
+   string news_reason="";
+   if(!ExternalNewsFilterAllows(g_ext,g_cfg.news_mode,TimeGMT(),
+                               g_cfg.stale_threshold_s,news_reason))
    {
-      // New trading session started: reset intraday accumulation
-      g_footprint_engine.Reset();
-      g_vwap_engine.Reset();
-      s_last_session_open_epoch = session_open_date_tag;
-      LogMsg(LOG_INFO, "FLOW", StringFormat("Trading session reset at server_time=%s session_tag=%d: cleared footprint bins and VWAP engine",
-             TimeToString(now_t, TIME_DATE|TIME_MINUTES|TIME_SECONDS), session_open_date_tag));
+      LogMsg(LOG_WARN,"NEWS_FILTER",news_reason);
+      return RISK_OP_REJECTED;
    }
-   s_was_in_session = session_pass;
 
    //--- 1) Snapshot
-   bool snap_res = BuildMarketSnapshot(g_symbol, g_snap);
+   MarketSnapshot candidate_snap;
+   FeatureSnapshot candidate_feat;
+   AMIGOFeatureState candidate_feature_state = g_amigo_feature_state;
+   MqlRates candidate_feature_rates[];
+   RegimePersist candidate_regime = g_regime_state;
+   ZeroMemory(candidate_snap);
+   ZeroMemory(candidate_feat);
+   bool snap_res = BuildMarketSnapshot(g_symbol,candidate_snap,decision_boundary,
+                                       closed_bar_time,opportunity_id,g_cfg.tf_exec);
    PrintFormat("[RUNTIME_DIAG][SNAPSHOT] server_time=%s success=%s bid=%.5f ask=%.5f dq=%d",
                TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES|TIME_SECONDS),
-               snap_res ? "YES" : "NO", g_snap.bid, g_snap.ask, g_snap.data_quality);
+               snap_res ? "YES" : "NO", candidate_snap.bid, candidate_snap.ask, candidate_snap.data_quality);
    if(!snap_res)
    {
       LogMsg(LOG_WARN, "BAR", "snapshot build failed");
-      return;
+      return RISK_OP_REJECTED;
    }
+   if(candidate_snap.snapshot_id!=opportunity_id ||
+      candidate_snap.decision_boundary!=decision_boundary ||
+      candidate_snap.closed_bar_time!=closed_bar_time)
+      return RISK_OP_REJECTED;
+   candidate_snap.external_max_age_s=g_cfg.stale_threshold_s;
 
    //--- 2) Features
-   bool feat_res = BuildFeatureVector(g_symbol, g_cfg, g_feat);
+   bool feat_res = BuildFeatureVector(g_symbol, g_cfg, candidate_feat, candidate_feature_state,
+                                      candidate_feature_rates);
    PrintFormat("[RUNTIME_DIAG][FEATURES] server_time=%s success=%s ts=%s atr14=%.5f fusion=%.2f",
                TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES|TIME_SECONDS),
                feat_res ? "YES" : "NO",
-               TimeToString(g_feat.timestamp, TIME_DATE|TIME_MINUTES|TIME_SECONDS),
-               g_feat.atr14, g_feat.fusion);
+               TimeToString(candidate_feat.timestamp, TIME_DATE|TIME_MINUTES|TIME_SECONDS),
+               candidate_feat.atr14, candidate_feat.fusion);
    if(!feat_res)
    {
       LogMsg(LOG_WARN, "BAR", "feature build failed");
-      return;
+      return RISK_OP_REJECTED;
    }
-
-   //--- Order-Flow Native Calculations & Diagnostics
-   double fp_pressure = g_footprint_engine.CalculateFootprintPressure();
-   MQL_FootprintBin bins[];
-   g_footprint_engine.GetBins(bins);
-   g_profile_engine.Compute(bins, ArraySize(bins));
-
-   ENUM_PRESSURE_STATE p_state = g_pressure_engine.ClassifyState(fp_pressure);
-   g_pressure_engine.UpdateState(fp_pressure, g_footprint_engine.GetTotalActivity(), p_state);
-
-   MqlRates last_rates[];
-   double h_bar = 0.0, l_bar = 0.0;
-   if(CopyRates(g_symbol, g_cfg.tf_exec, 1, 1, last_rates) > 0)
-   {
-      h_bar = last_rates[0].high;
-      l_bar = last_rates[0].low;
-   }
-   datetime current_bar_t = iTime(g_symbol, g_cfg.tf_exec, 0);
-   g_events_engine.AddBar(current_bar_t, fp_pressure, p_state, h_bar, l_bar, g_footprint_engine.GetTotalActivity());
-
-   double cur_p = SymbolInfoDouble(g_symbol, SYMBOL_BID);
-   LogMsg(LOG_INFO, "FLOW_DIAG", StringFormat("ts=%s vwap=%.5f dev=%.2f poc=%.5f vah=%.5f val=%.5f cd=%.2f fp_press=%.4f state=%d shadow=%s",
-          TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES),
-          g_vwap_engine.GetVWAP(), g_vwap_engine.GetDeviation(cur_p, g_feat.atr14),
-          g_profile_engine.GetPOC(), g_profile_engine.GetVAH(), g_profile_engine.GetVAL(),
-          g_footprint_engine.GetCumulativeDelta(), fp_pressure, (int)p_state, g_cfg.shadow_only ? "TRUE" : "FALSE"));
+   if(candidate_feat.timestamp!=closed_bar_time ||
+      iTime(g_symbol,g_cfg.tf_exec,0)!=decision_boundary ||
+      iTime(g_symbol,g_cfg.tf_exec,1)!=closed_bar_time)
+      return RISK_OP_REJECTED;
+   // Bind the exported close to the exact validated history read that produced
+   // the feature snapshot. Do not re-read iClose during later publication.
+   int validated_feature_count=ArraySize(candidate_feature_rates);
+   if(validated_feature_count<=0 || !ArrayGetAsSeries(candidate_feature_rates) ||
+      candidate_feature_rates[0].time!=closed_bar_time ||
+      !MathIsValidNumber(candidate_feature_rates[0].close) ||
+      candidate_feature_rates[0].close<=0.0)
+      return RISK_OP_REJECTED;
+   candidate_snap.closed_bar_close=candidate_feature_rates[0].close;
+   candidate_feat.snapshot_id=opportunity_id;
+   candidate_feat.decision_boundary=decision_boundary;
+   candidate_feat.closed_bar_time=closed_bar_time;
+   candidate_feat.symbol=g_symbol;
+   candidate_feat.timeframe=(int)g_cfg.tf_exec;
 
    //--- Diagnostic Top-Down Multi-Timeframe Context (Section 7)
-   TopDownContext td = EvaluateTopDownContext(g_symbol, g_feat.atr14);
+   TopDownContext td;
+   if(!EvaluateTopDownContext(g_symbol,g_cfg.atr_period,decision_boundary,td) ||
+      td.asof_boundary!=decision_boundary ||
+      iTime(g_symbol,g_cfg.tf_exec,0)!=decision_boundary ||
+      iTime(g_symbol,g_cfg.tf_exec,1)!=closed_bar_time)
+   {
+      LogMsg(LOG_WARN,"TOPDOWN","INCOMPLETE_OR_MIXED_TIME_HISTORY");
+      return RISK_OP_REJECTED;
+   }
    LogMsg(LOG_INFO, "TOPDOWN_DIAG", StringFormat("ts=%s d1=%d h4=%d h1=%d m15=%d aligned=%s score=%.2f summary=%s",
           TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES),
           td.d1_dir, td.h4_dir, td.h1_dir, td.m15_dir,
           td.aligned ? "TRUE" : "FALSE", td.alignment_score, td.summary));
 
-   //--- 3) Publish snapshot for Python (external context)
-   WriteSnapshotForExternal(g_cfg.bridge_outbox, g_snap, g_feat);
-
    //--- 4) Multi-Timeframe Regime
-   RegimeState rs = EvaluateRegime(g_feat, td, g_cfg);
+   FeatureSnapshot decision_feat = candidate_feat;
+   if(!g_cfg.tick_pressure_enabled)
+   {
+      // Keep raw proxy values for diagnostics, but prevent them influencing
+      // authoritative regime/strategy scores unless explicitly enabled.
+      decision_feat.fusion = 0.0;
+      decision_feat.pressure_state = 0;
+      decision_feat.bull_flip = false;
+      decision_feat.bear_flip = false;
+      decision_feat.surge = false;
+      decision_feat.delta_divergence = 0.0;
+      decision_feat.divergence_bull = 0.0;
+      decision_feat.divergence_bear = 0.0;
+   }
+   RegimeState rs = EvaluateRegimeWithState(decision_feat, td, g_cfg, candidate_regime);
+   if(rs.snapshot_id!=opportunity_id || decision_feat.snapshot_id!=candidate_snap.snapshot_id)
+      return RISK_OP_REJECTED;
 
    //--- 5) Strategy scores
-   StrategyScores ss = ScoreStrategies(g_feat, g_ext, g_cfg);
+   StrategyScores ss = ScoreStrategies(decision_feat, g_ext, g_cfg);
 
    //--- 6) ML gate (no-op when disabled)
-   MLGateResult ml = MLGateEvaluate(g_feat, ss, g_cfg);
+   MLGateResult ml = MLGateEvaluate(candidate_feat, ss, g_cfg);
    if(ml.available && !ml.pass)
    {
-      long did = NextDecisionId();
+      long did = opportunity_id;
       LogDecision(did, g_symbol, ACTION_NO_TRADE, rs.regime, HYP_NONE,
                   MathMax(ss.s_long, ss.s_short), "ML_VETO");
-      return;
+      return RISK_OP_REJECTED;
    }
 
    //--- 7) Decision gate
    DecisionResult dr = Decide(ss, rs, g_ext, g_cfg,
-                              g_ext.data_quality | g_snap.data_quality);
-   long decision_id = NextDecisionId();
+                              g_ext.data_quality | candidate_snap.data_quality);
+   if(dr.snapshot_id!=opportunity_id ||
+      iTime(g_symbol,g_cfg.tf_exec,0)!=decision_boundary ||
+      iTime(g_symbol,g_cfg.tf_exec,1)!=closed_bar_time)
+      return RISK_OP_REJECTED;
+   long decision_id = opportunity_id;
    LogDecision(decision_id, g_symbol, dr.action, rs.regime, dr.hypothesis,
                dr.best_score, dr.reason);
 
-   LogFeatureDiagnostics(g_feat.timestamp, g_symbol, g_cfg.tf_exec,
-                         (int)rs.regime, g_feat.structure_dir, g_feat.fusion,
-                         g_feat.bull_flip, g_feat.bear_flip, g_feat.surge,
-                         g_feat.sweep_reject, ss.long_cont, ss.short_cont,
+   LogFeatureDiagnostics(candidate_feat.timestamp, g_symbol, g_cfg.tf_exec,
+                         (int)rs.regime, candidate_feat.structure_dir, candidate_feat.fusion,
+                         candidate_feat.bull_flip, candidate_feat.bear_flip, candidate_feat.surge,
+                         candidate_feat.sweep_reject, ss.long_cont, ss.short_cont,
                          ss.long_mr, ss.short_mr, ss.s_long, ss.s_short,
                          dr.best_score, dr.margin, g_cfg.score_threshold,
                          g_cfg.score_margin, dr.action, dr.reason);
 
-   if(dr.action != ACTION_TRADE) return;
+   if(dr.action != ACTION_TRADE)
+   {
+      // A fully assembled and evaluated no-trade opportunity may advance accepted
+      // strategy history. Invalid/failed paths above leave globals untouched.
+      CommitFlowOpportunityDiagnostics(candidate_feature_rates,decision_boundary,candidate_feat.atr14);
+      g_snap = candidate_snap;
+      g_feat = candidate_feat;
+      g_amigo_feature_state = candidate_feature_state;
+      g_regime_state = candidate_regime;
+      WriteSnapshotForExternal(g_cfg.bridge_outbox, candidate_snap, candidate_feat);
+      return RISK_OP_NO_TRADE;
+   }
 
    //--- M1 Microstructure Execution Filter (Workstream B):
    // For SCALPING horizon (or M1/M5 execution), check M1 structure for immediate adverse impulse.
@@ -473,39 +744,97 @@ void OnClosedBar()
       if(td.m1_dir != 0 && td.m1_dir != dr.direction)
       {
          LogMsg(LOG_INFO, "EXEC_M1_VETO", StringFormat("M1 adverse microstructure veto: m1_dir=%d trade_dir=%d", td.m1_dir, dr.direction));
-         return;
+         return RISK_OP_REJECTED;
       }
    }
+
+   ENUM_HORIZON selected_horizon=(ENUM_HORIZON)0;
+   if(!SelectApprovedHorizon(td,dr,rs.regime,decision_boundary,selected_horizon))
+   {
+      LogDecision(decision_id,g_symbol,ACTION_NO_TRADE,rs.regime,dr.hypothesis,
+                  dr.best_score,"NO_ELIGIBLE_HORIZON");
+      return RISK_OP_NO_TRADE;
+   }
+   dr.horizon=selected_horizon;
+   string horizon_news_reason="";
+   if(!AmigoNewsHorizonAllows(g_ext,g_cfg.news_mode,dr.horizon,TimeGMT(),
+                              g_cfg.stale_threshold_s,horizon_news_reason))
+   {
+      LogDecision(decision_id,g_symbol,ACTION_NO_TRADE,rs.regime,dr.hypothesis,
+                  dr.best_score,horizon_news_reason);
+      return RISK_OP_REJECTED;
+   }
+   LogMsg(LOG_INFO,"NEWS_HORIZON",StringFormat("id=%I64d horizon=%d event_utc=%I64d reason=%s",
+          decision_id,(int)dr.horizon,(long)g_ext.news_event_ts,horizon_news_reason));
+   LogMsg(LOG_INFO,"FROZEN_FOOTPRINT",StringFormat("id=%I64d horizon=%d strategy=%d available=%s pressure=%.4f poc=%.5f concentration=%.4f observations=%d persistent=%s bull_div=%s bear_div=%s provenance=MT5_TICK_PROXY",
+      decision_id,(int)dr.horizon,(int)dr.hypothesis,decision_feat.footprint_available?"TRUE":"FALSE",
+      decision_feat.footprint_pressure,decision_feat.footprint_poc,decision_feat.footprint_concentration,
+      decision_feat.footprint_observations,decision_feat.footprint_persistent?"TRUE":"FALSE",
+      decision_feat.footprint_divergence_bull?"TRUE":"FALSE",decision_feat.footprint_divergence_bear?"TRUE":"FALSE"));
+
+   string proxy_reason;
+   if(!HorizonProxyAgreement(decision_feat,td,dr,rs.regime,g_cfg,decision_boundary,proxy_reason))
+   {
+      LogDecision(decision_id,g_symbol,ACTION_NO_TRADE,rs.regime,dr.hypothesis,dr.best_score,proxy_reason);
+      return RISK_OP_NO_TRADE;
+   }
+   LogMsg(LOG_INFO,"HORIZON_PROXY",StringFormat("id=%I64d horizon=%d hypothesis=%d pressure=%.3f bull_div=%.3f bear_div=%.3f provenance=%s streaming_footprint=DIAGNOSTIC broker_depth=UNAVAILABLE",
+      decision_id,(int)dr.horizon,(int)dr.hypothesis,decision_feat.fusion,
+      decision_feat.divergence_bull,decision_feat.divergence_bear,proxy_reason));
+
 
    //--- 8) Risk gate
    string risk_reason;
    if(!RiskAllows(g_cfg, risk_reason))
    {
       LogMsg(LOG_WARN, "RISK", risk_reason);
-      return;
+      return RISK_OP_REJECTED;
    }
 
-   //--- 9) Horizon Determination & Entry Geometry
-   ENUM_HORIZON selected_horizon = HORIZON_INTRADAY;
-   if(g_cfg.tf_exec == PERIOD_M1) selected_horizon = HORIZON_SCALPING;
-   else if(g_cfg.tf_exec == PERIOD_H1 || g_cfg.tf_exec == PERIOD_H4) selected_horizon = HORIZON_SWING;
-   else if(td.aligned && (td.h4_dir == dr.direction || td.h1_dir == dr.direction)) selected_horizon = HORIZON_INTRADAY;
-
+   //--- 9) Entry geometry uses the already frozen horizon.
    double ask = SymbolInfoDouble(g_symbol, SYMBOL_ASK);
    double bid = SymbolInfoDouble(g_symbol, SYMBOL_BID);
    double entry = (dr.direction == +1) ? ask : bid;
-   double atr = g_feat.atr14;
-   if(atr <= 0.0) return;
+   double atr = candidate_feat.atr14;
+   if(atr <= 0.0) return RISK_OP_REJECTED;
 
    // Horizon-specific structural invalidation timeframe
    ENUM_TIMEFRAMES stop_tf = g_cfg.tf_exec;
-   if(selected_horizon == HORIZON_SCALPING) stop_tf = (g_cfg.tf_exec == PERIOD_M1) ? PERIOD_M1 : PERIOD_M5;
-   else if(selected_horizon == HORIZON_SWING) stop_tf = (g_cfg.tf_h4 != 0) ? g_cfg.tf_h4 : PERIOD_H4;
+   if(dr.horizon == HORIZON_SCALPING) stop_tf = (g_cfg.tf_exec == PERIOD_M1) ? PERIOD_M1 : PERIOD_M5;
+   else if(dr.horizon == HORIZON_SWING) stop_tf = (g_cfg.tf_h4 != 0) ? g_cfg.tf_h4 : PERIOD_H4;
    else stop_tf = (g_cfg.tf_context != 0) ? g_cfg.tf_context : PERIOD_M15;
 
    double structural_invalid = 0.0;
    MqlRates r[];
-   int got = CopyRates(g_symbol, stop_tf, 1, 200, r);
+   int got=0;
+   if(stop_tf==g_cfg.tf_exec)
+   {
+      got=ArraySize(candidate_feature_rates);
+      if(got<50 || !ArrayGetAsSeries(candidate_feature_rates)) return RISK_OP_REJECTED;
+      if(ArrayResize(r,got)!=got || !ArraySetAsSeries(r,true)) return RISK_OP_REJECTED;
+      for(int q=0;q<got;q++) r[q]=candidate_feature_rates[q];
+   }
+   else
+   {
+      if(!ArraySetAsSeries(r, true)) return RISK_OP_REJECTED;
+      datetime geometry_boundary=iTime(g_symbol,stop_tf,0);
+      datetime geometry_latest=iTime(g_symbol,stop_tf,1);
+      if(geometry_boundary<=0 || geometry_latest<=0 || geometry_latest>=geometry_boundary ||
+         geometry_boundary>decision_boundary || geometry_latest>=decision_boundary)
+         return RISK_OP_REJECTED;
+      got=CopyRates(g_symbol, stop_tf, 1, 200, r);
+      if(!ValidateClosedRateSequence(r,got,geometry_boundary,geometry_latest,50,200,
+                                     PeriodSeconds(stop_tf),false) ||
+         iTime(g_symbol,stop_tf,0)!=geometry_boundary ||
+         iTime(g_symbol,stop_tf,1)!=geometry_latest ||
+         iTime(g_symbol,g_cfg.tf_exec,0)!=decision_boundary ||
+         iTime(g_symbol,g_cfg.tf_exec,1)!=closed_bar_time) return RISK_OP_REJECTED;
+   }
+   // Both reused feature history and independently copied geometry must
+   // still belong to the frozen opportunity before swing calculation.
+   if(iTime(g_symbol,g_cfg.tf_exec,0)!=decision_boundary ||
+           iTime(g_symbol,g_cfg.tf_exec,1)!=closed_bar_time)
+      return RISK_OP_REJECTED;
    if(got > 20)
    {
       double sp; datetime ts;
@@ -532,13 +861,20 @@ void OnClosedBar()
       LogMsg(LOG_WARN, "RISK_AUTO_BLOCKED", StringFormat("status=%s reason=%s risk_budget=%.5f",
              (risk_auto.risk_state == RISK_STATE_DAILY_STOP) ? "DAILY_STOP" : "UNSAFE",
              risk_auto.reason, risk_auto.risk_budget));
-      return;
+      return RISK_OP_REJECTED;
    }
 
    //--- Apply Authoritative Regime Risk Modifier (Workstream A Integration)
    double reg_mod = rs.risk_modifier;
    if(reg_mod < 0.10 || reg_mod > 1.00 || !MathIsValidNumber(reg_mod))
-      reg_mod = 1.00; // Fail-safe default
+   {
+      // Never turn an invalid/zero regime modifier into full risk. A zero
+      // modifier is the regime engine's explicit non-tradable value.
+      LogMsg(LOG_WARN, "RISK_MODIFIER_INVALID",
+             StringFormat("regime=%d modifier=%.8f; opportunity rejected",
+                          (int)rs.regime, reg_mod));
+      return RISK_OP_REJECTED;
+   }
    double effective_risk_pct = risk_auto.effective_risk_percent * reg_mod;
 
    AdaptiveSLResult adapt_res = EvaluateAdaptiveStop(
@@ -562,7 +898,7 @@ void OnClosedBar()
    if(stop_dist > 0.0 && spread > g_cfg.max_spread_atr_pct * stop_dist)
    {
       LogMsg(LOG_WARN, "EXEC", "spread too large relative to stop");
-      return;
+      return RISK_OP_REJECTED;
    }
 
    //--- Netting Account Single-Active-Horizon Invariant Gate
@@ -572,7 +908,7 @@ void OnClosedBar()
       if(PositionsTotal() > 0 && PositionSelect(g_symbol))
       {
          LogMsg(LOG_WARN, "NETTING_GATE", "NETTING_CONCURRENT_POSITION_BLOCKED: Symbol already has active position");
-         return;
+         return RISK_OP_REJECTED;
       }
    }
 
@@ -594,7 +930,7 @@ void OnClosedBar()
    {
       LogMsg(LOG_WARN, "ACCOUNT_FEASIBILITY", StringFormat("BLOCKED status=%d reason=%s",
              (int)acc_env.feasibility, acc_env.reason));
-      return;
+      return RISK_OP_REJECTED;
    }
 
    double lots = acc_env.executable_volume;
@@ -603,14 +939,18 @@ void OnClosedBar()
    TradeIntent ti;
    ZeroMemory(ti);
    ti.intent_id        = decision_id;
+   ti.snapshot_id      = dr.snapshot_id;
    ti.schema_version   = Amigo_SCHEMA_VERSION;
    ti.strategy_version = 1;
-   ti.feature_version  = g_feat.feature_version;
+   ti.feature_version  = candidate_feat.feature_version;
    ti.model_version    = ml.available ? 1 : 0;
    ti.symbol           = g_symbol;
    ti.direction        = dr.direction;
    ti.timestamp        = TimeCurrent();
-   ti.expiry           = TimeCurrent() + 60;
+   ti.expiry           = ti.timestamp + 60;
+   // A delayed evaluation cannot extend the frozen bar's opportunity.
+   datetime opportunity_expiry=decision_boundary+PeriodSeconds(g_cfg.tf_exec);
+   if(ti.expiry>opportunity_expiry) ti.expiry=opportunity_expiry;
    ti.entry_reference  = entry;
    ti.stop             = sl;
    ti.target           = tp;
@@ -618,47 +958,113 @@ void OnClosedBar()
    ti.confidence       = dr.confidence;
    ti.regime           = rs.regime;
    ti.hypothesis       = dr.hypothesis;
-   ti.horizon          = selected_horizon;
+   ti.horizon          = dr.horizon;
    ti.reason_codes     = dr.reason;
-   ti.risk_allocation  = g_cfg.risk_per_trade_pct;
+   ti.risk_allocation  = risk_auto.effective_risk_percent;
    ti.risk_modifier    = reg_mod;
-   ti.data_quality     = g_ext.data_quality | g_snap.data_quality;
+   ti.data_quality     = g_ext.data_quality | candidate_snap.data_quality;
 
    string vreason;
    if(!ValidateIntent(ti, g_cfg, vreason))
    {
       LogMsg(LOG_WARN, "INTENT", vreason);
-      return;
+      return RISK_OP_REJECTED;
+   }
+
+   if(!PositionManagerHasCapacity())
+   {
+      LogMsg(LOG_WARN,"POSITION_CAPACITY","persistent position capacity reached; no new entry");
+      return RISK_OP_REJECTED;
    }
 
    //--- 12) Execute
-   ExecutionResult er = ExecuteIntent(ti, lots, g_cfg);
+   ExecutionResult er = ExecuteIntent(ti, lots, g_cfg, stop_dist,
+                                      effective_risk_pct,risk_auto.max_allowed_distortion,atr);
+   if(er.risk_guard_blocked)
+   {
+      LogMsg(LOG_WARN, "EXEC", er.comment);
+      return RISK_OP_REJECTED;
+   }
+   // A proven deal that is partial must be registered before quarantine so
+   // its known exposure remains under management. A full fill is registered
+   // only after current broker identity and account exposure are confirmed.
+   if(er.outcome_uncertain)
+   {
+      LogMsg(LOG_ERROR,"EXEC_UNCERTAIN",
+             StringFormat("intent=%I64d order=%I64u deal=%I64u retcode=%u detail=%s; admission quarantined",
+                          decision_id,er.order_ticket,er.deal_ticket,er.retcode,er.comment));
+      if(er.position_id!=0 && er.accepted)
+         PositionManagerRegister(er.position_id,er.fill_price,sl,tp,er.fill_volume,
+                                 dr.direction,atr,g_cfg,ti.horizon);
+      PositionManagerLatchStateFault("execution outcome is uncertain; reconcile before new admission");
+      return RISK_OP_UNCERTAIN;
+   }
    if(!er.accepted && !g_cfg.shadow_only)
    {
       LogMsg(LOG_ERROR, "EXEC", StringFormat("fail retcode=%u %s",
              er.retcode, er.comment));
-      return;
+      return RISK_OP_REJECTED;
    }
    if(er.accepted)
    {
       LogMsg(LOG_INFO, "EXEC", StringFormat("filled dir=%d lots=%.2f price=%.5f",
              dr.direction, lots, er.fill_price));
    }
+   if(er.position_id == 0 && !g_cfg.shadow_only && er.accepted)
+   {
+      PositionManagerLatchStateFault("accepted execution has no stable position identifier");
+      return RISK_OP_UNCERTAIN;
+   }
+   else if(er.position_id == 0 && g_cfg.shadow_only)
+   {
+      // Use the exact quote/volume accepted by final preflight, not the older
+      // strategy quote. A synthetic reference is never a confirmed broker fill.
+      if(!er.shadow_evaluated || !MathIsValidNumber(er.shadow_entry) || er.shadow_entry<=0.0 ||
+         !MathIsValidNumber(er.shadow_volume) || er.shadow_volume<=0.0)
+         return RISK_OP_REJECTED;
+      PositionManagerRegister((ulong)decision_id, er.shadow_entry, sl, tp, er.shadow_volume, dr.direction,
+                              atr, g_cfg, ti.horizon);
+   }
 
-   //--- 13) Register position for management
-   if(er.position_id == 0 && PositionSelect(g_symbol))
-      er.position_id = (ulong)PositionGetInteger(POSITION_IDENTIFIER);
-   if(er.position_id != 0)
+   if(!g_cfg.shadow_only && er.accepted)
    {
-      PositionManagerRegister(er.position_id, entry, sl, tp, dr.direction,
-                              atr, g_cfg, selected_horizon);
+      ulong execution_magic=(g_cfg.magic_number>0)?g_cfg.magic_number:20260908;
+      if(!AccountManagedPositionVisible(er.position_id,ti.symbol,execution_magic,er.fill_volume))
+      {
+         PositionManagerLatchStateFault("confirmed fill is not yet visible with expected identity, volume and stop");
+         return RISK_OP_UNCERTAIN;
+      }
+      // The fill already exists. Retain its management state before any
+      // post-fill risk failure quarantines admission. This records exposure;
+      // it does not approve the opportunity or commit strategy state.
+      PositionManagerRegister(er.position_id,er.fill_price,sl,tp,er.fill_volume,
+                              dr.direction,atr,g_cfg,ti.horizon);
+      if(!PositionManagerAdmissionAllowed()) return RISK_OP_UNCERTAIN;
+
+      double reconciled_stop_risk=0.0;
+      string reconciled_risk_reason="";
+      double reconciled_equity=AccountInfoDouble(ACCOUNT_EQUITY);
+      if(!MathIsValidNumber(reconciled_equity) || reconciled_equity<=0.0 ||
+         !AccountEstimatedStopRisk(reconciled_stop_risk,reconciled_risk_reason) ||
+         !MathIsValidNumber(reconciled_stop_risk) ||
+         reconciled_stop_risk/reconciled_equity*100.0>AMIGO_MAX_ESTIMATED_STOP_LOSS_PERCENT)
+      {
+         PositionManagerLatchStateFault("post-fill aggregate stop-risk verification failed: "+reconciled_risk_reason);
+         return RISK_OP_UNCERTAIN;
+      }
    }
-   else if(g_cfg.shadow_only)
-   {
-      // In Shadow Mode, register synthetic position ticket (decision_id) to run post-entry shadow position management
-      PositionManagerRegister((ulong)decision_id, entry, sl, tp, dr.direction,
-                              atr, g_cfg, selected_horizon);
-   }
+
+   if(!PositionManagerAdmissionAllowed()) return RISK_OP_UNCERTAIN;
+
+   // Single accepted-state commit point after geometry, risk, final quote,
+   // confirmed execution outcome and position registration all succeed.
+   CommitFlowOpportunityDiagnostics(candidate_feature_rates,decision_boundary,candidate_feat.atr14);
+   g_snap = candidate_snap;
+   g_feat = candidate_feat;
+   g_amigo_feature_state = candidate_feature_state;
+   g_regime_state = candidate_regime;
+   WriteSnapshotForExternal(g_cfg.bridge_outbox, candidate_snap, candidate_feat);
+   return g_cfg.shadow_only ? RISK_OP_SHADOW : RISK_OP_CONFIRMED;
 }
 
 //+------------------------------------------------------------------+
@@ -666,12 +1072,22 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
                         const MqlTradeRequest &request,
                         const MqlTradeResult &result)
 {
+   if(trans.type==TRADE_TRANSACTION_REQUEST && !ReconCaptureRequestEvent(request,result,g_cfg))
+   {
+      g_risk_admission_ready=false;
+      PositionManagerLatchStateFault("request callback evidence could not be matched or persisted");
+   }
    TransactionReconHandle(trans, request, result);
 }
 
 //+------------------------------------------------------------------+
 void OnTimer()
 {
+   if(!PositionStateOwnerMatches(g_cfg))
+   {
+      PositionManagerLatchStateFault("position state ownership or account scope changed");
+      return;
+   }
    PositionManagerTick(g_cfg);
 }
 //+------------------------------------------------------------------+ // force timestamp change

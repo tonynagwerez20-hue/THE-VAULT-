@@ -1,0 +1,50 @@
+{
+  "purpose": "Additional unmodified pre-roll archives for at least 50 closed D1 bars before requested start; exact broker-bar readiness remains to be checked.",
+  "files": [
+    {
+      "month": "2016-08",
+      "source": "https://www.histdata.com/download-free-forex-historical-data/?/ascii/tick-data-quotes/xauusd/2016/8",
+      "path": "E:\\AMIGO-EA31337-REBUILD\\research-data\\histdata\\HISTDATA_COM_ASCII_XAUUSD_T_201608.zip",
+      "bytes": 11651566,
+      "sha256": "8d52c4f58f587fbac179bc6cca9f70b2b7b35354111087ed229051c67e3c6c07",
+      "rows": 2494417,
+      "first_est": "20160801 000000253",
+      "last_est": "20160831 235956350",
+      "quote_days": 27,
+      "invalid_quotes": 0,
+      "out_of_order": 0,
+      "adjacent_duplicate_rows": 0,
+      "status": "validated"
+    },
+    {
+      "month": "2016-09",
+      "source": "https://www.histdata.com/download-free-forex-historical-data/?/ascii/tick-data-quotes/xauusd/2016/9",
+      "path": "E:\\AMIGO-EA31337-REBUILD\\research-data\\histdata\\HISTDATA_COM_ASCII_XAUUSD_T_201609.zip",
+      "bytes": 11106878,
+      "sha256": "d56f6b0483f489b4cfa3e8a6652c33ea9782dbf7f81fea083e06673e39498468",
+      "rows": 2417579,
+      "first_est": "20160901 000001850",
+      "last_est": "20160930 165902287",
+      "quote_days": 26,
+      "invalid_quotes": 0,
+      "out_of_order": 0,
+      "adjacent_duplicate_rows": 0,
+      "status": "validated"
+    },
+    {
+      "month": "2016-10",
+      "source": "https://www.histdata.com/download-free-forex-historical-data/?/ascii/tick-data-quotes/xauusd/2016/10",
+      "path": "E:\\AMIGO-EA31337-REBUILD\\research-data\\histdata\\HISTDATA_COM_ASCII_XAUUSD_T_201610.zip",
+      "bytes": 10473994,
+      "sha256": "752822971bcfd654817f2ee9c4d5da77ef0bb3f6672f02d57674231d2ff4a80a",
+      "rows": 2289114,
+      "first_est": "20161002 180100317",
+      "last_est": "20161031 235956063",
+      "quote_days": 26,
+      "invalid_quotes": 0,
+      "out_of_order": 0,
+      "adjacent_duplicate_rows": 0,
+      "status": "validated"
+    }
+  ]
+}

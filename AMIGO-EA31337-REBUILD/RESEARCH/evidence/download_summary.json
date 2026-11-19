@@ -1,0 +1,49 @@
+{
+  "requested_months": 121,
+  "warmup_months": 3,
+  "acquired_archives": 124,
+  "bytes": 3301979150,
+  "rows": 504932597,
+  "validated_archives": 111,
+  "quality_failure_months": [
+    "2019-10",
+    "2020-10",
+    "2021-10",
+    "2022-10",
+    "2023-10",
+    "2024-10",
+    "2025-10",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+    "2026-10",
+    "2026-11"
+  ],
+  "invalid_quotes": 0,
+  "backward_timestamp_events": 72512,
+  "adjacent_duplicate_rows": 234028,
+  "latest_provider_timestamp": "20261113 165959000",
+  "latest_utc_using_documented_fixed_est": "2026-11-13T21:59:59+00:00",
+  "account_equities_usd": [
+    5,
+    10,
+    25,
+    50,
+    100,
+    250,
+    500,
+    1000,
+    5000,
+    10000
+  ],
+  "backtest_status": "BLOCKED: chronology, endpoint coverage and native/account-model verification; no ten-year performance results",
+  "source_data_modified": false,
+  "endpoint_check": {
+    "rows": 5142425,
+    "minimum_provider_timestamp": "20261101 180000000",
+    "maximum_provider_timestamp": "20261113 165959000",
+    "requested_utc_end_exclusive": "2026-11-18T00:00:00Z",
+    "endpoint_covered": false
+  }
+}

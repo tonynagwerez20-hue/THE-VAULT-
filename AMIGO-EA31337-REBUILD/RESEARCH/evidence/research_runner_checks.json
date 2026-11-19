@@ -1,0 +1,8 @@
+{
+  "excluded_month_guard": "passed",
+  "streamed_drawdown_fixture": "passed",
+  "controlled_stop_trade_matches_unmodified_prototype": true,
+  "report_is_idempotent": true,
+  "ledger_reconciles": true,
+  "fixture_only": true
+}

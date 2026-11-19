@@ -1,0 +1,30 @@
+{
+  "name": "USD standard-contract cost scenario",
+  "verified_broker_specification": false,
+  "equities_usd": [
+    5,
+    10,
+    25,
+    50,
+    100,
+    250,
+    500,
+    1000,
+    5000,
+    10000
+  ],
+  "requested_account_mode": "hedging",
+  "implemented_account_mode": "single-position prototype; hedging and margin NOT modeled",
+  "specification": {
+    "trade_tick_size": 0.01,
+    "trade_tick_value_loss": 1.0,
+    "volume_min": 0.01,
+    "volume_max": 100.0,
+    "volume_step": 0.01,
+    "commission_per_lot_roundturn": 7.0,
+    "slippage_price": 0.1,
+    "swap_long_per_lot_day": -20.0,
+    "swap_short_per_lot_day": -10.0,
+    "day_offset_seconds": 0
+  }
+}

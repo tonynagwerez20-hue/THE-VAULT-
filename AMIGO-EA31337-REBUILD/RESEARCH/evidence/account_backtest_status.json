@@ -1,0 +1,132 @@
+[
+  {
+    "equity_usd": 5,
+    "requested_mode": "hedging",
+    "risk_scenarios_executed": 8,
+    "historical_backtest_executed": false,
+    "blockers": [
+      "Backward quote timestamps",
+      "Unverified exact endpoint and active-session coverage",
+      "Native historical replay not initialized/validated",
+      "Prototype lacks hedging and native horizon parity",
+      "Historical broker specifications and costs unverified"
+    ]
+  },
+  {
+    "equity_usd": 10,
+    "requested_mode": "hedging",
+    "risk_scenarios_executed": 8,
+    "historical_backtest_executed": false,
+    "blockers": [
+      "Backward quote timestamps",
+      "Unverified exact endpoint and active-session coverage",
+      "Native historical replay not initialized/validated",
+      "Prototype lacks hedging and native horizon parity",
+      "Historical broker specifications and costs unverified"
+    ]
+  },
+  {
+    "equity_usd": 25,
+    "requested_mode": "hedging",
+    "risk_scenarios_executed": 8,
+    "historical_backtest_executed": false,
+    "blockers": [
+      "Backward quote timestamps",
+      "Unverified exact endpoint and active-session coverage",
+      "Native historical replay not initialized/validated",
+      "Prototype lacks hedging and native horizon parity",
+      "Historical broker specifications and costs unverified"
+    ]
+  },
+  {
+    "equity_usd": 50,
+    "requested_mode": "hedging",
+    "risk_scenarios_executed": 8,
+    "historical_backtest_executed": false,
+    "blockers": [
+      "Backward quote timestamps",
+      "Unverified exact endpoint and active-session coverage",
+      "Native historical replay not initialized/validated",
+      "Prototype lacks hedging and native horizon parity",
+      "Historical broker specifications and costs unverified"
+    ]
+  },
+  {
+    "equity_usd": 100,
+    "requested_mode": "hedging",
+    "risk_scenarios_executed": 8,
+    "historical_backtest_executed": false,
+    "blockers": [
+      "Backward quote timestamps",
+      "Unverified exact endpoint and active-session coverage",
+      "Native historical replay not initialized/validated",
+      "Prototype lacks hedging and native horizon parity",
+      "Historical broker specifications and costs unverified"
+    ]
+  },
+  {
+    "equity_usd": 250,
+    "requested_mode": "hedging",
+    "risk_scenarios_executed": 8,
+    "historical_backtest_executed": false,
+    "blockers": [
+      "Backward quote timestamps",
+      "Unverified exact endpoint and active-session coverage",
+      "Native historical replay not initialized/validated",
+      "Prototype lacks hedging and native horizon parity",
+      "Historical broker specifications and costs unverified"
+    ]
+  },
+  {
+    "equity_usd": 500,
+    "requested_mode": "hedging",
+    "risk_scenarios_executed": 8,
+    "historical_backtest_executed": false,
+    "blockers": [
+      "Backward quote timestamps",
+      "Unverified exact endpoint and active-session coverage",
+      "Native historical replay not initialized/validated",
+      "Prototype lacks hedging and native horizon parity",
+      "Historical broker specifications and costs unverified"
+    ]
+  },
+  {
+    "equity_usd": 1000,
+    "requested_mode": "hedging",
+    "risk_scenarios_executed": 8,
+    "historical_backtest_executed": false,
+    "blockers": [
+      "Backward quote timestamps",
+      "Unverified exact endpoint and active-session coverage",
+      "Native historical replay not initialized/validated",
+      "Prototype lacks hedging and native horizon parity",
+      "Historical broker specifications and costs unverified"
+    ]
+  },
+  {
+    "equity_usd": 5000,
+    "requested_mode": "hedging",
+    "risk_scenarios_executed": 8,
+    "historical_backtest_executed": false,
+    "blockers": [
+      "Backward quote timestamps",
+      "Unverified exact endpoint and active-session coverage",
+      "Native historical replay not initialized/validated",
+      "Prototype lacks hedging and native horizon parity",
+      "Historical broker specifications and costs unverified"
+    ]
+  },
+  {
+    "equity_usd": 10000,
+    "requested_mode": "hedging",
+    "risk_scenarios_executed": 8,
+    "historical_backtest_executed": false,
+    "blockers": [
+      "Backward quote timestamps",
+      "Unverified exact endpoint and active-session coverage",
+      "Native historical replay not initialized/validated",
+      "Prototype lacks hedging and native horizon parity",
+      "Historical broker specifications and costs unverified"
+    ]
+  }
+]

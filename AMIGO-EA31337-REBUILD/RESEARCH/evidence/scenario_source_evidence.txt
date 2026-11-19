@@ -1,0 +1,201 @@
+
+FILE E:\AMIGO-EA31337-REBUILD\Python\backtest_engine.py
+158: # ============================================================================
+159: class RiskManager:
+160:     """Implements AMIGO risk invariants for position sizing."""
+161:
+162:     def __init__(self, account_balance: float = 10000.0, risk_per_trade_pct: float = 0.5,
+163:                  daily_loss_limit_pct: float = 2.0, max_distortion: float = 5.0,
+164:                  min_rr: float = 2.0):
+165:         if not 0 < risk_per_trade_pct <= 2 or daily_loss_limit_pct != 2 or not 1 <= max_distortion <= 5 or min_rr < 2:
+166:             raise ValueError("Risk policy violation")
+167:         self.day_start = account_balance
+168:         self.balance = account_balance
+169:         self.risk_per_trade = risk_per_trade_pct / 100.0
+170:         self.daily_loss_limit = daily_loss_limit_pct / 100.0
+171:         self.max_distortion = max_distortion
+172:         self.min_rr = min_rr
+173:         self.daily_pnl = 0.0
+174:         self.daily_entries = 0
+175:         self.daily_losses = 0.0
+176:
+177:     def reset_daily(self):
+178:         self.day_start = self.balance
+179:         self.daily_pnl = 0.0
+180:         self.daily_entries = 0
+181:         self.daily_losses = 0.0
+182:
+183:     def can_trade(self) -> bool:
+184:         if self.daily_entries >= MAX_DAILY_ENTRIES:
+185:             return False
+186:         if self.balance <= self.day_start * (1-self.daily_loss_limit):
+187:             return False
+188:         return True
+189:
+190:     def calculate_position_size(self, entry_price: float, stop_price: float,
+191:                                  symbol_info: dict) -> float:
+192:         """Calculate position size per AMIGO risk invariants."""
+193:         keys = ('trade_tick_size','trade_tick_value_loss','volume_min','volume_max','volume_step')
+194:         if any(k not in symbol_info or not math.isfinite(symbol_info[k]) or symbol_info[k]<=0 for k in keys): return 0.0
+195:         if not all(math.isfinite(x) for x in (entry_price,stop_price,self.balance)) or self.balance<=0: return 0.0
+196:         distance=abs(entry_price-stop_price)
+197:         if distance<=0 or not self.can_trade(): return 0.0
+198:         per_lot=distance/symbol_info['trade_tick_size']*symbol_info['trade_tick_value_loss']
+199:         per_lot+=symbol_info.get('commission_per_lot_roundturn',0.)
+200:         per_lot+=symbol_info.get('slippage_price',0.)/symbol_info['trade_tick_size']*symbol_info['trade_tick_value_loss']
+201:         budget=self.balance*self.risk_per_trade
+202:         remaining=max(0.,self.balance-self.day_start*.98)
+203:         cap=min(budget*self.max_distortion,remaining,self.balance*.02)
+204:         step=Decimal(str(symbol_info['volume_step']))
+205:         minimum=(Decimal(str(symbol_info['volume_min']))/step).to_integral_value(rounding=ROUND_CEILING)*step
+206:         raw=min(budget,remaining)/per_lot
+207:         lots=(Decimal(str(min(raw,symbol_info['volume_max'])))/step).to_integral_value(rounding=ROUND_FLOOR)*step
+208:         lots=max(lots,minimum)
+209:         if float(lots)>symbol_info['volume_max'] or float(lots)*per_lot>cap+1e-9: return 0.0
+210:         return float(lots)
+211:
+263:             bid,ask=float(tick['bid']),float(tick['ask'])
+264:             if not all(math.isfinite(v) for v in (bid,ask)) or bid<=0 or ask<bid or (self.last_timestamp is not None and timestamp<self.last_timestamp):
+265:                 raise ValueError('Invalid or unordered quote')
+266:             day=int((timestamp/1000+self.symbol_info['day_offset_seconds'])//86400)
+267:             if day!=self.day:
+268:                 if self.position and self.day is not None:
+269:                     key='swap_long_per_lot_day' if self.position['direction']==1 else 'swap_short_per_lot_day'
+270:                     self.balance+=self.position['position_size']*self.symbol_info[key]*(day-self.day)
+271:                 self.risk_manager.balance=self.balance
+272:                 self.risk_manager.reset_daily()
+273:                 if self.position:
+274:                     p=self.position; mark=bid if p['direction']==1 else ask
+275:                     self.risk_manager.day_start+=(mark-p['entry_price'])*p['direction']*p['position_size']*self.symbol_info['trade_tick_value_loss']/self.symbol_info['trade_tick_size']
+276:                 self.day=day
+277:             self.last_timestamp=timestamp
+278:             self._mark_position(bid,ask,timestamp)
+279:             self.risk_manager.balance=self.balance
+280:             if self.pending and timestamp>self.pending[3] and self.position is None and self.risk_manager.can_trade():
+281:                 direction,confidence,reason,_=self.pending
+282:                 price=ask if direction==1 else bid
+283:                 self._execute_trade(direction,confidence,reason,price,timestamp)
+284:                 self.pending=None
+285:             bar=self.tib_generator.process_tick(dict(bid=bid,ask=ask,time=timestamp/1000,time_msc=timestamp))
+286:             if bar:
+287:                 self.trend_strategy.update(bar['close'])
+288:                 self.meanrev_strategy.update(bar['close'])
+289:                 signal=self._arbitrate(*self.trend_strategy.generate_signal(),*self.meanrev_strategy.generate_signal())
+290:                 self.pending=(*signal,timestamp) if signal[0] and self.position is None else None
+291:
+320:     def _mark_position(self,bid,ask,timestamp):
+321:         equity=self.balance
+322:         if self.position:
+323:             p=self.position; direction=p['direction']; price=bid if direction==1 else ask
+324:             cash_per_price=p['position_size']*self.symbol_info['trade_tick_value_loss']/self.symbol_info['trade_tick_size']
+325:             costs=p['position_size']*self.symbol_info['commission_per_lot_roundturn']
+326:             equity+=(price-p['entry_price'])*direction*cash_per_price-costs
+327:             stopped=(price-p['sl_price'])*direction<=0
+328:             target=(price-p['tp_price'])*direction>=0
+329:             daily=equity<=self.risk_manager.day_start*.98
+330:             if stopped or target or daily:
+331:                 fill=(p['tp_price'] if target and not stopped and not daily else price)-direction*self.symbol_info['slippage_price']
+332:                 pnl=(fill-p['entry_price'])*direction*cash_per_price-costs
+333:                 p.update(exit_price=fill,exit_time=timestamp,pnl=pnl,won=pnl>0,exit_reason='DAILY_STOP' if daily else ('STOP' if stopped else 'TARGET'))
+334:                 self.trades.append(p); self.balance+=pnl; self.risk_manager.record_trade(pnl)
+335:                 self.position=None; equity=self.balance
+336:         self.equity_curve.append(equity)
+337:
+338:     def _execute_trade(self, direction: int, confidence: float, reason: str,
+339:                        entry_price: float, timestamp: int):
+340:         """Execute simulated trade with risk management."""
+341:         if self.position is not None: return
+342:         entry_price+=direction*self.symbol_info['slippage_price']
+343:         # Prototype SL/TP approximation; not native strategy parity
+344:         atr_approx = entry_price * 0.001  # 10 pips for XAUUSD
+345:         stop_distance = atr_approx * 2.0  # 2 ATR stop
+346:
+347:         if direction == 1:  # BUY
+348:             sl_price = entry_price - stop_distance
+349:             tp_price = entry_price + stop_distance * 2.0  # 1:2 RR
+350:         else:  # SELL
+351:             sl_price = entry_price + stop_distance
+352:             tp_price = entry_price - stop_distance * 2.0
+353:
+354:         # Calculate position size
+355:         position_size = self.risk_manager.calculate_position_size(
+356:             entry_price, sl_price, self.symbol_info
+357:         )
+358:
+359:         if position_size <= 0:
+360:             return  # NO_TRADE - min lot infeasible
+361:
+362:         # Record trade
+363:         trade = {
+364:             'entry_time': timestamp,
+365:             'entry_price': entry_price,
+366:             'direction': direction,
+367:             'position_size': position_size,
+368:             'sl_price': sl_price,
+369:             'tp_price': tp_price,
+370:             'reason': reason,
+371:             'confidence': confidence,
+372:         }
+373:         self.position=trade
+374:         self.risk_manager.daily_entries+=1
+375:
+
+FILE E:\AMIGO-EA31337-REBUILD\research-data\amigo-research-v1\replay.py
+13:     def __init__(self, initial):
+14:         self.last=self.peak=initial;self.maximum_drawdown=0.;self.count=0
+15:     def append(self,value):
+16:         self.last=value;self.peak=max(self.peak,value)
+17:         self.maximum_drawdown=max(self.maximum_drawdown,(self.peak-value)/self.peak if self.peak>0 else 0.)
+18:         self.count+=1
+19:
+20: class ResearchEngine(BacktestEngine):
+21:     def __init__(self,equity,spec):
+22:         super().__init__('XAUUSD_RESEARCH',equity,spec)
+23:         self.equity_curve=EquityAccumulator(equity)
+24:     def _generate_report(self):
+25:         # Entry can occur after the parent's per-tick mark; value that final position explicitly.
+26:         equity=self.balance
+27:         if self.position and hasattr(self,'last_quote'):
+28:             p=self.position;bid,ask=self.last_quote
+29:             mark=bid if p['direction']==1 else ask
+30:             equity+=(mark-p['entry_price'])*p['direction']*p['position_size']*self.symbol_info['trade_tick_value_loss']/self.symbol_info['trade_tick_size']
+31:             equity-=p['position_size']*self.symbol_info['commission_per_lot_roundturn']
+32:         final_drawdown=(self.equity_curve.peak-equity)/self.equity_curve.peak if self.equity_curve.peak>0 else 0.
+33:         closed=sum(t['pnl'] for t in self.trades)
+34:         return dict(initial_equity=self.initial_balance,final_balance=self.balance,final_marked_equity=equity,
+35:             net_equity_change=equity-self.initial_balance,closed_trades=len(self.trades),
+36:             closed_trade_pnl=closed,separate_cash_adjustments=self.balance-self.initial_balance-closed,
+37:             unrealized_after_reserved_commission=equity-self.balance,
+38:             max_drawdown_pct=100*max(self.equity_curve.maximum_drawdown,final_drawdown),open_position=self.position,
+39:             ticks_processed=self.equity_curve.count,scope='Existing single-position Python prototype; not native, multi-horizon or hedging parity',
+40:             assumptions=self.symbol_info)
+41:     def _mark_position(self,bid,ask,timestamp):
+42:         self.last_quote=(bid,ask)
+43:         return super()._mark_position(bid,ask,timestamp)
+87:     for path,expected in manifest['source_hashes'].items():
+88:         if hashlib.sha256(Path(path).read_bytes()).hexdigest()!=expected:raise ValueError('Prototype source changed: '+path)
+89:     scenario=json.loads((HERE/'scenario.json').read_text())
+90:     selected=selected_files(manifest,start,end)
+91:     engines=[ResearchEngine(e,scenario['specification']) for e in scenario['equities_usd']]
+92:     # Existing strategy implementations consume each identical source quote once per account.
+93:     # Shared bounded batches avoid loading the entire history or storing per-tick equity arrays.
+94:     batch=[];count=0
+95:     import contextlib,io
+96:     def replay_batch():
+97:         for engine in engines:
+98:             with contextlib.redirect_stdout(io.StringIO()):engine.run_backtest(start,end,ticks=batch)
+99:     for tick in ticks(selected,start,end):
+100:         batch.append(tick);count+=1
+101:         if len(batch)>=10000:replay_batch();batch.clear()
+102:     if batch:replay_batch()
+103:     if not count:raise ValueError('No quotes in requested interval')
+104:     reports=[e._generate_report() for e in engines]
+105:     result=dict(start_utc=start.isoformat(),end_utc_exclusive=end.isoformat(),input_ticks=count,
+106:         scope='Diagnostic prototype replay only; fixed 0.5% risk, one position, no native horizon or hedging/margin parity',
+107:         scenario=scenario,source_months=[f['month'] for f in selected],accounts=reports)
+108:     dest=Path(args.output)
+109:     if dest.exists():raise FileExistsError('Refusing to overwrite existing results')
+110:     dest.write_text(json.dumps(result,indent=2,allow_nan=False))
+111:     print(json.dumps(dict(input_ticks=count,accounts=len(reports),closed_trades=[r['closed_trades'] for r in reports],output=str(dest)),indent=2))
+112:
+113: if __name__=='__main__':main()

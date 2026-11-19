@@ -1,0 +1,7 @@
+{
+  "rows": 5142425,
+  "minimum_provider_timestamp": "20261101 180000000",
+  "maximum_provider_timestamp": "20261113 165959000",
+  "requested_utc_end_exclusive": "2026-11-18T00:00:00Z",
+  "endpoint_covered": false
+}

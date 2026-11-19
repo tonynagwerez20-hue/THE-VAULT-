@@ -1,0 +1,14 @@
+{
+  "root": "E:\\AMIGO-EA31337-REBUILD",
+  "branch": "master",
+  "head": "48cd514ba1469f86dfc17ffd8613162a254078f8",
+  "status": "MM ARCHITECTURE/StrategyProposalTest.mq5\nMM ARCHITECTURE/Strategy_Framework.mqh\n?? .claude-flow/\n?? .claude/\n?? .swarm/\n?? AMIGO_BASELINE/\n?? ARCHITECTURE/MeanReversionStrategy.mqh\n?? ARCHITECTURE/StrategyLifecycleTest.mq5\n?? ARCHITECTURE/StrategyRegistration.mqh\n?? ARCHITECTURE/TrendStrategy.mqh\n?? ARCHITECTURE/UnitTestReport.md\n?? \"E\\357\\200\\272AMIGO-EA31337-REBUILDPythontib_generator.py\"\n?? FINAL_INVESTIGATION_SUMMARY.md\n?? GATE_2_STRATEGY_FRAMEWORK_REPORT.md\n?? Python/\n?? README_DEVELOPMENT_GUIDE.md\n?? README_ENGINEERING_PROGRESS.md\n?? README_INVESTIGATION_COMPLETE.md\n?? REFERENCES/\n?? REPORTS/\n?? SHADOW_VALIDATION_PACKAGE.md\n?? TEST_DISPOSABLE_SQLITE/\n?? VALIDATION/\n?? download_gold_ticks.py\n?? implementation_blueprint.md\n?? investigation_summary.md\n?? memory/\n?? metatester_help.txt\n?? mql_check.ex5\n?? mql_check.mq5\n?? p0_identity_arbitration_final.md\n?? p0_identity_arbitration_report.md\n?? research-data/\n?? workspace_verification.md",
+  "source_files_compared": 55,
+  "changed_from_prior_audit": [],
+  "package_hashes": {
+    "replay.py": "68999d6127bdd8b4930957ab7a69cb9057e3d14aba8342ecc1a3ef1dbe215121",
+    "scenario.json": "35d44e03710c9fa33b5effd37a1ab49da0ccbdc1b83aa2d7536692a67a2dda7d",
+    "dataset.json": "e17568806c5e8ec71fee91cce763b6f9fa83e5848a3b4dd28567446cae937667"
+  },
+  "scope": "Read-only audit and new result artifacts; no strategy/config/data edits"
+}

@@ -1,0 +1,86 @@
+{
+  "accounts": [
+    {
+      "equity": 5,
+      "ledger_reconciles": true,
+      "quote_count_matches": true
+    },
+    {
+      "equity": 10,
+      "ledger_reconciles": true,
+      "quote_count_matches": true
+    },
+    {
+      "equity": 25,
+      "ledger_reconciles": true,
+      "quote_count_matches": true
+    },
+    {
+      "equity": 50,
+      "ledger_reconciles": true,
+      "quote_count_matches": true
+    },
+    {
+      "equity": 100,
+      "ledger_reconciles": true,
+      "quote_count_matches": true
+    },
+    {
+      "equity": 250,
+      "ledger_reconciles": true,
+      "quote_count_matches": true
+    },
+    {
+      "equity": 500,
+      "ledger_reconciles": true,
+      "quote_count_matches": true
+    },
+    {
+      "equity": 1000,
+      "ledger_reconciles": true,
+      "quote_count_matches": true
+    },
+    {
+      "equity": 5000,
+      "ledger_reconciles": true,
+      "quote_count_matches": true
+    },
+    {
+      "equity": 10000,
+      "ledger_reconciles": true,
+      "quote_count_matches": true
+    }
+  ],
+  "source_files_unchanged": 55,
+  "package_files_unchanged": 3,
+  "tests": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "tests": "102",
+    "time": "2.834",
+    "timestamp": "2026-11-19T06:36:31.559947+03:00",
+    "hostname": "DESKTOP-Q7VPUR4"
+  },
+  "test_counts_by_class": {
+    "Python.test_quant_regression": 24,
+    "AMIGO_BASELINE.Python.algomind.tests.test_approved_horizon_selector_candidate": 4,
+    "AMIGO_BASELINE.Python.algomind.tests.test_saved_horizon_management": 3,
+    "AMIGO_BASELINE.Python.algomind.tests.test_horizon_decision_contract_candidate": 4,
+    "AMIGO_BASELINE.Python.algomind.tests.test_timeframe_input_ladder": 1,
+    "AMIGO_BASELINE.Python.algomind.tests.test_tick_proxy_math.TestHardenedTickProxyMath": 12,
+    "AMIGO_BASELINE.Python.algomind.tests.test_topdown_volatility_candidate": 8,
+    "AMIGO_BASELINE.Python.algomind.orderflow_lab.tests.test_horizons.TestScalpingMeanReversion": 3,
+    "AMIGO_BASELINE.Python.algomind.orderflow_lab.tests.test_horizons.TestScalpingTrendContinuation": 2,
+    "AMIGO_BASELINE.Python.algomind.orderflow_lab.tests.test_horizons.TestIntradayMeanReversion": 2,
+    "AMIGO_BASELINE.Python.algomind.orderflow_lab.tests.test_horizons.TestIntradayTrendContinuation": 2,
+    "AMIGO_BASELINE.Python.algomind.orderflow_lab.tests.test_horizons.TestSwingMeanReversion": 3,
+    "AMIGO_BASELINE.Python.algomind.orderflow_lab.tests.test_horizons.TestSwingTrendContinuation": 2,
+    "AMIGO_BASELINE.Python.algomind.orderflow_lab.tests.test_python_mql5_parity.TestPythonMQL5Parity": 2,
+    "AMIGO_BASELINE.Python.algomind.tests.test_completion_lock_order_candidate": 5,
+    "AMIGO_BASELINE.Python.algomind.tests.test_chronology_bounds_candidate": 16,
+    "AMIGO_BASELINE.Python.algomind.tests.test_risk_arithmetic_guards": 9
+  },
+  "scope": "Output ledger identities and quote-count equality, not independent native strategy verification"
+}

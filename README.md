@@ -19,13 +19,6 @@ The Vault is the collaboration home for AlgoMind and its AMIGO XAUUSD system. Th
 
 MQL5 is the final authority for order submission, hard risk, position management, and transaction reconciliation. Python may provide research and validated external context, but it must not bypass MQL5 safety gates.
 
-## Collaboration rules
-
-1. Work on a topic branch; keep `main` release-ready.
-2. Use a pull request for MQL5, risk, bridge, schema, or research-claim changes.
-3. Keep generated logs and scratch output out of production folders.
-4. Every quantitative claim must state data period, costs, sample size, and whether it is native MT5 or offline.
-5. Never commit API keys, account credentials, broker tokens, or private tick archives.
 
 ## AMIGO system wiring
 

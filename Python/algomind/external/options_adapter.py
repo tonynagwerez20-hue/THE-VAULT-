@@ -1,4 +1,6 @@
-﻿"""GLD proxy options adapter — dual source (CBOE primary, yfinance fallback).
+"""GLD research fetch helpers. Production compute_context is unavailable.
+
+No validated ETF mapping or dealer-side inventory is provided by this adapter.
 
 The governing documents (D5 §12, D3 §24) require:
   * Options are CONTEXT ONLY. Never a trigger.
@@ -188,55 +190,10 @@ def fetch_gld_chain(symbol: str = "GLD") -> tuple[list[OptionsRow], str]:
 def compute_context(spot: float, atr: float,
                     gc_price: Optional[float],
                     now: datetime) -> dict:
-    """GLD proxy context. Returns options_valid=False if both sources fail."""
-    rows, source = fetch_gld_chain("GLD")
-    if not rows or source == SOURCE_NONE:
-        return {"options_valid": False, "options_source": SOURCE_NONE}
+    """Unavailable until a validated ETF mapping and positioning contract exists.
 
-    active = [r for r in rows if r.expiry.date() >= now.date()]
-    if not active:
-        return {"options_valid": False, "options_source": source,
-                "options_obs_ts": 0, "options_basis": 0.0,
-                "options_oi_concentration": 0.0,
-                "options_strike_distance_atr": 0.0,
-                "options_gamma_regime": 0}
-
-    total_oi = sum(r.oi for r in active)
-    if total_oi <= 0.0:
-        return {"options_valid": False, "options_source": source,
-                "options_obs_ts": 0, "options_basis": 0.0,
-                "options_oi_concentration": 0.0,
-                "options_strike_distance_atr": 0.0,
-                "options_gamma_regime": 0}
-
-    max_oi = max(r.oi for r in active)
-    oi_conc = max_oi / total_oi
-
-    notable = sorted(active, key=lambda r: -r.oi)[:5]
-    nearest = min(notable, key=lambda r: abs(r.strike - spot))
-
-    basis = (gc_price - spot) if gc_price is not None else 0.0
-    mapped_level = nearest.strike - basis
-    strike_dist_atr = ((spot - mapped_level) / atr) if atr > 0.0 else 0.0
-
-    if source == SOURCE_CBOE:
-        net_gamma = sum(r.gamma * r.oi for r in active)
-        if net_gamma > 0.0 and oi_conc > 0.15:
-            gamma_regime = +1
-        elif net_gamma < 0.0:
-            gamma_regime = -1
-        else:
-            gamma_regime = 0
-    else:
-        gamma_regime = 0  # yfinance: cannot infer dealer positioning
-
-    return {
-        "options_valid":               True,
-        "options_obs_ts":              int(now.timestamp()),
-        "options_basis":               basis,
-        "options_oi_concentration":    oi_conc,
-        "options_strike_distance_atr": strike_dist_atr,
-        "options_gamma_regime":        gamma_regime,
-        "options_source":              source,
-    }
-
+    GC minus spot is not a GLD strike conversion. Unsigned gamma times OI
+    cannot identify dealer inventory. Raw fetch helpers remain research-only.
+    """
+    return {"options_valid": False, "options_source": SOURCE_NONE,
+            "options_obs_ts": 0, "options_gamma_regime": 0}

@@ -1,0 +1,184 @@
+ M MQL5/Experts/AMIGO.ex5
+ M MQL5/Include/AM_FlowEvents.mqh
+ M "MQL5/Include/Account Execution Engine.mqh"
+ M MQL5/Include/Auction.mqh
+ M "MQL5/Include/Bar Collector.mqh"
+ M MQL5/Include/Configuration.mqh
+ M "MQL5/Include/Contracts header.mqh"
+ M "MQL5/Include/Execution Engine.mqh"
+ M "MQL5/Include/External Context Compactor.mqh"
+ M "MQL5/Include/FVG Engine.mqh"
+ M MQL5/Include/FeatureVector.mqh
+ M MQL5/Include/Logger.mqh
+ M "MQL5/Include/Market Snapshot Builder.mqh"
+ M MQL5/Include/Orderflow.mqh
+ M "MQL5/Include/Position Manager.mqh"
+ M MQL5/Include/PositionRecovery.mqh
+ M "MQL5/Include/Regime Engine.mqh"
+ M "MQL5/Include/Risk Engine.mqh"
+ M "MQL5/Include/Strategy Engine.mqh"
+ M "MQL5/Include/Structure Engine.mqh"
+ M MQL5/Include/TransactionRecon.mqh
+ M MQL5/Scripts/Test_HorizonPropagation.mq5
+ M MQL5/Scripts/Test_ShadowHarness.mq5
+ M Python/algomind/account_execution.py
+ M Python/algomind/bridge/local_bridge.py
+ M Python/algomind/external/cftc_adapter.py
+ M Python/algomind/external/news_adapter.py
+ M Python/algomind/external/options_adapter.py
+ M Python/algomind/mgle/cftc_engine.py
+ M Python/algomind/mgle/db.py
+ M Python/algomind/mgle/level_engine.py
+ M Python/algomind/mgle/macro_engines.py
+ M Python/algomind/mgle/options_engine.py
+ M Python/algomind/orderflow_lab/data_sources/__init__.py
+ M Python/algomind/orderflow_lab/data_sources/evlabs_adapter.py
+ M Python/algomind/orderflow_lab/data_sources/futures_ohlcv_adapter.py
+ M Python/algomind/orderflow_lab/data_sources/hyperliquid_adapter.py
+ M Python/algomind/orderflow_lab/data_sources/manual_sample_adapter.py
+ M Python/algomind/orderflow_lab/data_sources/mt5_adapter.py
+ M Python/algomind/orderflow_lab/data_sources/portara_adapter.py
+ M Python/algomind/orderflow_lab/engines/__init__.py
+ M Python/algomind/orderflow_lab/engines/event_engine.py
+ M Python/algomind/orderflow_lab/engines/flow_pipeline.py
+ M Python/algomind/orderflow_lab/engines/price_bin_engine.py
+ M Python/algomind/orderflow_lab/engines/proxy_dom.py
+ M Python/algomind/orderflow_lab/engines/proxy_footprint.py
+ M Python/algomind/orderflow_lab/engines/proxy_profile.py
+ M Python/algomind/orderflow_lab/engines/proxy_vwap.py
+ M Python/algomind/orderflow_lab/tests/test_account_execution.py
+ M Python/algomind/orderflow_lab/tests/test_engines.py
+ M Python/algomind/orderflow_lab/tests/test_horizons.py
+ M Python/algomind/orderflow_lab/tests/test_position_manager.py
+ M Python/algomind/orderflow_lab/tests/test_python_mql5_parity.py
+ M Python/algomind/orderflow_lab/tests/test_risk_controller.py
+ M Python/algomind/risk_controller.py
+ M Python/algomind/schema.py
+ M Python/run_external_service.py
+ M start_python_bridge.bat
+ M verify_backtest_ready.ps1
+?? .superpowers/sdd/amigo-implementation/progress.md
+?? AMIGO_CLAUDE_CODE_DIRECTIVE.md
+?? "C\357\200\272UsersUSERDesktopALGOMINDCURRENT_BRANCH.txt"
+?? "C\357\200\272UsersUSERDesktopALGOMINDCURRENT_HEAD.txt"
+?? Docs/reports/AMIGO_FINAL_BASELINE_FREEZE_REVIEW.md
+?? Docs/reports/AMIGO_FINAL_ENGINEERING_HANDOVER.md
+?? Docs/reports/AMIGO_FINAL_OFFLINE_EVIDENCE_MANIFEST.md
+?? Docs/reports/AMIGO_FINAL_READINESS_MATRIX.csv
+?? Docs/reports/AMIGO_REMAINING_VALIDATION_PLAN.md
+?? Docs/reports/READINESS_GATE_REPORT.md
+?? "MQL5/Include/Chronology Validation.mqh"
+?? MQL5/Include/FrozenFootprint.mqh
+?? "MQL5/Include/News Policy.mqh"
+?? MQL5/Include/Object.mqh
+?? MQL5/Include/StdLibErr.mqh
+?? MQL5/Include/TickProxyMath.mqh
+?? MQL5/Include/Trade/AccountInfo.mqh
+?? MQL5/Include/Trade/DealInfo.mqh
+?? MQL5/Include/Trade/HistoryOrderInfo.mqh
+?? MQL5/Include/Trade/OrderInfo.mqh
+?? MQL5/Include/Trade/PositionInfo.mqh
+?? MQL5/Include/Trade/SymbolInfo.mqh
+?? MQL5/Include/Trade/TerminalInfo.mqh
+?? MQL5/Include/Trade/Trade.mqh
+?? MQL5/Scripts/Test_ChronologyContract.mq5
+?? MQL5/Scripts/Test_TickProxyMath.mq5
+?? Python/algomind/tests/test_account_execution_broker_grid_loss_tick_candidate.py
+?? Python/algomind/tests/test_account_foreign_exposure_candidate.py
+?? Python/algomind/tests/test_account_mutex_namespace_candidate.py
+?? Python/algomind/tests/test_account_wide_risk_candidate.py
+?? Python/algomind/tests/test_approved_horizon_selector_candidate.py
+?? Python/algomind/tests/test_candidate_external_read_throttle.py
+?? Python/algomind/tests/test_candidate_feature_state_transaction.py
+?? Python/algomind/tests/test_candidate_geometry_snapshot_boundary.py
+?? Python/algomind/tests/test_candidate_news_clock_consistency.py
+?? Python/algomind/tests/test_candidate_opportunity_commit_contract.py
+?? Python/algomind/tests/test_candidate_position_quarantine.py
+?? Python/algomind/tests/test_candidate_position_ticket_refresh.py
+?? Python/algomind/tests/test_candidate_recovery_volume_consistency.py
+?? Python/algomind/tests/test_chronology_bounds_candidate.py
+?? Python/algomind/tests/test_closed_value_acceptance.py
+?? Python/algomind/tests/test_completion_lock_order_candidate.py
+?? Python/algomind/tests/test_critical_remediation_candidate.py
+?? Python/algomind/tests/test_execution_ambiguous_result_candidate.py
+?? Python/algomind/tests/test_execution_expiry_boundary_candidate.py
+?? Python/algomind/tests/test_execution_journal_candidate.py
+?? Python/algomind/tests/test_execution_preflight_candidate.py
+?? Python/algomind/tests/test_external_boundary_remediation.py
+?? Python/algomind/tests/test_external_launcher.py
+?? Python/algomind/tests/test_final_risk_guard_candidate.py
+?? Python/algomind/tests/test_flow_event_buffer_candidate.py
+?? Python/algomind/tests/test_flow_session_commit_candidate.py
+?? Python/algomind/tests/test_frozen_footprint.py
+?? Python/algomind/tests/test_frozen_position_policy_candidate.py
+?? Python/algomind/tests/test_horizon_decision_contract_candidate.py
+?? Python/algomind/tests/test_horizon_proxy_coherence.py
+?? Python/algomind/tests/test_intent_identity_candidate.py
+?? Python/algomind/tests/test_intraday_session_rollover_candidate.py
+?? Python/algomind/tests/test_journal_caller_fault_and_stubs.py
+?? Python/algomind/tests/test_journal_decoder_candidate.py
+?? Python/algomind/tests/test_journal_risk_pair_candidate.py
+?? Python/algomind/tests/test_journal_scope_freshness_candidate.py
+?? Python/algomind/tests/test_local_bridge_publication_candidate.py
+?? Python/algomind/tests/test_market_snapshot_contract_candidate.py
+?? Python/algomind/tests/test_missing_position_reconstruction_candidate.py
+?? Python/algomind/tests/test_missing_stop_recovery_candidate.py
+?? Python/algomind/tests/test_mql_control_flow_candidate.py
+?? Python/algomind/tests/test_mql_news_filter_candidate.py
+?? Python/algomind/tests/test_netting_admission_candidate.py
+?? Python/algomind/tests/test_news_availability_candidate.py
+?? Python/algomind/tests/test_news_horizon_windows.py
+?? Python/algomind/tests/test_news_payload_completeness_candidate.py
+?? Python/algomind/tests/test_news_trade_modes.py
+?? Python/algomind/tests/test_order_completion_evidence_candidate.py
+?? Python/algomind/tests/test_order_deal_aggregation_candidate.py
+?? Python/algomind/tests/test_partial_close_volume_candidate.py
+?? Python/algomind/tests/test_position_header_readback_candidate.py
+?? Python/algomind/tests/test_position_open_time_candidate.py
+?? Python/algomind/tests/test_position_owner_candidate.py
+?? Python/algomind/tests/test_position_registration_capacity_candidate.py
+?? Python/algomind/tests/test_postfill_retention_candidate.py
+?? Python/algomind/tests/test_proxy_persistence_horizons.py
+?? Python/algomind/tests/test_proxy_strategy_horizon_integration.py
+?? Python/algomind/tests/test_recovered_response_candidate.py
+?? Python/algomind/tests/test_recovery_interruption_boundaries_candidate.py
+?? Python/algomind/tests/test_recovery_management_geometry_candidate.py
+?? Python/algomind/tests/test_request_event_persistence_candidate.py
+?? Python/algomind/tests/test_request_event_recovery_candidate.py
+?? Python/algomind/tests/test_risk_arithmetic_guards.py
+?? Python/algomind/tests/test_risk_lock_ownership_candidate.py
+?? Python/algomind/tests/test_risk_payload_readback_candidate.py
+?? Python/algomind/tests/test_risk_recovery_pair_candidate.py
+?? Python/algomind/tests/test_saved_horizon_management.py
+?? Python/algomind/tests/test_seed_deal_reads_candidate.py
+?? Python/algomind/tests/test_shadow_harness_result_classification_candidate.py
+?? Python/algomind/tests/test_shadow_lifecycle_quote_candidate.py
+?? Python/algomind/tests/test_shared_include_contract_candidate.py
+?? Python/algomind/tests/test_snapshot_identity_candidate.py
+?? Python/algomind/tests/test_tester_live_bridge_boundary.py
+?? Python/algomind/tests/test_tick_proxy_math.py
+?? Python/algomind/tests/test_timeframe_input_ladder.py
+?? Python/algomind/tests/test_topdown_volatility_candidate.py
+?? Python/algomind/tests/test_volume_grid_candidate.py
+?? Python/launch_external_services.py
+?? amigo_readiness_loop.ps1
+?? audit_ocp_calls.txt
+?? compile_chk_now.log
+?? compile_latest_amigo.log
+?? compile_listing.txt
+?? compile_mql5_err.log
+?? compile_mt5_dir.log
+?? compile_run.log
+?? forensics_status.txt
+?? manifest_original.sha256
+?? sandbox_staging/amigo_stage1_probe.wsb
+?? sandbox_staging/guest_probe/Probe_Guest_Containment.ps1
+?? sandbox_staging/guest_probe/active_manifest.json
+?? sandbox_staging/guest_probe/manifests/manifest_20261111_182623_85ec9e11.json
+?? sandbox_staging/guest_probe/manifests/manifest_20261111_183254_21ac55a4.json
+?? sandbox_staging/guest_probe/manifests/manifest_20261111_184048_a1f3aaa6.json
+?? sandbox_staging/guest_probe/prelaunch_manifest.json
+?? sandbox_staging/guest_probe/session_nonce.txt
+?? sandbox_staging/test_stage1_evidence_validator_negative.py
+?? sandbox_staging/validate_guest_evidence.py
+?? verify_math.py

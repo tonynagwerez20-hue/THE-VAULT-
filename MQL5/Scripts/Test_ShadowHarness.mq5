@@ -22,6 +22,7 @@ void OnStart()
    
    //--- Test 2: Runtime Configuration Audit
    g_cfg.shadow_only = InpShadowOnly;
+   g_cfg.symbol = _Symbol;
    PrintFormat("[HARNESS_CONFIG] shadow_only=%s symbol=%s", g_cfg.shadow_only ? "true" : "false", _Symbol);
    
    if(!g_cfg.shadow_only)
@@ -30,7 +31,9 @@ void OnStart()
       return;
    }
    
-   int mock_submission_count = 0;
+   int preflight_block_count = 0;
+   int shadow_intercept_count = 0;
+   int unexpected_path_count = 0;
    int test_count = 3;
    
    //--- Test Intent Fixtures (Deterministic Test Cases)
@@ -45,6 +48,8 @@ void OnStart()
    // Intent 1: XAUUSD BUY
    ZeroMemory(test_intents[0]);
    test_intents[0].intent_id        = 9001;
+   test_intents[0].snapshot_id      = 9001;
+   test_intents[0].horizon          = HORIZON_SCALPING;
    test_intents[0].schema_version   = Amigo_SCHEMA_VERSION;
    test_intents[0].symbol           = _Symbol;
    test_intents[0].direction        = +1;
@@ -62,6 +67,8 @@ void OnStart()
    // Intent 2: XAUUSD SELL
    ZeroMemory(test_intents[1]);
    test_intents[1].intent_id        = 9002;
+   test_intents[1].snapshot_id      = 9002;
+   test_intents[1].horizon          = HORIZON_INTRADAY;
    test_intents[1].schema_version   = Amigo_SCHEMA_VERSION;
    test_intents[1].symbol           = _Symbol;
    test_intents[1].direction        = -1;
@@ -79,6 +86,8 @@ void OnStart()
    // Intent 3: XAUUSD BUY (Second Iteration)
    ZeroMemory(test_intents[2]);
    test_intents[2].intent_id        = 9003;
+   test_intents[2].snapshot_id      = 9003;
+   test_intents[2].horizon          = HORIZON_SWING;
    test_intents[2].schema_version   = Amigo_SCHEMA_VERSION;
    test_intents[2].symbol           = _Symbol;
    test_intents[2].direction        = +1;
@@ -111,24 +120,35 @@ void OnStart()
       
       PrintFormat("[EXECUTE_INTENT_ENTRY] reached=true intent_id=%I64d", test_intents[i].intent_id);
       
-      ExecutionResult er = ExecuteIntent(test_intents[i], test_lots[i], g_cfg);
+      // Explicit deterministic policy inputs keep the shared execution API
+      // fail-closed when a caller omits the sizing authorization.
+      ExecutionResult er = ExecuteIntent(test_intents[i], test_lots[i], g_cfg,
+                                         10.0, 0.50, 5.0, 1.0);
       
       PrintFormat("[SHADOW_GATE] shadow_only=%s retcode=%u comment=%s",
                   g_cfg.shadow_only ? "true" : "false", er.retcode, er.comment);
                   
-      if(er.comment == "SHADOW_MODE_EXECUTION_BLOCKED" || StringFind(er.comment, "SHADOW") >= 0)
+      if(er.risk_guard_blocked)
+      {
+         PrintFormat("[SHADOW_PREFLIGHT_BLOCK] no_order=true intent_id=%I64d reason=%s",
+                     test_intents[i].intent_id,er.comment);
+         preflight_block_count++;
+      }
+      else if(er.comment == "SHADOW_MODE_EXECUTION_BLOCKED")
       {
          PrintFormat("[SHADOW_INTERCEPT] intercepted=true intent_id=%I64d retcode=%u comment=%s",
                      test_intents[i].intent_id, er.retcode, er.comment);
+         shadow_intercept_count++;
       }
       else
       {
-         PrintFormat("[SHADOW_INTERCEPT_FAIL] intent_id=%I64d retcode=%u comment=%s",
+         PrintFormat("[SHADOW_UNEXPECTED_PATH] no_order_not_proven=true intent_id=%I64d retcode=%u comment=%s",
                      test_intents[i].intent_id, er.retcode, er.comment);
-         mock_submission_count++;
+         unexpected_path_count++;
       }
       
-      PrintFormat("[MOCK_BROKER] submission_count=%d", mock_submission_count);
+      PrintFormat("[HARNESS_COUNTS] preflight_blocked=%d shadow_intercepted=%d unexpected_paths=%d",
+                  preflight_block_count,shadow_intercept_count,unexpected_path_count);
    }
 
    PrintFormat("--- EXECUTING SHADOW POSITION MANAGEMENT TESTS ---");
@@ -136,7 +156,7 @@ void OnStart()
 
    // Test Shadow Position Registration & 50% BE / 25% Trailing Sequence
    // Entry = 2000.00, SL = 1990.00, TP = 2040.00 (TPDistance = 40.00, BE Trigger = 2020.00)
-   PositionManagerRegister(9001, 2000.00, 1990.00, 2040.00, +1, 2.00, g_cfg, HORIZON_INTRADAY);
+   PositionManagerRegister(9001, 2000.00, 1990.00, 2040.00, 0.10, +1, 2.00, g_cfg, HORIZON_INTRADAY);
 
    // Tick 1: Price = 2010.00 (Below 50% progress to TP)
    // We simulate tick in PositionManagerTick logic directly
@@ -157,16 +177,16 @@ void OnStart()
    PositionManagerTick(g_cfg);
 
    PrintFormat("--- HARNESS EXECUTION SUMMARY ---");
-   PrintFormat("[HARNESS_RESULT] Total Tests=%d Intercepted=%d Mock Submissions=%d",
-               test_count, test_count - mock_submission_count, mock_submission_count);
+   PrintFormat("[HARNESS_RESULT] Total Tests=%d PreflightBlocked=%d ShadowIntercepted=%d UnexpectedPaths=%d",
+               test_count,preflight_block_count,shadow_intercept_count,unexpected_path_count);
                
-   if(mock_submission_count == 0)
+   if(unexpected_path_count == 0 && preflight_block_count+shadow_intercept_count==test_count)
    {
-      PrintFormat("[HARNESS_FINAL] PASS - All 3 valid test intents reached ExecuteIntent() and were intercepted at shadow_only gate without broker submission.");
+      PrintFormat("[HARNESS_FINAL] PASS - Every intent was fail-closed before order APIs or explicitly intercepted by shadow mode; no fixture classifies a guard rejection as a submission.");
    }
    else
    {
-      PrintFormat("[HARNESS_FINAL] FAIL - Interception failed for %d intents!", mock_submission_count);
+      PrintFormat("[HARNESS_FINAL] FAIL - %d intents reached an unclassified execution path.",unexpected_path_count);
    }
 }
 

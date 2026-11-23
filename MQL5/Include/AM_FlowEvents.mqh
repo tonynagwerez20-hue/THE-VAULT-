@@ -33,11 +33,17 @@ private:
    double            m_low_history[];
    double            m_activity_history[];
    int               m_count;
+   int               m_history_limit;
 
 public:
                      CAM_FlowEvents(int persistence_bars = 2)
      {
       m_persistence_bars = persistence_bars;
+      if(m_persistence_bars < 1) m_persistence_bars = 1;
+      // Persistence needs m_persistence_bars observations; divergence only
+      // compares the latest two, so three slots preserve all existing queries.
+      // This diagnostic history must not grow for the lifetime of the EA.
+      m_history_limit = (m_persistence_bars > 3) ? m_persistence_bars : 3;
       Reset();
      }
 
@@ -53,14 +59,39 @@ public:
 
    void AddBar(datetime bar_time, double pressure, ENUM_PRESSURE_STATE state, double high_price, double low_price, double total_activity)
      {
-      m_count++;
-      ArrayResize(m_state_history, m_count);
-      ArrayResize(m_pressure_history, m_count);
-      ArrayResize(m_high_history, m_count);
-      ArrayResize(m_low_history, m_count);
-      ArrayResize(m_activity_history, m_count);
-
-      int idx = m_count - 1;
+      int idx=0;
+      if(m_count < m_history_limit)
+        {
+         int next_count=m_count+1;
+         if(ArrayResize(m_state_history,next_count)!=next_count ||
+            ArrayResize(m_pressure_history,next_count)!=next_count ||
+            ArrayResize(m_high_history,next_count)!=next_count ||
+            ArrayResize(m_low_history,next_count)!=next_count ||
+            ArrayResize(m_activity_history,next_count)!=next_count)
+           {
+            // Parallel arrays must remain aligned. On allocation failure,
+            // discard the incomplete diagnostic window rather than exposing
+            // mismatched indices to persistence/divergence queries.
+            Reset();
+            return;
+           }
+         m_count=next_count;
+         idx=m_count-1;
+        }
+      else
+        {
+         // Retain only the newest bounded window. All existing readers use
+         // recent persistence state or the latest two bars.
+         for(int i=1;i<m_history_limit;i++)
+           {
+            m_state_history[i-1]=m_state_history[i];
+            m_pressure_history[i-1]=m_pressure_history[i];
+            m_high_history[i-1]=m_high_history[i];
+            m_low_history[i-1]=m_low_history[i];
+            m_activity_history[i-1]=m_activity_history[i];
+           }
+         idx=m_history_limit-1;
+        }
       m_state_history[idx]    = state;
       m_pressure_history[idx] = pressure;
       m_high_history[idx]     = high_price;

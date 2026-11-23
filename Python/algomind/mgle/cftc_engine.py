@@ -1,4 +1,4 @@
-﻿"""
+"""
 Amigo MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
 ==================================================================
 CFTC Positioning Engine (v1.0)
@@ -9,7 +9,7 @@ Strictly enforces publication date gating (Friday release).
 from __future__ import annotations
 import numpy as np
 from typing import List, Dict, Any
-from Amigo.mgle.schema import DataQualityTag
+from algomind.mgle.schema import DataQualityTag
 
 class CFTCEngine:
     @staticmethod

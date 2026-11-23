@@ -1,4 +1,4 @@
-﻿"""AMIGO Account-Size-Correlated Risk + Distortion Engine (Python Mirror).
+"""AMIGO Account-Size-Correlated Risk + Distortion Engine (Python Mirror).
 
 Implements the deterministic RiskController component matching MQL5 RiskController.mqh:
   - Account-size risk spline curve (1.50% at $10 -> 0.50% at $500+)
@@ -16,11 +16,13 @@ Implements the deterministic RiskController component matching MQL5 RiskControll
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List, Tuple
+from decimal import Decimal, ROUND_CEILING
+import math
 
-from Amigo.account_execution import AccountClass, classify_account
+from algomind.account_execution import AccountClass, classify_account
 
 ABSOLUTE_MAX_RISK_PERCENT = 2.00
-ABSOLUTE_MAX_DISTORTION = 10.00
+ABSOLUTE_MAX_DISTORTION = 5.00
 
 
 class RiskState(Enum):
@@ -152,7 +154,34 @@ class RiskController:
         tick_value: float = 1.00,
         volume_min: float = 0.01,
         daily_locked: bool = False,
+        volume_step: float = 0.01,
+        tick_value_loss: Optional[float] = None,
     ) -> AdaptiveRiskResult:
+        # Match native RiskControllerUpdate: invalid equity is rejected before
+        # mutating the controller's last/high-water observations.
+        if not math.isfinite(equity) or equity <= 0.0:
+            reason = "INVALID_NONFINITE_EQUITY" if not math.isfinite(equity) else "ZERO_OR_NEGATIVE_EQUITY"
+            return AdaptiveRiskResult(
+                equity=equity,
+                balance=balance,
+                high_water_equity=self.high_water_equity,
+                growth_percent=0.0,
+                drawdown_percent=0.0,
+                base_risk_percent=0.0,
+                effective_risk_percent=0.0,
+                risk_budget=0.0,
+                account_class=AccountClass.UNKNOWN,
+                risk_state=RiskState.UNSAFE,
+                minimum_lot=0.0,
+                minimum_lot_loss=0.0,
+                distortion=999.0,
+                max_allowed_distortion=0.0,
+                required_risk_percent=999.0,
+                minimum_viable_equity=0.0,
+                trade_allowed=False,
+                reason=reason,
+            )
+
         self.update(equity)
 
         acc_class = classify_account(equity)
@@ -173,9 +202,19 @@ class RiskController:
         base_risk_pct = interpolate_risk_curve(equity, self.curve)
         max_allowed_dist = min(interpolate_distortion_curve(equity, self.curve), ABSOLUTE_MAX_DISTORTION)
 
-        # Broker minimum-lot economics
-        risk_per_lot = (stop_distance / tick_size) * tick_value if tick_size > 0 and stop_distance > 0 else 0.0
-        min_lot_loss = volume_min * risk_per_lot
+        # Match MQL5: use loss-side tick value and the first legal step volume
+        # at or above the broker's minimum-volume lower bound.
+        loss_tick = tick_value_loss if tick_value_loss is not None else tick_value
+        minimum_valid_volume = 0.0
+        try:
+            minimum, step = Decimal(str(volume_min)), Decimal(str(volume_step))
+            if (minimum.is_finite() and step.is_finite() and minimum > 0 and step > 0
+                    and math.isfinite(loss_tick) and loss_tick > 0):
+                minimum_valid_volume = float((minimum / step).to_integral_value(rounding=ROUND_CEILING) * step)
+        except (ArithmeticError, ValueError, TypeError):
+            minimum_valid_volume = 0.0
+        risk_per_lot = (stop_distance / tick_size) * loss_tick if tick_size > 0 and stop_distance > 0 and math.isfinite(loss_tick) else 0.0
+        min_lot_loss = minimum_valid_volume * risk_per_lot
 
         # Diagnostics: Required Risk % and Initial Minimum Viable Equity
         req_risk_pct = self.calculate_required_risk_percent(min_lot_loss, equity, max_allowed_dist)
@@ -194,7 +233,7 @@ class RiskController:
                 risk_budget=0.0,
                 account_class=acc_class,
                 risk_state=RiskState.DAILY_STOP,
-                minimum_lot=volume_min,
+                minimum_lot=minimum_valid_volume,
                 minimum_lot_loss=min_lot_loss,
                 distortion=999.0,
                 max_allowed_distortion=max_allowed_dist,
@@ -202,29 +241,6 @@ class RiskController:
                 minimum_viable_equity=mve,
                 trade_allowed=False,
                 reason="DAILY_STOP",
-            )
-
-        # Fail closed on zero or negative equity
-        if equity <= 0.0:
-            return AdaptiveRiskResult(
-                equity=equity,
-                balance=balance,
-                high_water_equity=self.high_water_equity,
-                growth_percent=growth_pct,
-                drawdown_percent=dd_pct,
-                base_risk_percent=base_risk_pct,
-                effective_risk_percent=0.0,
-                risk_budget=0.0,
-                account_class=acc_class,
-                risk_state=RiskState.UNSAFE,
-                minimum_lot=volume_min,
-                minimum_lot_loss=min_lot_loss,
-                distortion=999.0,
-                max_allowed_distortion=max_allowed_dist,
-                required_risk_percent=req_risk_pct,
-                minimum_viable_equity=mve,
-                trade_allowed=False,
-                reason="ZERO_OR_NEGATIVE_EQUITY",
             )
 
         # 3. High-Water Drawdown Throttle Multiplier (Drawdown may ONLY reduce risk, never increase it)
@@ -266,7 +282,7 @@ class RiskController:
                 risk_budget=risk_budget,
                 account_class=acc_class,
                 risk_state=RiskState.UNSAFE,
-                minimum_lot=volume_min,
+                minimum_lot=minimum_valid_volume,
                 minimum_lot_loss=min_lot_loss,
                 distortion=distortion,
                 max_allowed_distortion=max_allowed_dist,
@@ -287,7 +303,7 @@ class RiskController:
             risk_budget=risk_budget,
             account_class=acc_class,
             risk_state=risk_state,
-            minimum_lot=volume_min,
+            minimum_lot=minimum_valid_volume,
             minimum_lot_loss=min_lot_loss,
             distortion=distortion,
             max_allowed_distortion=max_allowed_dist,

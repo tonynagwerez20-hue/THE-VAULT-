@@ -1,0 +1,31 @@
+<Configuration>
+  <!-- Intended containment: Hypervisor-enforced complete network disconnection -->
+  <Networking>Disable</Networking>
+  <AudioInput>Disable</AudioInput>
+  <VideoInput>Disable</VideoInput>
+  <ProtectedClient>Enable</ProtectedClient>
+  <PrinterRedirection>Disable</PrinterRedirection>
+  <ClipboardRedirection>Disable</ClipboardRedirection>
+  <MemoryInMB>4096</MemoryInMB>
+
+  <MappedFolders>
+    <!-- Read-only mapping of the staged probe-only bundle (strictly no access to full repo) -->
+    <MappedFolder>
+      <HostFolder>C:\Users\USER\Desktop\ALGOMIND\sandbox_staging\guest_probe</HostFolder>
+      <SandboxFolder>C:\SandboxStaging</SandboxFolder>
+      <ReadOnly>true</ReadOnly>
+    </MappedFolder>
+    
+    <!-- Separate writable output mapping outside repository for evidence export -->
+    <MappedFolder>
+      <HostFolder>C:\Users\USER\Desktop\amigo_sandbox_results</HostFolder>
+      <SandboxFolder>C:\SandboxResults</SandboxFolder>
+      <ReadOnly>false</ReadOnly>
+    </MappedFolder>
+  </MappedFolders>
+
+  <!-- Probe-only logon execution: runs network telemetry audit and immediately exits -->
+  <LogonCommand>
+    <Command>powershell.exe -ExecutionPolicy Bypass -File C:\SandboxStaging\Probe_Guest_Containment.ps1 -NonceFilePath C:\SandboxStaging\session_nonce.txt -OutputPath C:\SandboxResults\guest_containment_evidence.json</Command>
+  </LogonCommand>
+</Configuration>

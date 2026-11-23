@@ -1,0 +1,23 @@
+Readiness Criterion,Status,Evidence,Remaining Requirement
+Source Preservation,VERIFIED,Backup SHA-256 verified,None
+Repository Integrity,VERIFIED,HEAD branch status unchanged,None
+Backup Integrity,VERIFIED,724 files 952 git objects SHA-256 match,None
+Architecture Integrity,VERIFIED,37 includes all engines present,None
+Python Schema,VERIFIED,v104 aligned with MQL5,None
+MQL5 Contract,VERIFIED,Contracts header.mqh v104 active,None
+Python/MQL5 Bridge,VERIFIED,v104 field-by-field parity,None
+Risk Mathematics,VERIFIED,Independent fixtures match,None
+Minimum-Lot Safety,VERIFIED,3-state logic 2% ceiling 5x cap,None
+Dual-Account Isolation,VERIFIED,File naming locking recovery,None
+Horizon Lifecycle,VERIFIED,SelectApprovedHorizon gates all,None
+TradeIntent Validation,VERIFIED,ValidateIntent enforces horizon,None
+Stop-Loss/Take-Profit,VERIFIED,Structural ATR 1:2 RR minimum,None
+Order Execution Safeguards,VERIFIED,10+ gates shadow mode quarantine,None
+Orderflow Diagnostics,VERIFIED,VWAP VAH/VAL footprint parity,None
+PIT News Replay,ENGINEERING GAP,news_econ.csv incomplete,Requires data source
+Python Regression Tests,NOT VERIFIED,Reported 848 not independently rerun,Requires test environment
+Native MQL5 Compilation,NOT VERIFIED,Requires MetaEditor GUI,Requires manual F7
+EX5 Source Provenance,NOT VERIFIED,Binary timestamp mismatch,Requires fresh compilation
+MT5 Strategy Tester,NOT VERIFIED,Requires MT5 terminal,Requires manual
+Broker Execution Parity,NOT VERIFIED,Requires live broker,Requires manual
+Manual MT5 Testing Readiness,PARTIALLY VERIFIED,Source ready compilation pending,Manual compilation + validation

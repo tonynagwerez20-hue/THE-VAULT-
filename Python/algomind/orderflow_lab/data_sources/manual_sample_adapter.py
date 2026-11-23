@@ -1,4 +1,4 @@
-﻿"""Manual Sample Data Adapter.
+"""Manual Sample Data Adapter.
 
 Loads user-provided CSV or JSON sample files and converts them into
 OrderFlowTick objects with full validation.
@@ -33,7 +33,7 @@ from typing import List, Optional, Tuple
 
 import pandas as pd
 
-from Amigo.orderflow_lab.schema import (
+from algomind.orderflow_lab.schema import (
     OrderFlowTick, SourceMetadata, DataQualityTag
 )
 

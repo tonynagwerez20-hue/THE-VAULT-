@@ -1,0 +1,16 @@
+Directory: E:\AMIGO-EA31337-REBUILD\REFERENCES\EA31337
+https://github.com/EA31337/EA31337.git
+9b9bd38c4e49dd6916f4fe3936e50e97fca7a692
+--------------------------
+Directory: E:\AMIGO-EA31337-REBUILD\REFERENCES\EA31337-classes
+https://github.com/EA31337/EA31337-classes.git
+a723dd7768f4b1cfb97b2be2216d1aa951565bda
+--------------------------
+Directory: E:\AMIGO-EA31337-REBUILD\REFERENCES\EA31337-strategies
+https://github.com/EA31337/EA31337-strategies.git
+55fcb1f37a158dd63470b58d605563f8c85ee399
+--------------------------
+Directory: E:\AMIGO-EA31337-REBUILD\REFERENCES\EA31337-indicators
+https://github.com/EA31337/EA31337-indicators.git
+f707f99f2b29a23d90a62b646fb5de67adbb3121
+--------------------------

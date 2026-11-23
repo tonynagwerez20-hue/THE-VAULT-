@@ -1,4 +1,4 @@
-﻿"""Independent Verification Suite: Six Horizon x Strategy Combinations.
+"""Independent Verification Suite: Six Horizon x Strategy Combinations.
 
 Validates the Three Trading Horizons (SCALPING, INTRADAY, SWING)
 across the two core strategy families (MEAN_REVERSION, TREND_CONTINUATION)
@@ -21,18 +21,18 @@ Validates:
 """
 
 import pytest
-from Amigo.schema import Horizon, DataQuality, ExternalContext
-from Amigo.account_execution import (
+from algomind.schema import Horizon, DataQuality, ExternalContext
+from algomind.account_execution import (
     AccountIdentification, SymbolCapabilityProfile,
     AccountClass, MinLotStatus, FeasibilityStatus, Action,
     evaluate_account_execution
 )
-from Amigo.risk_controller import (
+from algomind.risk_controller import (
     RiskController, RiskState, AdaptiveRiskResult,
     interpolate_risk_curve, interpolate_distortion_curve,
     DEFAULT_RISK_CURVE
 )
-from Amigo.position_manager import (
+from algomind.position_manager import (
     PositionManager, PositionDirection, TrailingMode, SymbolInfo
 )
 

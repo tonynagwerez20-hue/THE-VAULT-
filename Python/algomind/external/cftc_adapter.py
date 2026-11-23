@@ -179,7 +179,10 @@ def compute_context(now: datetime, lookback_years: int = 3,
     net_change = net - prev_net if prev_net is not None else 0.0
 
     return {
-        "cftc_valid":           True,
+        "cftc_valid":           False,
+        # The ZIP carries report dates; the inferred release date is not
+        # authoritative publication evidence (holidays/delays/revisions).
+        "cftc_publication_verified": False,
         "cftc_publication_ts":  int(latest["publication_ts"].timestamp()),
         "cftc_net_position":    net,
         "cftc_net_change":      net_change,

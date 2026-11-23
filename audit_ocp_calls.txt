@@ -1,0 +1,12 @@
+MQL5/Include/Account Execution Engine.mqh:      OrderCalcProfit(ORDER_TYPE_BUY,symbol,1.0,ask,ask-tick_size,profit) &&
+MQL5/Include/Account Execution Engine.mqh:      OrderCalcProfit(ORDER_TYPE_SELL,symbol,1.0,bid,bid+tick_size,profit) &&
+MQL5/Include/Account Execution Engine.mqh:      if(!OrderCalcProfit(order_type,symbol,volume,open,sl,profit) ||
+MQL5/Include/Account Execution Engine.mqh:      if(!OrderCalcProfit(order_type,symbol,volume,open,sl,profit) ||
+MQL5/Include/Account Execution Engine.mqh:         LogMsg(LOG_INFO, "SYMBOL_CAP", StringFormat("Resolved loss-side tick value via adverse OrderCalcProfit: %.5f", cap.tick_value));
+MQL5/Include/Account Execution Engine.mqh:   // must not override the approved absolute exposure ceiling. OrderCalcProfit
+MQL5/Include/Account Execution Engine.mqh:      !OrderCalcProfit(risk_order_type, symbol, env.executable_volume, entry, stop, stop_profit) ||
+MQL5/Include/Account Execution Engine.mqh.bak:      //--- Fallback: OrderCalcProfit for tick_value resolution (Prompt §6)
+MQL5/Include/Account Execution Engine.mqh.bak:               LogMsg(LOG_INFO, "SYMBOL_CAP", StringFormat("Resolved TICK_VALUE via OrderCalcProfit fallback: %.5f (SRC=ORDERCALCPROFIT_FALLBACK)", cap.tick_value));
+MQL5/Include/Execution Engine.mqh:      !OrderCalcProfit(req.type, req.symbol, req.volume, req.price, req.sl, request_stop_profit) ||
+MQL5/Include/Trade/AccountInfo.mqh://| Access functions OrderCalcProfit(...).                            |
+MQL5/Include/Trade/AccountInfo.mqh:   if(!OrderCalcProfit(trade_operation,symbol,volume,price_open,price_close,profit))

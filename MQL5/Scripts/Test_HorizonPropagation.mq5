@@ -12,9 +12,9 @@ void OnStart()
    Print("--- START HORIZON PROPAGATION AND MANAGEMENT TESTS ---");
    
    // Test Registration with explicit horizon
-   PositionManagerRegister(1001, 2000.0, 1990.0, 2020.0, +1, 2.0, g_cfg, HORIZON_SCALPING);
-   PositionManagerRegister(1002, 2000.0, 1990.0, 2020.0, +1, 2.0, g_cfg, HORIZON_INTRADAY);
-   PositionManagerRegister(1003, 2000.0, 1990.0, 2020.0, +1, 2.0, g_cfg, HORIZON_SWING);
+   PositionManagerRegister(1001, 2000.0, 1990.0, 2020.0, 0.10, +1, 2.0, g_cfg, HORIZON_SCALPING);
+   PositionManagerRegister(1002, 2000.0, 1990.0, 2020.0, 0.10, +1, 2.0, g_cfg, HORIZON_INTRADAY);
+   PositionManagerRegister(1003, 2000.0, 1990.0, 2020.0, 0.10, +1, 2.0, g_cfg, HORIZON_SWING);
    
    int total = ArraySize(g_positions);
    PrintFormat("[TEST] Registered %d positions:", total);

@@ -1,0 +1,9 @@
+{
+  "ManifestVersion": "1.0",
+  "SessionNonce": "85ec9e11901170f000f2a921e1993c08",
+  "HostSessionStartUtc": "2026-11-11T18:26:23.536033+00:00",
+  "ProbeScriptPath": "C:\\Users\\USER\\Desktop\\ALGOMIND\\sandbox_staging\\guest_probe\\Probe_Guest_Containment.ps1",
+  "ProbeScriptSha256": "4d26fc9a9feb75acc204f7e86b21adb38cf9c387f84f111628552592b0d656ba",
+  "WsbConfigPath": "C:\\Users\\USER\\Desktop\\ALGOMIND\\sandbox_staging\\amigo_stage1_probe.wsb",
+  "WsbConfigSha256": "37113e10e1f6f615efc398cedc80083b77949e4a44f463edc79cfac45e7cfc17"
+}

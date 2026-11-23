@@ -1,0 +1,26 @@
+}
+
+//+------------------------------------------------------------------+
+//| Evaluate Account-Size-Correlated Risk Budget & Feasibility Gate  |
+//+------------------------------------------------------------------+
+AdaptiveRiskResult RiskControllerEvaluate(
+   string symbol,
+   double entry,
+   double stop,
+   const AmigoConfig &cfg,
+   bool daily_locked_status = false
+)
+{
+   AdaptiveRiskResult res;
+   ZeroMemory(res);
+
+   double cur_eq=AccountInfoDouble(ACCOUNT_EQUITY);
+   double cur_bal=AccountInfoDouble(ACCOUNT_BALANCE);
+
+   if(!g_adaptive_risk.initialized || !RiskControllerUpdate())
+   {
+      res.trade_allowed=false;
+      res.risk_state=RISK_STATE_UNSAFE;
+      res.reason="RISK_LEDGER_UNAVAILABLE";
+      return res;
+   }

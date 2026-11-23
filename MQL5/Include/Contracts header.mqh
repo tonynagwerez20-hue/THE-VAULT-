@@ -1,10 +1,14 @@
+#ifndef AMIGO_INCLUDE_CONTRACTS_HEADER_MQH
+#define AMIGO_INCLUDE_CONTRACTS_HEADER_MQH
 //+------------------------------------------------------------------+
 //| Contract.mqh - Canonical data contracts (frozen Phase-0 schema)  |
 //+------------------------------------------------------------------+
 #property copyright "Amigo"
 #property strict
 
-#define Amigo_SCHEMA_VERSION 100   // v1.0.0
+#define Amigo_SCHEMA_VERSION 104   // v1.0.4: instrument binding and provider provenance
+#define Amigo_RISK_STATE_POLICY_VERSION 1 // Increment when account-wide risk ledger semantics change.
+#define AMIGO_LIVE_EXECUTION_READY 0 // Keep live OrderSend disabled until durable order reconciliation is implemented and verified.
 #define Amigo_MAX_REASON_CODES 16
 
 //--- Regime enum (per Master Harmonized Spec §13)
@@ -149,13 +153,20 @@ struct AdaptiveSLResult
 //--- Canonical market snapshot
 struct MarketSnapshot
 {
+   // Correlates inputs to one persistent opportunity. This ID does not by
+   // itself prove that independently read broker values were atomic.
    long     snapshot_id;
+   datetime decision_boundary;
+   datetime closed_bar_time;
+   int      external_max_age_s;
    datetime timestamp;
    string   symbol;
    string   broker_symbol;
    double   bid;
    double   ask;
    double   spread;
+   // Close copied from the validated closed-rate sequence for this opportunity.
+   double   closed_bar_close;
    int      digits;
    double   point;
    double   tick_size;
@@ -177,6 +188,7 @@ struct MarketSnapshot
 //--- Regime state
 struct RegimeState
 {
+   long        snapshot_id;
    ENUM_REGIME regime;
    double      confidence;
    ENUM_HYPOTHESIS preferred;
@@ -189,6 +201,7 @@ struct RegimeState
 struct TradeIntent
 {
    long            intent_id;
+   long            snapshot_id;
    int             schema_version;
    int             strategy_version;
    int             feature_version;
@@ -206,7 +219,7 @@ struct TradeIntent
    ENUM_HYPOTHESIS hypothesis;
    ENUM_HORIZON    horizon;         // Section 1 Three-Horizon Architecture
    string          reason_codes;
-   double          risk_allocation;
+   double          risk_allocation; // Account-adaptive target risk percent before regime modifier
    double          risk_modifier;   // Authoritative regime risk modifier [0.10, 1.00]
    uint            data_quality;
 };
@@ -237,6 +250,7 @@ struct ExternalContext
 
    //--- News
    bool     news_valid;
+   datetime news_observed_ts;
    datetime news_event_ts;
    bool     news_active_window;
    bool     news_released;        // Explicit flag: outcome is actually published
@@ -247,6 +261,11 @@ struct ExternalContext
 //--- Feature snapshot (canonical feature vector)
 struct FeatureSnapshot
 {
+   long     snapshot_id;
+   datetime decision_boundary;
+   datetime closed_bar_time;
+   string   symbol;
+   int      timeframe;
    datetime timestamp;
    int      feature_version;
 
@@ -289,10 +308,19 @@ struct FeatureSnapshot
    double   fvg_fill_pct;         // point-in-time
 
    //--- Acceptance
+   bool     acceptance_available; // false: insufficient prior session-value coverage
    bool     acceptance_above;
    bool     acceptance_below;
 
    //--- Approved GAP-01 & GAP-02 Strategy Evidence Additions
    double   delta_divergence;     // 0.0 to 1.0 classical price vs proxy-CVD divergence
+   bool     footprint_available;
+   bool     footprint_persistent,footprint_divergence_bull,footprint_divergence_bear;
+   double   footprint_pressure,footprint_poc,footprint_concentration;
+   int      footprint_observations;
+   double   divergence_bull;      // directional MT5_TICK_PROXY evidence, feature v2
+   double   divergence_bear;      // never substituted for bullish evidence
    double   displacement;         // 0.0 to 1.0 ATR-normalized BOS break distance
 };
+
+#endif // AMIGO_INCLUDE_CONTRACTS_HEADER_MQH

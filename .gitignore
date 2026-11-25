@@ -2,3 +2,9 @@ __pycache__/
 *.pyc
 .vscode/
 .idea/
+
+# Generated local output
+*.log
+*.log.bak
+scratch/*
+test subject/

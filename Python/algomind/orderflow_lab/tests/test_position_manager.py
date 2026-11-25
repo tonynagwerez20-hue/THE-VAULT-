@@ -1,4 +1,4 @@
-﻿"""Comprehensive Unit Tests & State-Transition Tests for Position Manager.
+"""Comprehensive Unit Tests & State-Transition Tests for Position Manager.
 
 Covers prompt Sections 13 and 14:
   - BUY & SELL mathematical formulas for 25% dynamic trailing
@@ -10,7 +10,7 @@ Covers prompt Sections 13 and 14:
 """
 
 import pytest
-from Amigo.position_manager import (
+from algomind.position_manager import (
     PositionManager, PositionDirection, TrailingMode, SymbolInfo,
     calculate_25pct_trailing_sl, calculate_be_trigger_price
 )

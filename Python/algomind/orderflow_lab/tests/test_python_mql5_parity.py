@@ -1,4 +1,4 @@
-﻿"""Python ↔ MQL5 Parity Test Suite (Spec §46).
+"""Python ↔ MQL5 Parity Test Suite (Spec §46).
 
 Validates numerical parity between Python orderflow_lab engines and native MQL5 algorithms.
 Tests VWAP, Footprint Pressure, POC, VAH, VAL, and State transitions on identical tick inputs.
@@ -14,12 +14,12 @@ Tolerance bounds:
 
 import pytest
 import math
-from Amigo.orderflow_lab.schema import OrderFlowTick, DataQualityTag, PressureState
-from Amigo.orderflow_lab.engines.price_bin_engine import PriceBinEngine
-from Amigo.orderflow_lab.engines.proxy_vwap import ProxyVWAPEngine, VWAPMethod
-from Amigo.orderflow_lab.engines.proxy_profile import ProxyProfileEngine
-from Amigo.orderflow_lab.engines.proxy_footprint import ProxyFootprintEngine
-from Amigo.orderflow_lab.engines.event_engine import EventEngine
+from algomind.orderflow_lab.schema import OrderFlowTick, DataQualityTag, PressureState, FootprintBin
+from algomind.orderflow_lab.engines.price_bin_engine import PriceBinEngine
+from algomind.orderflow_lab.engines.proxy_vwap import ProxyVWAPEngine, VWAPMethod
+from algomind.orderflow_lab.engines.proxy_profile import ProxyProfileEngine
+from algomind.orderflow_lab.engines.proxy_footprint import ProxyFootprintEngine
+from algomind.orderflow_lab.engines.event_engine import EventEngine
 
 
 # ----------------------------------------------------------------------
@@ -54,18 +54,22 @@ class MQL5ParitySimulator:
 
             norm_p = round(round(t.price / self.tick_size) * self.tick_size, 10)
             if norm_p not in bins:
-                bins[norm_p] = {"act": 0.0, "buy": 0.0, "sell": 0.0, "delta": 0.0}
+                bins[norm_p] = FootprintBin(
+                    price=norm_p,
+                    quality_tag=t.quality_tag,
+                )
 
-            bins[norm_p]["act"] += t.volume
+            bins[norm_p].tick_count += 1
+            bins[norm_p].observed_activity += t.volume
             if direction == 1:
-                bins[norm_p]["buy"] += t.volume
+                bins[norm_p].estimated_buy_activity += t.volume
             elif direction == -1:
-                bins[norm_p]["sell"] += t.volume
-            bins[norm_p]["delta"] = bins[norm_p]["buy"] - bins[norm_p]["sell"]
+                bins[norm_p].estimated_sell_activity += t.volume
+            bins[norm_p].estimated_delta = bins[norm_p].estimated_buy_activity - bins[norm_p].estimated_sell_activity
 
         # 3. Footprint Pressure
-        sum_delta = sum(b["delta"] for b in bins.values())
-        sum_abs_delta = sum(abs(b["delta"]) for b in bins.values())
+        sum_delta = sum(b.estimated_delta for b in bins.values())
+        sum_abs_delta = sum(abs(b.estimated_delta) for b in bins.values())
         mql_pressure = sum_delta / (sum_abs_delta + 1e-12)
 
         # 4. State
@@ -74,14 +78,14 @@ class MQL5ParitySimulator:
         else: mql_state = "NEUTRAL"
 
         # 5. Profile (POC, VAH, VAL)
-        poc_p = max(bins, key=lambda p: bins[p]["act"])
-        sorted_by_act = sorted(bins.items(), key=lambda kv: kv[1]["act"], reverse=True)
-        tot_act = sum(b["act"] for b in bins.values())
+        poc_p = max(bins, key=lambda p: bins[p].observed_activity)
+        sorted_by_act = sorted(bins.items(), key=lambda kv: kv[1].observed_activity, reverse=True)
+        tot_act = sum(b.observed_activity for b in bins.values())
         target_act = self.value_area_pct * tot_act
         cum = 0.0
         va_prices = []
         for p, b in sorted_by_act:
-            cum += b["act"]
+            cum += b.observed_activity
             va_prices.append(p)
             if cum >= target_act:
                 break
@@ -156,4 +160,45 @@ class TestPythonMQL5Parity:
 
         assert abs(py_vwap - mql_res["vwap"]) < 1e-5
         assert abs(py_pressure - mql_res["pressure"]) < 1e-5
+
+    def test_parity_tib_bar_timestamp_present(self):
+        """TIB bar must carry a timestamp on every tick (Python TIBGenerator vs native TickImbalanceBars).
+
+        Regression for a missing-key bug: the bar dict was initialized without 'timestamp',
+        so the first tick of every bar raised KeyError in extract_features().
+        Native TickImbalanceBars.mqh had the same gap (TIBBar.timestamp never set in Add()).
+        """
+        import sys
+        sys.path.insert(0, "E:/AMIGO-EA31337-REBUILD/Python")
+        from tib_generator import TIBGenerator
+        from tib_feature_contract import extract_features
+
+        gen = TIBGenerator(threshold_ticks=2)
+        # monodirectional ticks so imbalance reaches the threshold and bars close
+        ticks = [
+            {"bid": 1.00, "ask": 1.01, "time_msc": 1000},
+            {"bid": 1.01, "ask": 1.02, "time_msc": 2000},
+            {"bid": 1.02, "ask": 1.03, "time_msc": 3000},
+            {"bid": 1.03, "ask": 1.04, "time_msc": 4000},
+            {"bid": 1.04, "ask": 1.05, "time_msc": 5000},
+            {"bid": 1.05, "ask": 1.06, "time_msc": 6000},
+        ]
+        bars = []
+        for t in ticks:
+            bar = gen.process_tick(t)
+            if bar is not None:
+                bars.append(bar)
+
+        assert len(bars) >= 1, "expected at least one closed TIB bar"
+        for bar in bars:
+            # Every bar must expose a finite timestamp before feature extraction
+            assert "timestamp" in bar, f"bar missing timestamp: {bar}"
+            assert isinstance(bar["timestamp"], (int, float))
+            assert math.isfinite(bar["timestamp"])
+            assert bar["timestamp"] > 0.0
+            # Feature extraction must not raise on the produced bar
+            features = extract_features(bar)
+            assert features["timestamp"] == bar["timestamp"]
+            assert features["dir_persistence"] in (-1, 0, 1)
+            assert 0.0 <= features["imb_intensity"] <= 1.0
 

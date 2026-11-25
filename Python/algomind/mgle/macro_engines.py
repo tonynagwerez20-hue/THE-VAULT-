@@ -1,4 +1,4 @@
-﻿"""
+"""
 Amigo MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
 ==================================================================
 Macro & Geopolitical Component Processing Engines (v1.0)
@@ -9,8 +9,8 @@ from __future__ import annotations
 import numpy as np
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-from Amigo.mgle.schema import DataQualityTag, GeoEvent
-from Amigo.mgle.normalization import compute_robust_zscore, compute_surprise_zscore
+from algomind.mgle.schema import DataQualityTag, GeoEvent
+from algomind.mgle.normalization import compute_robust_zscore, compute_surprise_zscore
 
 class MacroEngines:
     @staticmethod

@@ -1297,7 +1297,22 @@ void CV38_2StructureEngine::PrecomputeQueries()
             if(m_pools[p].sweep_bar > lastSweepBar)
               { lastSweepBar = m_pools[p].sweep_bar;
                 depth = m_pools[p].sweep_depth_atr;
-                react = m_pools[p].post_sweep_atr; }
+                // Point-in-time: only bars up to b, not future bars beyond b.
+                int _bb = m_pools[p].sweep_bar;
+                int _end = MathMin(m_nBars, MathMin(_bb + 11, b + 1));
+                double _mfe = 0.0;
+                double _aa = ComputeATRVal(_bb);
+                if(_aa <= 0) _aa = 1.0;
+                if(m_pools[p].type == 1)
+                  {
+                   for(int _k=_bb; _k<_end; _k++) _mfe = MathMin(_mfe, m_low[_k] - m_pools[p].price);
+                   react = (-_mfe) / _aa;
+                  }
+                else
+                  {
+                   for(int _k=_bb; _k<_end; _k++) _mfe = MathMax(_mfe, m_high[_k] - m_pools[p].price);
+                   react = _mfe / _aa;
+                  } }
            }
         }
       m_sweptRecent[b] = recent;
@@ -1720,7 +1735,27 @@ double CV38_2StructureEngine::OBMitigationDepth(int ltfBar)
    double price = (ltfBar >= 0 && ltfBar < m_nBars) ? m_close[ltfBar] : 0;
    double atrVal = ComputeATRVal(ltfBar);
    NearestOB(ltfBar, price, atrVal, idx);
-   return (idx >= 0) ? m_obs[idx].deepest_pen : 0.0;
+   if(idx < 0) return 0.0;
+   // Point-in-time: only bars up to ltfBar, not future bars.
+   double zh = m_obs[idx].high, zl = m_obs[idx].low;
+   double depth = zh - zl;
+   if(depth <= 0) return 0.0;
+   double deepest = 0.0;
+   int start = m_obs[idx].conf_bar + 1;
+   int end = MathMin(m_nBars, MathMin(m_obs[idx].conf_bar + V38_2_OB_MAX_AGE_BARS + 1, ltfBar + 1));
+   for(int bb = start; bb < end; bb++)
+     {
+      double bh = m_high[bb], bl = m_low[bb];
+      bool entered = (bh >= zl && bl <= zh);
+      if(entered)
+        {
+         double pen;
+         if(m_obs[idx].direction == 1) pen = MathMax(0.0, bh - zl) / depth;
+         else pen = MathMax(0.0, zh - bl) / depth;
+         deepest = MathMax(deepest, pen);
+        }
+     }
+   return deepest;
   }
 
 //--- FVG queries ---
@@ -1783,7 +1818,30 @@ double CV38_2StructureEngine::FVGFillPct(int ltfBar)
    double price = (ltfBar >= 0 && ltfBar < m_nBars) ? m_close[ltfBar] : 0;
    double atrVal = ComputeATRVal(ltfBar);
    int idx = NearestFVG(ltfBar, price, atrVal);
-   return (idx >= 0) ? m_fvgs[idx].fill_pct : 0.0;
+   if(idx < 0) return 0.0;
+   // Point-in-time: recompute fill using only bars up to ltfBar.
+   double upper = m_fvgs[idx].upper, lower = m_fvgs[idx].lower;
+   double span = upper - lower;
+   if(span <= 0) return 0.0;
+   double filled = 0.0;
+   int start = m_fvgs[idx].conf_bar + 1;
+   int end = MathMin(m_nBars, ltfBar + 1);
+   for(int bb = start; bb < end; bb++)
+     {
+      double bh = m_high[bb], bl = m_low[bb];
+      bool entered = (bh >= lower && bl <= upper);
+      if(entered)
+        {
+         double f;
+         if(m_fvgs[idx].direction == 1)
+            f = (bl < upper) ? (upper - MathMax(lower, bl)) : 0.0;
+         else
+            f = (bh > lower) ? (MathMin(upper, bh) - lower) : 0.0;
+         double pct = MathMax(0.0, MathMin(1.0, f / span));
+         if(pct > filled) filled = pct;
+        }
+     }
+   return filled;
   }
 
 double CV38_2StructureEngine::FVGFreshnessEnc(int ltfBar)

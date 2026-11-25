@@ -1,4 +1,8 @@
+#ifndef AMIGO_INCLUDE_CONFIGURATION_MQH
+#define AMIGO_INCLUDE_CONFIGURATION_MQH
 #property strict
+
+#define AMIGO_NEWS_BUFFER_MINUTES 30
 
 #include <Contracts header.mqh>
 
@@ -9,12 +13,12 @@ struct AmigoConfig
    string   symbol;
 
    //--- Timeframes (original)
-   ENUM_TIMEFRAMES tf_exec;       // M5
+   ENUM_TIMEFRAMES tf_exec;       // M1 execution for every horizon
    ENUM_TIMEFRAMES tf_context;    // M15
    ENUM_TIMEFRAMES tf_htf;        // H1
 
    //--- Timeframes (new – top-down multi-horizon)
-   ENUM_TIMEFRAMES tf_m1;         // M1  – scalping horizon
+   ENUM_TIMEFRAMES tf_m1;         // M1 microstructure, resolved from execution input
    ENUM_TIMEFRAMES tf_m30;        // M30 – intraday swing
    ENUM_TIMEFRAMES tf_h4;         // H4  – swing / trend
 
@@ -43,7 +47,7 @@ struct AmigoConfig
    //--- Risk (per Math Spec S24)
    double   risk_per_trade_pct;   // 0.5
    double   daily_loss_pct;       // 2.0
-   double   total_dd_pct;         // 5.0
+   double   total_dd_pct;         // disabled; daily loss stop is authoritative
    double   partial_rr;           // 2.0
    double   partial_fraction;     // 0.50
    double   trail_atr_mult;       // 1.5
@@ -73,6 +77,7 @@ struct AmigoConfig
    //--- ML
    bool     ml_enabled;            // false by default
    string   ml_model_path;
+   bool     tick_pressure_enabled; // experimental proxy scoring, disabled by default
 
    //--- Bridge
    string   bridge_inbox;
@@ -88,3 +93,5 @@ struct AmigoConfig
 };
 
 AmigoConfig g_cfg;
+
+#endif // AMIGO_INCLUDE_CONFIGURATION_MQH

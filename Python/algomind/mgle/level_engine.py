@@ -10,7 +10,7 @@ from __future__ import annotations
 import math
 import numpy as np
 from typing import List, Dict, Any, Optional
-from Amigo.mgle.schema import MacroLevel, DataQualityTag
+from algomind.mgle.schema import MacroLevel, DataQualityTag
 
 class MacroLevelEngine:
     @staticmethod

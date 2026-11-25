@@ -1,4 +1,4 @@
-﻿"""
+"""
 Amigo MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
 ==================================================================
 CFTC Positioning & Proxy Options Engine (v1.0)
@@ -11,7 +11,7 @@ from __future__ import annotations
 import math
 import numpy as np
 from typing import List, Dict, Any, Optional
-from Amigo.mgle.schema import DataQualityTag, OptionsProxyLevel
+from algomind.mgle.schema import DataQualityTag, OptionsProxyLevel
 
 def norm_cdf(x: float) -> float:
     """Cumulative distribution function for standard normal distribution."""

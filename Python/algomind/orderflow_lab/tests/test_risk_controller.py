@@ -1,4 +1,4 @@
-﻿"""Comprehensive Unit & Property Tests for Account-Size-Correlated Risk + Distortion Engine.
+"""Comprehensive Unit & Property Tests for Account-Size-Correlated Risk + Distortion Engine.
 
 Covers all test requirements from Section 24 and Property Tests 1-7 from Section 25:
   - Account-size curve anchors ($10, $50, $100, $250, $500, $1,000, $5,000, $10,000)
@@ -15,7 +15,7 @@ Covers all test requirements from Section 24 and Property Tests 1-7 from Section
 """
 
 import pytest
-from Amigo.risk_controller import (
+from algomind.risk_controller import (
     RiskController,
     RiskState,
     AdaptiveRiskResult,
@@ -25,7 +25,7 @@ from Amigo.risk_controller import (
     ABSOLUTE_MAX_RISK_PERCENT,
     ABSOLUTE_MAX_DISTORTION,
 )
-from Amigo.account_execution import (
+from algomind.account_execution import (
     AccountIdentification,
     SymbolCapabilityProfile,
     Action,

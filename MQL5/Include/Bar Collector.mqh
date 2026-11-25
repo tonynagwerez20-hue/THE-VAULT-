@@ -1,3 +1,5 @@
+#ifndef AMIGO_INCLUDE_BAR_COLLECTOR_MQH
+#define AMIGO_INCLUDE_BAR_COLLECTOR_MQH
 #property strict
 
 //--- Completed-bar only ATR (Math Spec §3.2)
@@ -9,6 +11,7 @@ double ComputeATR14(const string symbol, ENUM_TIMEFRAMES tf, int period=14)
    ArrayResize(tr, period);
    int need = period + 1;
    MqlRates rates[];
+   if(!ArraySetAsSeries(rates, true)) return 0.0;
    int got = CopyRates(symbol, tf, 1, need, rates); // skip current forming bar
    if(got < need) return 0.0;
 
@@ -31,6 +34,7 @@ double ComputeATR14(const string symbol, ENUM_TIMEFRAMES tf, int period=14)
 double ComputeSigma20(const string symbol, ENUM_TIMEFRAMES tf)
 {
    MqlRates r[];
+   if(!ArraySetAsSeries(r, true)) return 0.0;
    int got = CopyRates(symbol, tf, 1, 21, r);
    if(got < 21) return 0.0;
    double rets[20];
@@ -52,6 +56,7 @@ double ComputeSigma20(const string symbol, ENUM_TIMEFRAMES tf)
 double ComputeRangeRatio(const string symbol, ENUM_TIMEFRAMES tf)
 {
    MqlRates r[];
+   if(!ArraySetAsSeries(r, true)) return 0.0;
    int got = CopyRates(symbol, tf, 1, 21, r);
    if(got < 21) return 1.0;
    double cur = r[0].high - r[0].low;
@@ -62,3 +67,4 @@ double ComputeRangeRatio(const string symbol, ENUM_TIMEFRAMES tf)
    if(med <= 0.0) return 1.0;
    return cur / med;
 }
+#endif // AMIGO_INCLUDE_BAR_COLLECTOR_MQH

@@ -6,7 +6,7 @@ change and requires a new schema version per D3 §31.
 from __future__ import annotations
 from dataclasses import dataclass, asdict
 
-SCHEMA_VERSION = 100  # v1.0.0
+SCHEMA_VERSION = 104  # v1.0.4: instrument binding and provider provenance
 
 
 class DataQuality:
@@ -35,6 +35,9 @@ class ExternalContext:
     timestamp: int = 0
     data_quality: int = DataQuality.OK
 
+    context_symbol: str = ""
+    cftc_publication_verified: bool = False
+
     # CFTC (Math Spec §23)
     cftc_valid: bool = False
     cftc_publication_ts: int = 0
@@ -54,6 +57,7 @@ class ExternalContext:
 
     # News
     news_valid: bool = False
+    news_observed_ts: int = 0
     news_event_ts: int = 0
     news_active_window: bool = False
     news_released: bool = False
@@ -67,6 +71,8 @@ class ExternalContext:
             "schema_version":    d["schema_version"],
             "timestamp":         d["timestamp"],
             "data_quality":      d["data_quality"],
+            "context_symbol": d["context_symbol"],
+            "cftc_pub_verified": d["cftc_publication_verified"],
             "cftc_valid":        d["cftc_valid"],
             "cftc_pub_ts":       d["cftc_publication_ts"],
             "cftc_net":          d["cftc_net_position"],
@@ -81,6 +87,7 @@ class ExternalContext:
             "options_gamma":     d["options_gamma_regime"],
             "options_source":    d["options_source"],
             "news_valid":        d["news_valid"],
+            "news_observed_ts":  d["news_observed_ts"],
             "news_ts":           d["news_event_ts"],
             "news_active":       d["news_active_window"],
             "news_released":     d["news_released"],
@@ -99,6 +106,10 @@ class ExternalContext:
 class MarketSnapshotIn:
     """Market snapshot written by MQL5 for Python to read."""
     snapshot_id: int = 0
+    decision_boundary: int = 0
+    closed_bar_time: int = 0
+    timeframe: int = 0
+    max_age_s: int = 0
     timestamp: int = 0
     symbol: str = ""
     bid: float = 0.0
@@ -113,21 +124,21 @@ class MarketSnapshotIn:
 
 
 def parse_kv_file(path: str) -> dict:
-    """Read key=value lines from a file written by MQL5.
-
-    Missing file or read error -> empty dict.
-    Malformed lines are skipped; caller treats empty result as absent.
-    """
+    """Reject an ambiguous/partial payload; never retain a parsed prefix."""
     out = {}
     try:
         with open(path, "r", encoding="utf-8") as f:
             for raw in f:
                 line = raw.strip()
-                if not line or "=" not in line:
+                if not line:
                     continue
+                if "=" not in line:
+                    return {}
                 k, v = line.split("=", 1)
-                out[k.strip()] = v.strip()
-    except (FileNotFoundError, OSError):
-        pass
+                k, v = k.strip(), v.strip()
+                if not k or k in out:
+                    return {}
+                out[k] = v
+    except (OSError, UnicodeError):
+        return {}
     return out
-

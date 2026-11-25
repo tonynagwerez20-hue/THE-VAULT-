@@ -1,4 +1,4 @@
-﻿"""Proxy DOM Engine (spec §29, §30).
+"""Proxy DOM Engine (spec §29, §30).
 
 Builds an Amigo PROXY DOM / Activity-at-Price Ladder from
 FootprintBin data, optionally enriched with broker Market Book
@@ -12,7 +12,7 @@ No claim of being a centralized institutional DOM.
 from __future__ import annotations
 from typing import Dict, List, Optional
 
-from Amigo.orderflow_lab.schema import (
+from algomind.orderflow_lab.schema import (
     FootprintBin, ProxyDOMRow, ProxyDOMSnapshot, DataQualityTag
 )
 

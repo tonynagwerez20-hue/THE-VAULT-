@@ -1,4 +1,4 @@
-﻿"""
+"""
 Amigo MACRO / GEOPOLITICAL / GOLD / PROXY-OPTIONS LAYER (MGLE)
 ==================================================================
 Point-in-Time (PIT) Causal Storage Engine (v1.0)
@@ -10,7 +10,7 @@ import sqlite3
 import json
 import os
 from typing import List, Optional
-from Amigo.mgle.schema import ExternalObservation, DataQualityTag
+from algomind.mgle.schema import ExternalObservation, DataQualityTag
 
 class MGLEDatabase:
     def __init__(self, db_path: str = "Python/Amigo_mgle_pit.db"):

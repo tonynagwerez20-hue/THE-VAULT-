@@ -91,6 +91,11 @@ struct RegimeState
 struct TradeIntent
 {
    long            intent_id;
+   long            snapshot_id;       // snapshot from MarketSnapshotBuilder
+   long            decision_id;       // from RiskBeginOpportunity (authoritative)
+   long            signal_id;         // aliased to decision_id
+   long            idempotency_key;   // aliased to decision_id
+   long            submission_attempt_id; // per-call submission counter (P0 identity chain)
    int             schema_version;
    int             strategy_version;
    int             feature_version;

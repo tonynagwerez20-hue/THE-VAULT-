@@ -1,3 +1,5 @@
+#ifndef AMIGO_INCLUDE_FVG_ENGINE_MQH
+#define AMIGO_INCLUDE_FVG_ENGINE_MQH
 #property strict
 
 //--- 3-bar FVG (Math Spec §10). Lifecycle is evaluated bar-by-bar.
@@ -70,3 +72,4 @@ void UpdateFVGState(FVGEvent &fvg, const MqlRates &r[], int j)
    if(!fvg.is_bull && r[j].close > fvg.upper) fvg.invalidated = true;
    if(fvg.invalidated) fvg.active = false;
 }
+#endif // AMIGO_INCLUDE_FVG_ENGINE_MQH

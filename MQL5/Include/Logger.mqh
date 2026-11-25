@@ -1,4 +1,6 @@
-﻿//+------------------------------------------------------------------+
+﻿#ifndef AMIGO_INCLUDE_LOGGER_MQH
+#define AMIGO_INCLUDE_LOGGER_MQH
+//+------------------------------------------------------------------+
 //| Logger.mqh                                                       |
 //+------------------------------------------------------------------+
 #property strict
@@ -69,3 +71,5 @@ long NextDecisionId()
    return (long)TimeCurrent() * 1000 + g_decision_seq;
 }
 //+------------------------------------------------------------------+
+
+#endif // AMIGO_INCLUDE_LOGGER_MQH

@@ -1,4 +1,4 @@
-﻿//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 //| RiskController.mqh                                               |
 //| AMIGO Account-Size-Correlated Risk + Distortion Engine           |
 //| Piecewise-Linear Spline, High-Water Throttle, Hard Safety Caps   |
@@ -172,10 +172,29 @@ double InterpolateDistortionCurve(double equity)
 //+------------------------------------------------------------------+
 double RiskControllerGetMinimumViableEquity(double min_lot_loss, double effective_risk_pct, double max_distortion)
 {
-   double r_dec = (effective_risk_pct > 0.0) ? (effective_risk_pct / 100.0) : 0.005;
-   double denom = r_dec * max_distortion;
-   if(denom <= 0.0 || min_lot_loss <= 0.0) return 0.0;
-   return min_lot_loss / denom;
+   // Compatibility argument effective_risk_pct must not freeze R(E).
+   if(!MathIsValidNumber(min_lot_loss) || min_lot_loss<=0.0 ||
+      !MathIsValidNumber(max_distortion) || max_distortion<1.0 ||
+      max_distortion>ABSOLUTE_MAX_DISTORTION) return 0.0;
+   // Approved curve has nondecreasing E*R(E), including each spline segment.
+   double lo=0.0, hi=10000.0;
+   while(hi*InterpolateRiskCurve(hi)/100.0*max_distortion<min_lot_loss)
+   {
+      hi*=2.0;
+      if(!MathIsValidNumber(hi)) return 0.0;
+   }
+   for(int i=0;i<100;i++)
+   {
+      double mid=lo+(hi-lo)/2.0;
+      if(mid*InterpolateRiskCurve(mid)/100.0*max_distortion>=min_lot_loss) hi=mid;
+      else lo=mid;
+   }
+   return hi;
+}
+
+double RiskControllerGetNormalEquity(double min_lot_loss)
+{
+   return RiskControllerGetMinimumViableEquity(min_lot_loss,0.0,1.0);
 }
 
 //+------------------------------------------------------------------+
@@ -190,6 +209,7 @@ double RiskControllerGetRequiredRiskPercent(double min_lot_loss, double equity, 
 
 //+------------------------------------------------------------------+
 //| Evaluate Account-Size-Correlated Risk Budget & Feasibility Gate  |
+//| NOTE: Drawdown throttling removed per approved policy (P0)
 //+------------------------------------------------------------------+
 AdaptiveRiskResult RiskControllerEvaluate(
    string symbol,
@@ -320,26 +340,9 @@ AdaptiveRiskResult RiskControllerEvaluate(
       return res;
    }
 
-   // 4. High-Water Drawdown Throttle Multiplier (Drawdown may ONLY reduce risk, never increase it)
-   double dd_mult = 1.0;
-   if(res.drawdown_percent >= 3.5)
-   {
-      dd_mult        = 0.50;
-      res.risk_state = RISK_STATE_RECOVERY;
-   }
-   else if(res.drawdown_percent >= 2.0)
-   {
-      dd_mult        = 0.70;
-      res.risk_state = RISK_STATE_CAUTION;
-   }
-   else
-   {
-      dd_mult        = 1.00;
-      res.risk_state = RISK_STATE_NORMAL;
-   }
-
-   double throttled_risk = res.base_risk_percent * dd_mult;
-   res.effective_risk_percent = MathMin(throttled_risk, ABSOLUTE_MAX_RISK_PERCENT);
+   // 4. Effective Risk Percent (no drawdown throttle per approved policy)
+   res.effective_risk_percent = MathMin(res.base_risk_percent, ABSOLUTE_MAX_RISK_PERCENT);
+   res.risk_state = RISK_STATE_NORMAL;
 
    // Recompute Minimum Viable Equity with effective risk percent
    res.minimum_viable_equity = RiskControllerGetMinimumViableEquity(res.minimum_lot_loss, res.effective_risk_percent, res.max_allowed_distortion);

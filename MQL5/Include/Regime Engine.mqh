@@ -1,3 +1,5 @@
+#ifndef AMIGO_INCLUDE_REGIME_ENGINE_MQH
+#define AMIGO_INCLUDE_REGIME_ENGINE_MQH
 //+------------------------------------------------------------------+
 //| RegimeEngine.mqh - multi-timeframe market state machine          |
 //+------------------------------------------------------------------+
@@ -107,9 +109,10 @@ double ScoreExhaustion(const FeatureSnapshot &f, const TopDownContext &td)
 //+------------------------------------------------------------------+
 //| Multi-Timeframe Regime Evaluator (Authoritative Context)         |
 //+------------------------------------------------------------------+
-RegimeState EvaluateRegime(const FeatureSnapshot &f, const TopDownContext &td, const AmigoConfig &cfg)
+RegimeState EvaluateRegimeWithState(const FeatureSnapshot &f, const TopDownContext &td, const AmigoConfig &cfg, RegimePersist &state)
 {
    RegimeState rs;
+   rs.snapshot_id = f.snapshot_id;
    rs.timestamp = f.timestamp;
    rs.reason_codes = td.summary;
 
@@ -144,38 +147,46 @@ RegimeState EvaluateRegime(const FeatureSnapshot &f, const TopDownContext &td, c
    ENUM_REGIME new_cand  = cr[best];
    double      new_score = cs[best];
 
-   if(new_cand == g_regime_state.candidate)
-      g_regime_state.candidate_count++;
+   if(new_cand == state.candidate)
+      state.candidate_count++;
    else
    {
-      g_regime_state.candidate = new_cand;
-      g_regime_state.candidate_count = 1;
+      state.candidate = new_cand;
+      state.candidate_count = 1;
    }
 
+   // Refresh the incumbent against this snapshot, never a historical peak.
+   double current_score=0.0;
+   for(int i=0;i<5;i++)
+      if(cr[i]==state.current) current_score=cs[i];
+   state.current_score=current_score;
+   if(!MathIsValidNumber(current_score) || current_score<cfg.regime_threshold)
+      state.current=REGIME_NO_TRADE;
+
    bool transition = false;
-   if(g_regime_state.current == REGIME_NO_TRADE ||
-      g_regime_state.current == REGIME_NONE)
+   if(state.current == REGIME_NO_TRADE ||
+      state.current == REGIME_NONE)
    {
       if(new_score >= cfg.regime_threshold &&
-         g_regime_state.candidate_count >= cfg.regime_persistence)
+         state.candidate_count >= cfg.regime_persistence)
          transition = true;
    }
-   else if(new_cand != g_regime_state.current)
+   else if(new_cand != state.current)
    {
       if(new_score >= cfg.regime_threshold &&
-         new_score >= g_regime_state.current_score + cfg.regime_hysteresis &&
-         g_regime_state.candidate_count >= cfg.regime_persistence)
+         new_score >= state.current_score + cfg.regime_hysteresis &&
+         state.candidate_count >= cfg.regime_persistence)
          transition = true;
    }
 
    if(transition)
    {
-      g_regime_state.current = new_cand;
-      g_regime_state.current_score = new_score;
+      state.current = new_cand;
+      state.current_score = new_score;
    }
 
-   rs.regime     = g_regime_state.current;
-   rs.confidence = g_regime_state.current_score;
+   rs.regime     = state.current;
+   rs.confidence = state.current_score;
 
    switch(rs.regime)
    {
@@ -208,6 +219,12 @@ RegimeState EvaluateRegime(const FeatureSnapshot &f, const TopDownContext &td, c
    return rs;
 }
 
+// Compatibility wrapper for legacy consumers that intentionally retain global hysteresis state.
+RegimeState EvaluateRegime(const FeatureSnapshot &f, const TopDownContext &td, const AmigoConfig &cfg)
+{
+   return EvaluateRegimeWithState(f, td, cfg, g_regime_state);
+}
+
 //+------------------------------------------------------------------+
 //| Backward Compatibility Overload                                  |
 //+------------------------------------------------------------------+
@@ -229,3 +246,5 @@ RegimeState EvaluateRegime(const FeatureSnapshot &f, const AmigoConfig &cfg)
    return EvaluateRegime(f, dummy_td, cfg);
 }
 //+------------------------------------------------------------------+
+
+#endif // AMIGO_INCLUDE_REGIME_ENGINE_MQH

@@ -12,6 +12,8 @@ Implements the deterministic Account-Aware Execution Layer matching MQL5 Account
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, Dict, List, Tuple
+from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR
+import math
 
 
 class AccountClass(Enum):
@@ -87,7 +89,7 @@ class SymbolCapabilityProfile:
     tick_size: float = 0.01
     tick_value: float = 1.00  # $1.00 per 0.01 tick on 1.00 lot (contract size 100 oz)
     tick_value_profit: float = 1.00
-    tick_value_loss: float = 1.00
+    tick_value_loss: float = 0.0  # zero means unavailable; reference falls back to legacy tick_value
     contract_size: float = 100.0
     volume_min: float = 0.01
     volume_max: float = 100.0
@@ -98,6 +100,41 @@ class SymbolCapabilityProfile:
     filling_mode: int = 1
     valid: bool = True
     invalid_reason: str = ""
+
+
+def _loss_tick_value(cap: SymbolCapabilityProfile) -> float:
+    """Use loss-side tick value; generic tick_value is a legacy reference fallback."""
+    if math.isfinite(cap.tick_value_loss) and cap.tick_value_loss > 0.0:
+        return cap.tick_value_loss
+    if math.isfinite(cap.tick_value) and cap.tick_value > 0.0:
+        return cap.tick_value
+    return 0.0
+
+
+def _volume_grid_bounds(cap: SymbolCapabilityProfile) -> Tuple[float, float]:
+    """Return first/last legal step volumes within broker lower/upper bounds."""
+    try:
+        minimum, maximum, step = map(Decimal, map(str, (cap.volume_min, cap.volume_max, cap.volume_step)))
+        if not all(value.is_finite() for value in (minimum, maximum, step)) or minimum <= 0 or step <= 0 or maximum < minimum:
+            return 0.0, 0.0
+        first = (minimum / step).to_integral_value(rounding=ROUND_CEILING) * step
+        last = (maximum / step).to_integral_value(rounding=ROUND_FLOOR) * step
+        if first > last:
+            return 0.0, 0.0
+        return float(first), float(last)
+    except (ArithmeticError, ValueError):
+        return 0.0, 0.0
+
+
+def _floor_volume_to_step(volume: float, step: float) -> float:
+    """Floor requested volume to a broker step; never rounds exposure upward."""
+    try:
+        requested, increment = Decimal(str(volume)), Decimal(str(step))
+        if not requested.is_finite() or not increment.is_finite() or requested <= 0 or increment <= 0:
+            return 0.0
+        return float((requested / increment).to_integral_value(rounding=ROUND_FLOOR) * increment)
+    except (ArithmeticError, ValueError):
+        return 0.0
 
 
 class SLAdaptationStatus(Enum):
@@ -186,11 +223,11 @@ def evaluate_adaptive_stop(
     )
 
     if (
-        symbol_cap.tick_size <= 0.0
-        or symbol_cap.tick_value <= 0.0
-        or symbol_cap.volume_min <= 0.0
-        or equity <= 0.0
-        or original_stop_dist <= 0.0
+        not math.isfinite(symbol_cap.tick_size) or symbol_cap.tick_size <= 0.0
+        or _loss_tick_value(symbol_cap) <= 0.0
+        or _volume_grid_bounds(symbol_cap)[0] <= 0.0
+        or not math.isfinite(equity) or equity <= 0.0
+        or not math.isfinite(original_stop_dist) or original_stop_dist <= 0.0
     ):
         res.status = SLAdaptationStatus.ADAPTIVE_SL_REJECTED
         res.reason = "INVALID_SYMBOL_OR_ACCOUNT_ECONOMICS"
@@ -198,8 +235,9 @@ def evaluate_adaptive_stop(
 
     target_risk_amt = equity * (target_risk_pct / 100.0)
     max_risk_allowed = target_risk_amt * max_allowed_distortion
-    val_per_unit = symbol_cap.tick_value / symbol_cap.tick_size
-    res.max_account_stop_dist = max_risk_allowed / (symbol_cap.volume_min * val_per_unit)
+    val_per_unit = _loss_tick_value(symbol_cap) / symbol_cap.tick_size
+    minimum_valid_volume, _ = _volume_grid_bounds(symbol_cap)
+    res.max_account_stop_dist = max_risk_allowed / (minimum_valid_volume * val_per_unit)
 
     # 1. Is original SL executable?
     if original_stop_dist <= res.max_account_stop_dist:
@@ -277,21 +315,23 @@ def evaluate_adaptive_stop(
 
 def validate_symbol_capability(cap: SymbolCapabilityProfile) -> Tuple[bool, str]:
     """Validate runtime symbol contract specification (Prompt §6)."""
-    if cap.tick_size <= 0.0:
+    if not math.isfinite(cap.tick_size) or cap.tick_size <= 0.0:
         return False, "INVALID_TICK_SIZE"
-    if cap.tick_value <= 0.0:
+    if _loss_tick_value(cap) <= 0.0:
         return False, "INVALID_TICK_VALUE"
-    if cap.contract_size <= 0.0:
+    if not math.isfinite(cap.contract_size) or cap.contract_size <= 0.0:
         return False, "INVALID_CONTRACT_SIZE"
-    if cap.volume_min <= 0.0:
+    if not math.isfinite(cap.volume_min) or cap.volume_min <= 0.0:
         return False, "INVALID_VOLUME_MIN"
-    if cap.volume_step <= 0.0:
+    if not math.isfinite(cap.volume_step) or cap.volume_step <= 0.0:
         return False, "INVALID_VOLUME_STEP"
-    if cap.volume_max < cap.volume_min:
+    if not math.isfinite(cap.volume_max) or cap.volume_max < cap.volume_min:
         return False, "INVALID_VOLUME_MAX"
+    if _volume_grid_bounds(cap)[0] <= 0.0:
+        return False, "INVALID_VOLUME_STEP_GRID"
     if cap.digits < 0:
         return False, "INVALID_DIGITS"
-    if cap.point <= 0.0:
+    if not math.isfinite(cap.point) or cap.point <= 0.0:
         return False, "INVALID_POINT"
     return True, "OK"
 
@@ -421,7 +461,7 @@ def evaluate_account_execution(
 
     # 5. Risk Sizing & 3-State Minimum Lot Sizing
     env.target_risk_amount = account.equity * (target_risk_pct / 100.0)
-    env.risk_per_lot = (stop_distance / symbol_cap.tick_size) * symbol_cap.tick_value if symbol_cap.tick_size > 0 else 0.0
+    env.risk_per_lot = (stop_distance / symbol_cap.tick_size) * _loss_tick_value(symbol_cap) if symbol_cap.tick_size > 0 else 0.0
 
     if env.risk_per_lot <= 0.0:
         env.feasibility = FeasibilityStatus.INVALID_SYMBOL_SPEC
@@ -433,15 +473,21 @@ def evaluate_account_execution(
     env.raw_volume = env.target_risk_amount / env.risk_per_lot
 
     # 3-State Minimum Lot Handling
-    if env.raw_volume >= symbol_cap.volume_min:
+    minimum_valid_volume, maximum_valid_volume = _volume_grid_bounds(symbol_cap)
+    if env.raw_volume >= minimum_valid_volume:
         # STATE A: NORMAL
         env.min_lot_status = MinLotStatus.NORMAL
         raw_steps = math.floor(env.raw_volume / symbol_cap.volume_step)
-        env.executable_volume = round(raw_steps * symbol_cap.volume_step, 4)
-        if env.executable_volume < symbol_cap.volume_min:
-            env.executable_volume = symbol_cap.volume_min
-        if env.executable_volume > symbol_cap.volume_max:
-            env.executable_volume = symbol_cap.volume_max
+        env.executable_volume = _floor_volume_to_step(env.raw_volume, symbol_cap.volume_step)
+        if env.executable_volume > maximum_valid_volume:
+            env.executable_volume = maximum_valid_volume
+        if env.executable_volume < minimum_valid_volume:
+            env.min_lot_status = MinLotStatus.MIN_LOT_UNSAFE
+            env.feasibility = FeasibilityStatus.MIN_LOT_UNSAFE
+            env.execution_classification = SignalExecutionClassification.SIGNAL_VALID_ACCOUNT_INFEASIBLE
+            env.final_action = Action.NO_TRADE
+            env.reason = "NO_VALID_VOLUME_WITHIN_BROKER_LIMITS"
+            return env
 
         env.actual_risk = env.executable_volume * env.risk_per_lot
         env.actual_risk_pct = (env.actual_risk / account.equity * 100.0) if account.equity > 0 else 0.0
@@ -450,14 +496,14 @@ def evaluate_account_execution(
         env.execution_classification = SignalExecutionClassification.SIGNAL_VALID_EXECUTABLE
     else:
         # Raw Volume < VolumeMin
-        min_lot_risk = symbol_cap.volume_min * env.risk_per_lot
+        min_lot_risk = minimum_valid_volume * env.risk_per_lot
         min_lot_risk_pct = (min_lot_risk / account.equity * 100.0) if account.equity > 0 else 999.0
         distortion = (min_lot_risk / env.target_risk_amount) if env.target_risk_amount > 0 else 999.0
 
         if allow_min_lot_override and distortion <= max_allowed_distortion:
             # STATE B: MIN_LOT_ACCOMMODATED
             env.min_lot_status = MinLotStatus.MIN_LOT_ACCOMMODATED
-            env.executable_volume = symbol_cap.volume_min
+            env.executable_volume = minimum_valid_volume
             env.actual_risk = min_lot_risk
             env.actual_risk_pct = min_lot_risk_pct
             env.risk_distortion = distortion
@@ -529,7 +575,8 @@ def _build_diagnostics(env: AccountExecutionEnvelope, max_allowed_distortion: fl
 
     max_risk_allowed = env.target_risk_amount * max_allowed_distortion
     stop_dist_ticks = (env.stop_distance / env.symbol_cap.tick_size) if env.symbol_cap.tick_size > 0 else 0.0
-    min_lot_loss = env.symbol_cap.volume_min * env.risk_per_lot
+    minimum_valid_volume, _ = _volume_grid_bounds(env.symbol_cap)
+    min_lot_loss = minimum_valid_volume * env.risk_per_lot
     target_risk_pct_dec = env.target_risk_pct / 100.0 if env.target_risk_pct > 0 else 0.005
     req_equity = (min_lot_loss / (target_risk_pct_dec * max_allowed_distortion)) if (target_risk_pct_dec * max_allowed_distortion) > 0 else 0.0
     broker_min_stop = env.symbol_cap.stops_level * env.symbol_cap.point
@@ -540,7 +587,7 @@ def _build_diagnostics(env: AccountExecutionEnvelope, max_allowed_distortion: fl
     size_diag_log = (
         f"[SIZE_DIAG] equity={env.account.equity:.2f} target_risk={env.target_risk_amount:.2f} max_risk={max_risk_allowed:.2f} "
         f"entry={env.entry:.5f} primary_sl={env.original_sl:.5f} selected_sl={env.selected_sl:.5f} sl_source={sl_source_str} "
-        f"stop_dist_price={env.stop_distance:.5f} stop_dist_ticks={stop_dist_ticks:.0f} min_volume={env.symbol_cap.volume_min:.2f} "
+        f"stop_dist_price={env.stop_distance:.5f} stop_dist_ticks={stop_dist_ticks:.0f} min_volume={minimum_valid_volume:.2f} "
         f"min_lot_loss={min_lot_loss:.2f} distortion={env.risk_distortion:.2f}x max_distortion={max_allowed_distortion:.2f}x "
         f"required_equity={req_equity:.2f} broker_min_stop={broker_min_stop:.5f} rr={rr_val:.2f} "
         f"candidate_count={cand_count} executable_candidate_count={exec_cand_count} classification={exec_class_str} reason={env.reason}"
@@ -548,7 +595,7 @@ def _build_diagnostics(env: AccountExecutionEnvelope, max_allowed_distortion: fl
 
     env.diagnostics = [
         f"[ACCOUNT] equity={env.account.equity:.2f} balance={env.account.balance:.2f} free_margin={env.account.margin_free:.2f} leverage={env.account.leverage:.0f} class={cls_name} login={env.account.login}",
-        f"[SYMBOL] symbol={env.symbol_cap.symbol} tick_sz={env.symbol_cap.tick_size:.5f} tick_val={env.symbol_cap.tick_value:.5f} contract_sz={env.symbol_cap.contract_size:.1f} vol_min={env.symbol_cap.volume_min:.2f} vol_step={env.symbol_cap.volume_step:.2f} stops_lvl={env.symbol_cap.stops_level}",
+        f"[SYMBOL] symbol={env.symbol_cap.symbol} tick_sz={env.symbol_cap.tick_size:.5f} tick_val_loss={_loss_tick_value(env.symbol_cap):.5f} contract_sz={env.symbol_cap.contract_size:.1f} vol_min={minimum_valid_volume:.2f} vol_step={env.symbol_cap.volume_step:.2f} stops_lvl={env.symbol_cap.stops_level}",
         f"[SETUP] dir={'BUY' if env.direction == 1 else 'SELL'} entry={env.entry:.5f} sl={env.stop:.5f} tp={env.target:.5f} stop_dist={env.stop_distance:.5f}",
         f"[RISK] target_risk=${env.target_risk_amount:.2f}({env.target_risk_pct:.2f}%) risk_per_lot=${env.risk_per_lot:.2f} raw_vol={env.raw_volume:.5f} exec_vol={env.executable_volume:.2f} actual_risk=${env.actual_risk:.2f}({env.actual_risk_pct:.2f}%) distortion={env.risk_distortion:.2f}x",
         f"[ACCOUNT_HANDLING] class={cls_name} status={env.feasibility.value} min_lot_status={min_lot_str} margin_req=${env.required_margin:.2f}",

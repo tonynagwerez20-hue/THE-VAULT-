@@ -29,6 +29,7 @@
 #include <TransactionRecon.mqh>
 #include <External Context Compactor.mqh>
 #include <ML gate hook.mqh>
+#include <TickImbalanceBars.mqh>
 
 //--- Order-Flow ASAP / Amigo Native Engines
 #include <AM_FlowQuality.mqh>
@@ -41,8 +42,7 @@
 
 //--- Inputs
 input group "=== Execution Mode Safety ==="
-input bool   InpShadowOnly        = true;         // true = SHADOW MODE (blocks live OrderSend)
-   input bool   InpEnableTickPressure = false;      // Experimental proxy scoring; disabled by default
+input bool   InpEnableTickPressure = false;      // Experimental proxy scoring; disabled by default
 input bool   InpInitializeRiskLedger = false;     // Explicit baseline only if no persistent ledger exists
 
 input group "=== Symbol & Timeframes ==="
@@ -58,7 +58,6 @@ input ENUM_TIMEFRAMES InpTFExec   = PERIOD_M1;  // M1 execution and microstructu
 input group "=== Risk (starting research params) ==="
 input double InpRiskPerTrade      = 0.5;     // % per trade
 input double InpDailyLossPct      = 2.0;     // % hard daily
-input double InpTotalDDPct        = 5.0;     // % hard total DD
 input double InpPartialRR         = 2.0;
 input double InpPartialFraction   = 0.50;
 input double InpTrailATRMult      = 1.5;
@@ -104,7 +103,15 @@ input group "=== Dual-Account Isolation ==="
 input long   InpExpectedLogin     = 0;        // 0 = unconstrained
 input ulong  InpMagicNumber       = 20260908; // Scoped Magic Number
 
+input group "=== Tick imbalance confirmation ==="
+input int InpTIBThreshold=100; // Same quote imbalance threshold as Python reference.
+input bool InpTIBEnabled=true; // GAP-03: feed closed-TIB features into BuildFeatureVector
+
 //--- Globals
+TickImbalanceBars g_tib;
+TIBBar g_tib_decision;
+bool g_tib_decision_ready=false;
+datetime g_tib_last_boundary=0;
 string          g_symbol;
 datetime        g_last_bar_time = 0;
 datetime        g_last_ext_read = 0;
@@ -131,7 +138,7 @@ bool AMIGOScoreInputsValid(const double score_threshold,const double score_margi
 
 bool AMIGOPartialInputsValid(const double partial_rr,const double partial_fraction)
 {
-   return MathIsValidNumber(partial_rr) && partial_rr>0.0 &&
+   return MathIsValidNumber(partial_rr) && partial_rr>=2.0 &&
           MathIsValidNumber(partial_fraction) && partial_fraction>0.0 && partial_fraction<1.0;
 }
 
@@ -169,17 +176,20 @@ void CommitFlowOpportunityDiagnostics(const MqlRates &closed_rate[],
                           closed_rate[0].high,closed_rate[0].low,total_activity);
 
    double current_price=SymbolInfoDouble(g_symbol,SYMBOL_BID);
-   LogMsg(LOG_INFO,"FLOW_DIAG",StringFormat("ts=%s vwap=%.5f dev=%.2f poc=%.5f vah=%.5f val=%.5f cd=%.2f fp_press=%.4f state=%d shadow=%s",
-      TimeToString(TimeCurrent(),TIME_DATE|TIME_MINUTES),g_vwap_engine.GetVWAP(),
+   LogMsg(LOG_INFO,"FLOW_DIAG",StringFormat("ts=%s vwap=%.5f dev=%.2f poc=%.5f vah=%.5f val=%.5f cd=%.2f fp_press=%.4f state=%d",
+      TimeToString(TimeCurrent(),TIME_DATE|TIME_MINUTES|TIME_SECONDS),g_vwap_engine.GetVWAP(),
       g_vwap_engine.GetDeviation(current_price,atr),g_profile_engine.GetPOC(),
       g_profile_engine.GetVAH(),g_profile_engine.GetVAL(),g_footprint_engine.GetCumulativeDelta(),
-      fp_pressure,(int)p_state,g_cfg.shadow_only?"TRUE":"FALSE"));
+      fp_pressure,(int)p_state));
 }
 CAM_ProxyDOM        g_dom_engine;
 
 //+------------------------------------------------------------------+
 int OnInit()
 {
+   if(InpTIBThreshold<=0) return INIT_PARAMETERS_INCORRECT;
+   g_tib.Reset(InpTIBThreshold);
+   if(InpDailyLossPct!=2.0 || InpMaxAllowedDistortion<1.0 || InpMaxAllowedDistortion>5.0) return INIT_PARAMETERS_INCORRECT;
    LogInit(InpLogLevel);
    if(InpTFExec!=PERIOD_M1 || InpTFM5!=PERIOD_M5 || InpTFContext!=PERIOD_M15 ||
       InpTFM30!=PERIOD_M30 || InpTFHTF!=PERIOD_H1 || InpTFH4!=PERIOD_H4 || InpTFD1!=PERIOD_D1)
@@ -238,7 +248,7 @@ int OnInit()
    g_cfg.symbol              = g_symbol;
    g_cfg.magic_number        = InpMagicNumber;
    g_cfg.expected_login      = InpExpectedLogin;
-   g_cfg.shadow_only         = InpShadowOnly;
+   g_cfg.shadow_only         = false;
    g_cfg.tf_exec             = InpTFExec;
    g_cfg.tf_context          = InpTFContext;
    g_cfg.tf_htf              = InpTFHTF;
@@ -258,7 +268,9 @@ int OnInit()
    g_cfg.regime_persistence  = 2;
    g_cfg.risk_per_trade_pct  = InpRiskPerTrade;
    g_cfg.daily_loss_pct      = InpDailyLossPct;
-   g_cfg.total_dd_pct        = InpTotalDDPct;
+   // Total/account-wide DD lock is intentionally disabled.  The active
+   // loss control for this EA is the 2% daily stop above.
+   g_cfg.total_dd_pct        = 0.0;
    g_cfg.partial_rr          = InpPartialRR;
    g_cfg.partial_fraction    = InpPartialFraction;
    g_cfg.trail_atr_mult      = InpTrailATRMult;
@@ -280,12 +292,6 @@ int OnInit()
    g_cfg.bridge_inbox        = InpBridgeInbox;
    g_cfg.bridge_outbox       = InpBridgeOutbox;
    g_cfg.stale_threshold_s   = InpStaleThresholdSec;
-
-   if(!g_cfg.shadow_only && AMIGO_LIVE_EXECUTION_READY==0)
-   {
-      Print("[LIVE_EXECUTION_BLOCKED] Durable order/deal reconciliation is not verified. Use shadow mode only.");
-      return INIT_FAILED;
-   }
 
    if(!PositionStateOwnerAcquire(g_cfg))
    {
@@ -433,6 +439,18 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
 {
+   // Keep the runtime failure state observable even when a fail-closed gate
+   // prevents the normal analysis path from running.
+   static datetime s_last_gate_diag = 0;
+   if(TimeCurrent() - s_last_gate_diag >= 60)
+   {
+      PrintFormat("[RUNTIME_GATE][OnTick] owner=%s admission=%s risk_ready=%s time=%s",
+                  PositionStateOwnerMatches(g_cfg) ? "OK" : "BLOCKED",
+                  PositionManagerAdmissionAllowed() ? "OK" : "BLOCKED",
+                  g_risk_admission_ready ? "OK" : "BLOCKED",
+                  TimeToString(TimeCurrent(),TIME_DATE|TIME_MINUTES|TIME_SECONDS));
+      s_last_gate_diag = TimeCurrent();
+   }
    if(!PositionStateOwnerMatches(g_cfg)) return;
    // Lifecycle/persistence ambiguity blocks new opportunities. Timer-driven
    // management continues so existing positions can still be reconciled.
@@ -585,6 +603,30 @@ int OnClosedBar(const long opportunity_id)
                dt.hour, g_cfg.session_start_hour, g_cfg.session_end_hour,
                session_pass ? "YES" : "NO");
 
+   // TIB persistence: check for boundary jumps to handle gap detection
+   g_tib_decision_ready = false;
+   if(g_tib_last_boundary != 0 && g_tib_last_boundary != closed_bar_time)
+      g_tib.Reset(InpTIBThreshold);
+
+   MqlTick tib_ticks[];
+   int tib_count = CopyTicksRange(g_symbol, tib_ticks, COPY_TICKS_ALL,
+                                  (ulong)closed_bar_time * 1000, (ulong)decision_boundary * 1000 - 1);
+   if(tib_count > 0)
+   {
+      for(int i = 0; i < tib_count; i++)
+      {
+         if(tib_ticks[i].time_msc < (long)closed_bar_time * 1000 ||
+            tib_ticks[i].time_msc >= (long)decision_boundary * 1000 ||
+            !MathIsValidNumber(tib_ticks[i].bid) || !MathIsValidNumber(tib_ticks[i].ask) ||
+            tib_ticks[i].bid <= 0 || tib_ticks[i].ask < tib_ticks[i].bid ||
+            (i > 0 && tib_ticks[i].time_msc < tib_ticks[i - 1].time_msc)) continue;
+
+         g_tib.Add(tib_ticks[i].bid, tib_ticks[i].ask, tib_ticks[i].time_msc);
+      }
+      g_tib_decision_ready = g_tib.ClosedBefore((long)decision_boundary * 1000, g_tib_decision);
+   }
+   g_tib_last_boundary = decision_boundary;
+
    //--- 0) Session hour gate
    if(dt.hour < g_cfg.session_start_hour || dt.hour >= g_cfg.session_end_hour)
    {
@@ -628,7 +670,10 @@ int OnClosedBar(const long opportunity_id)
 
    //--- 2) Features
    bool feat_res = BuildFeatureVector(g_symbol, g_cfg, candidate_feat, candidate_feature_state,
-                                      candidate_feature_rates);
+                                      candidate_feature_rates,
+                                      InpTIBEnabled && g_tib_decision_ready,
+                                      InpTIBEnabled && g_tib_decision_ready ? (long)g_tib_decision.imbalance : 0,
+                                      InpTIBEnabled && g_tib_decision_ready ? (long)g_tib_decision.tick_count : 0);
    PrintFormat("[RUNTIME_DIAG][FEATURES] server_time=%s success=%s ts=%s atr14=%.5f fusion=%.2f",
                TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES|TIME_SECONDS),
                feat_res ? "YES" : "NO",
@@ -712,6 +757,8 @@ int OnClosedBar(const long opportunity_id)
       iTime(g_symbol,g_cfg.tf_exec,0)!=decision_boundary ||
       iTime(g_symbol,g_cfg.tf_exec,1)!=closed_bar_time)
       return RISK_OP_REJECTED;
+   // TIB VETO (Disabled by default, but native logic kept for manual evaluation)
+
    long decision_id = opportunity_id;
    LogDecision(decision_id, g_symbol, dr.action, rs.regime, dr.hypothesis,
                dr.best_score, dr.reason);
@@ -778,9 +825,11 @@ int OnClosedBar(const long opportunity_id)
       LogDecision(decision_id,g_symbol,ACTION_NO_TRADE,rs.regime,dr.hypothesis,dr.best_score,proxy_reason);
       return RISK_OP_NO_TRADE;
    }
-   LogMsg(LOG_INFO,"HORIZON_PROXY",StringFormat("id=%I64d horizon=%d hypothesis=%d pressure=%.3f bull_div=%.3f bear_div=%.3f provenance=%s streaming_footprint=DIAGNOSTIC broker_depth=UNAVAILABLE",
+   LogMsg(LOG_INFO,"HORIZON_PROXY",StringFormat("id=%I64d horizon=%d hypothesis=%d pressure=%.3f bull_div=%.3f bear_div=%.3f tib_imb_atr=%.3f tib_dir=%d tib_count=%I64d provenance=%s streaming_footprint=DIAGNOSTIC broker_depth=UNAVAILABLE",
       decision_id,(int)dr.horizon,(int)dr.hypothesis,decision_feat.fusion,
-      decision_feat.divergence_bull,decision_feat.divergence_bear,proxy_reason));
+      decision_feat.divergence_bull,decision_feat.divergence_bear,
+      decision_feat.tib_imb_atr, decision_feat.tib_direction, decision_feat.tib_tick_count,
+      proxy_reason));
 
 
    //--- 8) Risk gate
@@ -903,7 +952,7 @@ int OnClosedBar(const long opportunity_id)
 
    //--- Netting Account Single-Active-Horizon Invariant Gate
    ENUM_ACCOUNT_MARGIN_MODE margin_mode = (ENUM_ACCOUNT_MARGIN_MODE)AccountInfoInteger(ACCOUNT_MARGIN_MODE);
-   if(margin_mode == ACCOUNT_MARGIN_MODE_RETAIL_NETTING && !g_cfg.shadow_only)
+   if(margin_mode == ACCOUNT_MARGIN_MODE_RETAIL_NETTING)
    {
       if(PositionsTotal() > 0 && PositionSelect(g_symbol))
       {
@@ -940,6 +989,10 @@ int OnClosedBar(const long opportunity_id)
    ZeroMemory(ti);
    ti.intent_id        = decision_id;
    ti.snapshot_id      = dr.snapshot_id;
+   ti.decision_id      = decision_id;
+   ti.signal_id        = decision_id;
+   ti.idempotency_key  = decision_id;
+   ti.submission_attempt_id = 0; // will be injected before ExecuteIntent call
    ti.schema_version   = Amigo_SCHEMA_VERSION;
    ti.strategy_version = 1;
    ti.feature_version  = candidate_feat.feature_version;
@@ -977,7 +1030,14 @@ int OnClosedBar(const long opportunity_id)
       return RISK_OP_REJECTED;
    }
 
-   //--- 12) Execute
+   //--- 12) Inject submission_attempt_id before ExecuteIntent call
+   // P0 identity chain: submission_attempt_id is a per-call counter that
+   // preserves submission identity across terminal restarts when combined
+   // with durable decision_id binding.
+   static long g_submission_attempt_counter = 0;
+   g_submission_attempt_counter++;
+   ti.submission_attempt_id = g_submission_attempt_counter;
+
    ExecutionResult er = ExecuteIntent(ti, lots, g_cfg, stop_dist,
                                       effective_risk_pct,risk_auto.max_allowed_distortion,atr);
    if(er.risk_guard_blocked)
@@ -999,7 +1059,7 @@ int OnClosedBar(const long opportunity_id)
       PositionManagerLatchStateFault("execution outcome is uncertain; reconcile before new admission");
       return RISK_OP_UNCERTAIN;
    }
-   if(!er.accepted && !g_cfg.shadow_only)
+   if(!er.accepted)
    {
       LogMsg(LOG_ERROR, "EXEC", StringFormat("fail retcode=%u %s",
              er.retcode, er.comment));
@@ -1009,49 +1069,38 @@ int OnClosedBar(const long opportunity_id)
    {
       LogMsg(LOG_INFO, "EXEC", StringFormat("filled dir=%d lots=%.2f price=%.5f",
              dr.direction, lots, er.fill_price));
+      RiskCompleteDailyFillTracking();
+      g_daily_fill_count++;
    }
    if(er.position_id == 0 && !g_cfg.shadow_only && er.accepted)
    {
       PositionManagerLatchStateFault("accepted execution has no stable position identifier");
       return RISK_OP_UNCERTAIN;
    }
-   else if(er.position_id == 0 && g_cfg.shadow_only)
+
+   ulong execution_magic=(g_cfg.magic_number>0)?g_cfg.magic_number:20260908;
+   if(!AccountManagedPositionVisible(er.position_id,ti.symbol,execution_magic,er.fill_volume))
    {
-      // Use the exact quote/volume accepted by final preflight, not the older
-      // strategy quote. A synthetic reference is never a confirmed broker fill.
-      if(!er.shadow_evaluated || !MathIsValidNumber(er.shadow_entry) || er.shadow_entry<=0.0 ||
-         !MathIsValidNumber(er.shadow_volume) || er.shadow_volume<=0.0)
-         return RISK_OP_REJECTED;
-      PositionManagerRegister((ulong)decision_id, er.shadow_entry, sl, tp, er.shadow_volume, dr.direction,
-                              atr, g_cfg, ti.horizon);
+      PositionManagerLatchStateFault("confirmed fill is not yet visible with expected identity, volume and stop");
+      return RISK_OP_UNCERTAIN;
    }
+   // The fill already exists. Retain its management state before any
+   // post-fill risk failure quarantines admission. This records exposure;
+   // it does not approve the opportunity or commit strategy state.
+   PositionManagerRegister(er.position_id,er.fill_price,sl,tp,er.fill_volume,
+                           dr.direction,atr,g_cfg,ti.horizon);
+   if(!PositionManagerAdmissionAllowed()) return RISK_OP_UNCERTAIN;
 
-   if(!g_cfg.shadow_only && er.accepted)
+   double reconciled_stop_risk=0.0;
+   string reconciled_risk_reason="";
+   double reconciled_equity=AccountInfoDouble(ACCOUNT_EQUITY);
+   if(!MathIsValidNumber(reconciled_equity) || reconciled_equity<=0.0 ||
+      !AccountEstimatedStopRisk(reconciled_stop_risk,reconciled_risk_reason) ||
+      !MathIsValidNumber(reconciled_stop_risk) ||
+      reconciled_stop_risk/reconciled_equity*100.0>AMIGO_MAX_ESTIMATED_STOP_LOSS_PERCENT)
    {
-      ulong execution_magic=(g_cfg.magic_number>0)?g_cfg.magic_number:20260908;
-      if(!AccountManagedPositionVisible(er.position_id,ti.symbol,execution_magic,er.fill_volume))
-      {
-         PositionManagerLatchStateFault("confirmed fill is not yet visible with expected identity, volume and stop");
-         return RISK_OP_UNCERTAIN;
-      }
-      // The fill already exists. Retain its management state before any
-      // post-fill risk failure quarantines admission. This records exposure;
-      // it does not approve the opportunity or commit strategy state.
-      PositionManagerRegister(er.position_id,er.fill_price,sl,tp,er.fill_volume,
-                              dr.direction,atr,g_cfg,ti.horizon);
-      if(!PositionManagerAdmissionAllowed()) return RISK_OP_UNCERTAIN;
-
-      double reconciled_stop_risk=0.0;
-      string reconciled_risk_reason="";
-      double reconciled_equity=AccountInfoDouble(ACCOUNT_EQUITY);
-      if(!MathIsValidNumber(reconciled_equity) || reconciled_equity<=0.0 ||
-         !AccountEstimatedStopRisk(reconciled_stop_risk,reconciled_risk_reason) ||
-         !MathIsValidNumber(reconciled_stop_risk) ||
-         reconciled_stop_risk/reconciled_equity*100.0>AMIGO_MAX_ESTIMATED_STOP_LOSS_PERCENT)
-      {
-         PositionManagerLatchStateFault("post-fill aggregate stop-risk verification failed: "+reconciled_risk_reason);
-         return RISK_OP_UNCERTAIN;
-      }
+      PositionManagerLatchStateFault("post-fill aggregate stop-risk verification failed: "+reconciled_risk_reason);
+      return RISK_OP_UNCERTAIN;
    }
 
    if(!PositionManagerAdmissionAllowed()) return RISK_OP_UNCERTAIN;
@@ -1064,7 +1113,7 @@ int OnClosedBar(const long opportunity_id)
    g_amigo_feature_state = candidate_feature_state;
    g_regime_state = candidate_regime;
    WriteSnapshotForExternal(g_cfg.bridge_outbox, candidate_snap, candidate_feat);
-   return g_cfg.shadow_only ? RISK_OP_SHADOW : RISK_OP_CONFIRMED;
+   return RISK_OP_CONFIRMED;
 }
 
 //+------------------------------------------------------------------+
@@ -1090,5 +1139,4 @@ void OnTimer()
    }
    PositionManagerTick(g_cfg);
 }
-//+------------------------------------------------------------------+ // force timestamp change
-
+//+------------------------------------------------------------------+

@@ -1,23 +1,24 @@
-﻿"""Amigo external-information service — AUTONOMOUS.
+"""Amigo external-information service — AUTONOMOUS.
 
 Fetches CFTC COT (official cftc.gov ZIPs), ForexFactory news (XML),
-and GLD options (CBOE primary, yfinance fallback).
+with unsupported GLD scoring disabled. CFTC release provenance must be verified.
 
 Never issues executable orders. Never bypasses MQL5 hard risk.
 Fail closed: on any error, write a context marked unavailable.
 """
 from __future__ import annotations
 import argparse
+import math
 import time
 from datetime import datetime, timezone
 
-from Amigo.schema import ExternalContext, DataQuality
-from Amigo.bridge.local_bridge import (
+from algomind.schema import ExternalContext, DataQuality
+from algomind.bridge.local_bridge import (
     read_market_snapshot, write_external_context,
 )
-from Amigo.external.cftc_adapter import compute_context as cftc_ctx
-from Amigo.external.options_adapter import compute_context as options_ctx
-from Amigo.external.news_adapter import compute_context as news_ctx
+from algomind.external.cftc_adapter import compute_context as cftc_ctx
+from algomind.external.options_adapter import compute_context as options_ctx
+from algomind.external.news_adapter import DEFAULT_BUFFER_MINUTES, compute_context as news_ctx
 
 _last_cftc_fetch = 0.0
 _cached_cftc = None
@@ -38,54 +39,63 @@ def build_context(mkt_path: str, now: datetime) -> ExternalContext:
     snap = read_market_snapshot(mkt_path)
     now_ts = now.timestamp()
 
-    # --- CFTC (autonomous, official cftc.gov source, refresh every 1 hour)
-    if _cached_cftc is None or (now_ts - _last_cftc_fetch) >= 3600.0:
+    ctx.context_symbol = snap.symbol if snap is not None else ""
+    gold_supported = ctx.context_symbol.upper() in {"XAUUSD", "XAUUSDM"}
+    # COMEX positioning is optional gold context, never generic FX/crypto flow.
+    # Publication dates inferred from report dates are not verified releases.
+    if gold_supported and (now_ts < _last_cftc_fetch or
+                           now_ts - _last_cftc_fetch >= 3600.0):
+        _last_cftc_fetch = now_ts
         try:
             _cached_cftc = cftc_ctx(now)
-            _last_cftc_fetch = now_ts
         except Exception:
             _cached_cftc = None
-
-    if _cached_cftc and _cached_cftc.get("cftc_valid"):
-        for k, v in _cached_cftc.items():
-            setattr(ctx, k, v)
+    data = _cached_cftc or {}
+    fields = ("cftc_publication_ts", "cftc_net_position", "cftc_net_change", "cftc_percentile")
+    numeric = all(type(data.get(k)) in (int, float) and math.isfinite(data[k]) for k in fields)
+    valid_cftc = (gold_supported and data.get("cftc_valid") is True and
+                  data.get("cftc_publication_verified") is True and numeric and
+                  type(data.get("cftc_extreme")) is bool and
+                  type(data.get("cftc_publication_ts")) is int and
+                  0 < data["cftc_publication_ts"] <= now_ts and
+                  now_ts - data["cftc_publication_ts"] <= 14 * 86400 and
+                  0 <= data["cftc_percentile"] <= 100)
+    if valid_cftc:
+        for k in (*fields, "cftc_extreme", "cftc_valid", "cftc_publication_verified"):
+            setattr(ctx, k, data[k])
     else:
-        ctx.cftc_valid = False
         ctx.data_quality |= DataQuality.EXTERNAL_ABSENT
 
-    # --- Options (CBOE -> yfinance fallback, refresh every 60s)
-    spot = snap.close if snap and snap.close > 0 else 0.0
-    atr = snap.atr14 if snap else 0.0
-    if _cached_options is None or (now_ts - _last_options_fetch) >= 60.0:
-        try:
-            _cached_options = options_ctx(spot, atr, gc_price=None, now=now)
-            _last_options_fetch = now_ts
-        except Exception:
-            _cached_options = None
-
-    if _cached_options and _cached_options.get("options_valid"):
-        for k, v in _cached_options.items():
-            setattr(ctx, k, v)
-    else:
-        ctx.options_valid = False
-        ctx.options_source = "NONE"
-        ctx.data_quality |= DataQuality.EXTERNAL_ABSENT
+    # No validated GLD-to-broker-gold mapping or dealer inventory exists.
+    # Do not fetch/cache/publish derived options as authoritative context.
+    _cached_options = None
+    ctx.options_valid = False
+    ctx.options_source = "NONE"
+    ctx.data_quality |= DataQuality.EXTERNAL_ABSENT
 
     # --- News (autonomous, ForexFactory XML feed, refresh every 60s)
     if _cached_news is None or (now_ts - _last_news_fetch) >= 60.0:
+        # Rate-limit attempts as well as successes. An unavailable result is
+        # cached explicitly so a provider outage does not create 5-second retry churn.
+        _last_news_fetch = now_ts
         try:
-            _cached_news = news_ctx(now, buffer_minutes=30, reaction_bars=3,
-                                    bar_minutes=5)
-            _last_news_fetch = now_ts
+            _cached_news = news_ctx(now, buffer_minutes=DEFAULT_BUFFER_MINUTES, reaction_minutes=15)
         except Exception:
-            _cached_news = None
+            _cached_news = {"news_valid": False,
+                            "news_observed_ts": 0,
+                            "news_event_ts": 0,
+                            "news_active_window": False,
+                            "news_released": False,
+                            "news_surprise": 0.0,
+                            "news_relative_surprise": 0.0}
 
-    if _cached_news and _cached_news.get("news_valid"):
+    if _cached_news is not None:
         for k, v in _cached_news.items():
             setattr(ctx, k, v)
-    else:
+    if not ctx.news_valid:
         ctx.news_valid = False
-        # Note: news is only valid/active during news events; if inactive, not an external error unless fetch failed completely
+        ctx.news_observed_ts = 0
+        ctx.data_quality |= DataQuality.EXTERNAL_ABSENT
 
     return ctx
 
@@ -98,6 +108,10 @@ def main():
     ap.add_argument("--interval", type=float, default=5.0, help="Loop interval seconds")
     args = ap.parse_args()
 
+    if not math.isfinite(args.interval) or args.interval < 1.0:
+        ap.error("--interval must be finite and at least 1 second")
+    if args.out2:
+        ap.error("--out2 is disabled: use a separate launcher and snapshot for each terminal")
     targets = [args.out]
     if args.out2:
         targets.append(args.out2)
@@ -105,7 +119,7 @@ def main():
     print(f"[ExternalService] started; mkt={args.mkt} targets={targets}")
     print("[ExternalService] CFTC source: official cftc.gov ZIPs (autonomous)")
     print("[ExternalService] News source: ForexFactory XML (autonomous)")
-    print("[ExternalService] Options source: CBOE -> yfinance fallback")
+    print("[ExternalService] Options scoring DISABLED; CFTC publication provenance UNVERIFIED")
 
     while True:
         try:

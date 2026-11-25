@@ -1,4 +1,4 @@
-﻿# futures_ohlcv_adapter.py
+# futures_ohlcv_adapter.py
 """Futures OHLCV Adapter.
 
 Ingests GC/MGC OHLCV files from a free public source (axb0306 repository) or a local fallback directory.
@@ -13,7 +13,7 @@ import glob
 import pandas as pd
 from typing import List
 
-from Amigo.orderflow_lab.schema import SourceMetadata, DataQualityTag
+from algomind.orderflow_lab.schema import SourceMetadata, DataQualityTag
 
 
 class FuturesOHLCVAdapter:

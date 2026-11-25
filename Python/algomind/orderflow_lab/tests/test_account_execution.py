@@ -1,4 +1,4 @@
-﻿"""Comprehensive Unit Tests & Small-Account Simulation for Account-Aware Execution Layer.
+"""Comprehensive Unit Tests & Small-Account Simulation for Account-Aware Execution Layer.
 
 Covers Prompt Sections 16, 17, 18:
   - Contract Specification Validation
@@ -10,7 +10,7 @@ Covers Prompt Sections 16, 17, 18:
 """
 
 import pytest
-from Amigo.account_execution import (
+from algomind.account_execution import (
     AccountIdentification, SymbolCapabilityProfile, AccountExecutionEnvelope,
     AccountClass, MinLotStatus, FeasibilityStatus, Action,
     validate_symbol_capability, classify_account, evaluate_account_execution
@@ -470,7 +470,7 @@ class TestExnessCentAccount2000Leverage:
 # ======================================================================
 # Section 23 & 24: Account-Aware Adaptive Stop-Loss Test Matrix
 # ======================================================================
-from Amigo.account_execution import (
+from algomind.account_execution import (
     SLAdaptationStatus, AdaptiveSLResult, evaluate_adaptive_stop
 )
 
@@ -698,7 +698,7 @@ class TestAccountAwareAdaptiveStopLoss:
         assert "reason=VALID_STRATEGY_STRUCTURE" in sl_adapt_logs[0]
 
 
-from Amigo.account_execution import SignalExecutionClassification, SymbolTradeMode
+from algomind.account_execution import SignalExecutionClassification, SymbolTradeMode
 
 
 class TestCasesABCDFourStateFeasibility:

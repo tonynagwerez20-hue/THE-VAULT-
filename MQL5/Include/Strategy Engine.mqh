@@ -33,7 +33,9 @@ struct DecisionResult
    string          reason;
 };
 
-// Approved context eligibility; this never creates or rescues a strategy signal.
+// Hierarchical horizon selection: independent evaluation per horizon (Swing → Intraday → Scalp).
+// Longer-horizon failure does not suppress shorter valid horizons. Missing/invalid TFs = hard reject.
+// Supports qualified countertrend scalps when setup+entry support direction.
 bool SelectApprovedHorizon(const TopDownContext &td,const DecisionResult &decision,
                            const ENUM_REGIME regime,const datetime boundary,
                            ENUM_HORIZON &horizon)
@@ -41,30 +43,196 @@ bool SelectApprovedHorizon(const TopDownContext &td,const DecisionResult &decisi
    horizon=(ENUM_HORIZON)0;
    if(!td.complete || boundary<=0 || td.asof_boundary!=boundary ||
       decision.action!=ACTION_TRADE || (decision.direction!=1 && decision.direction!=-1)) return false;
+
+   // Validate all TFs are in valid range [-1, 1]
    int dirs[7]={td.d1_dir,td.h4_dir,td.h1_dir,td.m30_dir,td.m15_dir,td.m5_dir,td.m1_dir};
-   int d=decision.direction;
    for(int i=0;i<7;i++)
-      if(dirs[i]<-1 || dirs[i]>1 || dirs[i]==-d) return false;
-   if(td.m1_dir!=d) return false;
-   if(decision.hypothesis==HYP_CONTINUATION)
+      if(dirs[i]<-1 || dirs[i]>1) return false;
+
+   // Evaluate Swing horizon first (highest priority)
+   if(EvaluateHorizonForTrend(td, decision.direction, decision.hypothesis, regime, HORIZON_SWING))
    {
-      if(td.m5_dir!=d) return false;
-      if(td.d1_dir==d && td.h4_dir==d && td.h1_dir==d)
-         horizon=HORIZON_SWING;
-      else if(td.h1_dir==d && td.m30_dir==d && td.m15_dir==d)
-         horizon=HORIZON_INTRADAY;
-      else horizon=HORIZON_SCALPING;
+      horizon=HORIZON_SWING;
       return true;
    }
-   if(decision.hypothesis==HYP_MEAN_REVERSION && regime==REGIME_BALANCED)
+
+   // Evaluate Intraday horizon (second priority)
+   if(EvaluateHorizonForTrend(td, decision.direction, decision.hypothesis, regime, HORIZON_INTRADAY))
    {
-      if(td.h1_dir==0 && td.m30_dir==0 && td.m15_dir==0)
-         horizon=HORIZON_INTRADAY;
-      else if(td.m15_dir==0 && td.m5_dir==0)
-         horizon=HORIZON_SCALPING;
-      return horizon!=(ENUM_HORIZON)0;
+      horizon=HORIZON_INTRADAY;
+      return true;
    }
+
+   // Evaluate Scalp horizon (lowest priority, allows countertrend)
+   if(EvaluateHorizonForTrend(td, decision.direction, decision.hypothesis, regime, HORIZON_SCALPING))
+   {
+      horizon=HORIZON_SCALPING;
+      return true;
+   }
+
    return false;
+}
+
+// Helper: evaluate a specific horizon based on its TF groups and directional bias
+bool EvaluateHorizonForTrend(const TopDownContext &td, const int direction,
+                             const ENUM_HYPOTHESIS hypothesis, const ENUM_REGIME regime,
+                             const ENUM_HORIZON horizon)
+{
+   int d=direction; // Use explicit direction from decision
+   if(d!=1 && d!=-1) return false; // Invalid direction
+
+   // Define TF groups for each horizon
+   int context_dirs[2], setup_dirs[3], entry_dirs[2];
+   int context_count=0, setup_count=0, entry_count=0;
+
+   if(horizon==HORIZON_SWING)
+   {
+      // Swing: Context (D1,H4), Setup (H1,M30,M15), Entry (M5,M1)
+      context_dirs[0]=td.d1_dir; context_dirs[1]=td.h4_dir; context_count=2;
+      setup_dirs[0]=td.h1_dir; setup_dirs[1]=td.m30_dir; setup_dirs[2]=td.m15_dir; setup_count=3;
+      entry_dirs[0]=td.m5_dir; entry_dirs[1]=td.m1_dir; entry_count=2;
+   }
+   else if(horizon==HORIZON_INTRADAY)
+   {
+      // Intraday: Context (D1,H4), Setup (H1,M30), Entry (M15,M5)
+      context_dirs[0]=td.d1_dir; context_dirs[1]=td.h4_dir; context_count=2;
+      setup_dirs[0]=td.h1_dir; setup_dirs[1]=td.m30_dir; setup_dirs[2]=0; setup_count=2; // M15 not in setup for intraday
+      entry_dirs[0]=td.m15_dir; entry_dirs[1]=td.m5_dir; entry_count=2;
+   }
+   else if(horizon==HORIZON_SCALPING)
+   {
+      // Scalp: Context (H1,M30), Setup (M15,M5), Entry (M1)
+      context_dirs[0]=td.h1_dir; context_dirs[1]=td.m30_dir; context_count=2;
+      setup_dirs[0]=td.m15_dir; setup_dirs[1]=td.m5_dir; setup_dirs[2]=0; setup_count=2;
+      entry_dirs[0]=td.m1_dir; entry_dirs[1]=0; entry_count=1;
+   }
+
+   // Check for missing/invalid TF data (hard reject)
+   for(int i=0;i<context_count;i++) if(context_dirs[i]<-1 || context_dirs[i]>1) return false;
+   for(int i=0;i<setup_count;i++) if(setup_dirs[i]<-1 || setup_dirs[i]>1) return false;
+   for(int i=0;i<entry_count;i++) if(entry_dirs[i]<-1 || entry_dirs[i]>1) return false;
+
+   // For continuation hypothesis
+   if(hypothesis==HYP_CONTINUATION)
+   {
+      // Use explicit direction from decision (not inferred)
+      // d is already set from direction parameter
+
+      // Check entry trigger matches direction
+      if(entry_count==0 || entry_dirs[0]!=d) return false;
+
+      // Check setup support
+      bool setup_ok=false;
+      if(setup_count>=2)
+      {
+         // At least 2 of setup TFs should support direction
+         int support=0;
+         for(int i=0;i<setup_count;i++) if(setup_dirs[i]==d || setup_dirs[i]==0) support++;
+         setup_ok=(support>=2);
+      }
+      else if(setup_count==1)
+      {
+         setup_ok=(setup_dirs[0]==d || setup_dirs[0]==0);
+      }
+
+      if(!setup_ok) return false;
+
+      // For scalp horizon, allow countertrend (opposing HTF) if setup+entry support direction
+      if(horizon==HORIZON_SCALPING)
+      {
+         // Scalp can trade against HTF bias if setup and entry support direction
+         return true;
+      }
+
+      // For swing/intraday, require context support
+      if(horizon==HORIZON_SWING || horizon==HORIZON_INTRADAY)
+      {
+         // Context should not strongly oppose
+         if(context_count>=2 && context_dirs[0]==-d && context_dirs[1]==-d) return false;
+      }
+
+      return true;
+   }
+
+   // For mean reversion hypothesis
+   if(hypothesis==HYP_MEAN_REVERSION && regime==REGIME_BALANCED)
+   {
+      // MR requires neutral context
+      bool context_neutral=true;
+      for(int i=0;i<context_count;i++) if(context_dirs[i]!=0) { context_neutral=false; break; }
+
+      // Setup should be neutral or mixed
+      bool setup_neutral=true;
+      for(int i=0;i<setup_count;i++) if(setup_dirs[i]!=0) { setup_neutral=false; break; }
+
+      // Entry should be neutral
+      bool entry_neutral=true;
+      for(int i=0;i<entry_count;i++) if(entry_dirs[i]!=0) { entry_neutral=false; break; }
+
+      if(context_neutral && setup_neutral && entry_neutral) return true;
+   }
+
+   return false;
+}
+
+// Directional bias calculator for hierarchical horizon evaluation
+// B_d = SUM(w_i * c_i * d_i) / SUM(w_i * c_i)
+double TFBias(const TopDownContext &td, const ENUM_HORIZON horizon,
+              double &weights[], double &confidences[], int &valid_count)
+{
+   valid_count=0;
+   double numerator=0.0;
+   double denominator=0.0;
+
+   int dirs[7]={td.d1_dir,td.h4_dir,td.h1_dir,td.m30_dir,td.m15_dir,td.m5_dir,td.m1_dir};
+
+   if(horizon==HORIZON_SWING)
+   {
+      // Swing: Context (D1,H4), Setup (H1,M30,M15), Entry (M5,M1)
+      int indices[7]={0,1,2,3,4,5,6}; // All TFs
+      for(int i=0;i<7;i++)
+      {
+         if(dirs[i]>=-1 && dirs[i]<=1 && dirs[i]!=0) // Valid and non-neutral
+         {
+            valid_count++;
+            numerator += weights[i]*confidences[i]*dirs[i];
+            denominator += weights[i]*confidences[i];
+         }
+      }
+   }
+   else if(horizon==HORIZON_INTRADAY)
+   {
+      // Intraday: Context (D1,H4), Setup (H1,M30), Entry (M15,M5)
+      int indices[6]={0,1,2,3,4,5}; // Exclude M1
+      for(int j=0;j<6;j++)
+      {
+         int i=indices[j];
+         if(dirs[i]>=-1 && dirs[i]<=1 && dirs[i]!=0)
+         {
+            valid_count++;
+            numerator += weights[i]*confidences[i]*dirs[i];
+            denominator += weights[i]*confidences[i];
+         }
+      }
+   }
+   else if(horizon==HORIZON_SCALPING)
+   {
+      // Scalp: Context (H1,M30), Setup (M15,M5), Entry (M1)
+      int indices[5]={2,3,4,5,6}; // H1,M30,M15,M5,M1
+      for(int j=0;j<5;j++)
+      {
+         int i=indices[j];
+         if(dirs[i]>=-1 && dirs[i]<=1 && dirs[i]!=0)
+         {
+            valid_count++;
+            numerator += weights[i]*confidences[i]*dirs[i];
+            denominator += weights[i]*confidences[i];
+         }
+      }
+   }
+
+   if(denominator<=0.0 || valid_count==0) return 0.0;
+   return numerator/denominator;
 }
 
 // One frozen entry-proxy assessment for the already selected strategy/horizon.

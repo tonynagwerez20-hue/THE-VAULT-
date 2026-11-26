@@ -377,25 +377,28 @@ int OnInit()
    if(!MathIsValidNumber(v_min_valid) || v_min_valid<=0.0 ||
       !MathIsValidNumber(tv_loss_risk) || tv_loss_risk<=0.0)
       ocp_ok=false;
-   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 1.00, 2000.000, 2000.001, p_b_1_0001);
-   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 1.00, 2000.000, 2000.010, p_b_1_0010);
-   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 1.00, 2000.000, 2001.000, p_b_1_1000);
+double ref_price = SymbolInfoDouble(g_symbol, SYMBOL_ASK);
+   if(ref_price <= 0.0) ref_price = SymbolInfoDouble(g_symbol, SYMBOL_BID);
+   if(ref_price <= 0.0) { LogMsg(LOG_ERROR, "INIT", "No price available"); return INIT_FAILED; }
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 1.00, ref_price, ref_price + 0.001, p_b_1_0001);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 1.00, ref_price, ref_price + 0.010, p_b_1_0010);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 1.00, ref_price, ref_price + 1.000, p_b_1_1000);
 
-   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.10, 2000.000, 2000.001, p_b_01_0001);
-   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.10, 2000.000, 2000.010, p_b_01_0010);
-   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.10, 2000.000, 2001.000, p_b_01_1000);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.10, ref_price, ref_price + 0.001, p_b_01_0001);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.10, ref_price, ref_price + 0.010, p_b_01_0010);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.10, ref_price, ref_price + 1.000, p_b_01_1000);
 
-   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.01, 2000.000, 2000.001, p_b_001_0001);
-   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.01, 2000.000, 2000.010, p_b_001_0010);
-   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.01, 2000.000, 2001.000, p_b_001_1000);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.01, ref_price, ref_price + 0.001, p_b_001_0001);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.01, ref_price, ref_price + 0.010, p_b_001_0010);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, 0.01, ref_price, ref_price + 1.000, p_b_001_1000);
 
    PrintFormat("[P22_AUDIT][TASK2_BUY] 1.00lot(0.001=%.4f, 0.01=%.4f, 1.00=%.4f) | 0.10lot(0.001=%.4f, 0.01=%.4f, 1.00=%.4f) | 0.01lot(0.001=%.4f, 0.01=%.4f, 1.00=%.4f)",
                p_b_1_0001, p_b_1_0010, p_b_1_1000, p_b_01_0001, p_b_01_0010, p_b_01_1000, p_b_001_0001, p_b_001_0010, p_b_001_1000);
 
    double p_s_1_1000=0, p_s_01_1000=0, p_s_001_1000=0;
-   ocp_ok &= OrderCalcProfit(ORDER_TYPE_SELL, g_symbol, 1.00, 2000.000, 1999.000, p_s_1_1000);
-   ocp_ok &= OrderCalcProfit(ORDER_TYPE_SELL, g_symbol, 0.10, 2000.000, 1999.000, p_s_01_1000);
-   ocp_ok &= OrderCalcProfit(ORDER_TYPE_SELL, g_symbol, 0.01, 2000.000, 1999.000, p_s_001_1000);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_SELL, g_symbol, 1.00, ref_price, ref_price - 1.000, p_s_1_1000);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_SELL, g_symbol, 0.10, ref_price, ref_price - 1.000, p_s_01_1000);
+   ocp_ok &= OrderCalcProfit(ORDER_TYPE_SELL, g_symbol, 0.01, ref_price, ref_price - 1.000, p_s_001_1000);
    PrintFormat("[P22_AUDIT][TASK2_SELL] 1.00lot(1.00=%.4f) | 0.10lot(1.00=%.4f) | 0.01lot(1.00=%.4f)",
                p_s_1_1000, p_s_01_1000, p_s_001_1000);
 
@@ -406,9 +409,9 @@ int OnInit()
       double st_d = test_stops[k];
       double act_risk = 0.0; string err = "";
       double raw_l = (ts>0.0 && tv_loss_risk>0.0) ? (2.50) / ((st_d / ts) * tv_loss_risk) : 0.0;
-      double calc_lots = ComputeLotSize(g_symbol, 2000.0, 2000.0 - st_d, 0.5, act_risk, err);
+      double calc_lots = ComputeLotSize(g_symbol, ref_price, ref_price - st_d, 0.5, act_risk, err);
       double ocp_min_loss = 0.0;
-      if(v_min_valid<=0.0 || !OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, v_min_valid, 2000.0, 2000.0 - st_d, ocp_min_loss))
+      if(v_min_valid<=0.0 || !OrderCalcProfit(ORDER_TYPE_BUY, g_symbol, v_min_valid, ref_price, ref_price - st_d, ocp_min_loss))
       {
          ocp_ok = false;
       }
